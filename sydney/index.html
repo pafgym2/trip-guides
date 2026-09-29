@@ -189,6 +189,14 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
   background:var(--accent-soft);padding:2px 7px;border-radius:5px;margin-left:7px;
   vertical-align:2px;white-space:nowrap;text-decoration:none;letter-spacing:.01em}
 .daytbl a.g:active{opacity:.6}
+.bar{height:11px;background:var(--surface-2);border-radius:6px;overflow:hidden;margin:12px 0 7px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:6px}
+.barlab{display:flex;justify-content:space-between;font-family:'IBM Plex Mono',monospace;
+  font-size:12px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.big{font-family:'Gothic A1',sans-serif;font-weight:800;font-size:27px;letter-spacing:-.02em;
+  line-height:1.15;margin:2px 0 0}
+.big small{display:block;font-family:'IBM Plex Sans KR',sans-serif;font-weight:500;
+  font-size:13px;color:var(--ink-3);letter-spacing:0;margin-top:4px}
 .dayhead{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin:0 0 4px}
 .dayhead .n{font-family:'Gothic A1',sans-serif;font-weight:800;font-size:19px;letter-spacing:-.02em}
 .dayhead .dt{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--ink-3);font-weight:600}
@@ -210,6 +218,7 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
     <button role="tab" aria-selected="false" data-t="days">일정</button>
     <button role="tab" aria-selected="false" data-t="move">이동</button>
     <button role="tab" aria-selected="false" data-t="stay">숙소</button>
+    <button role="tab" aria-selected="false" data-t="cost">예산</button>
     <button role="tab" aria-selected="false" data-t="eat">먹기</button>
     <button role="tab" aria-selected="false" data-t="kids">아이들</button>
     <button role="tab" aria-selected="false" data-t="pack">준비물</button>
@@ -842,6 +851,102 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
       </div>
       <div class="note w"><b>검색은 "성인 4명"으로 하세요.</b> "성인 2 + 아동 2"로 넣으면
         아파트형이 <b>전부 "예약 불가"로 표시됩니다.</b> 매진이 아니라 검색 방식 문제입니다.</div>
+    </section>
+  </div>
+
+  <div class="panel" id="p-cost" role="tabpanel" hidden>
+    <section class="sec">
+      <p class="eyebrow">4인 · 8박 9일 · 9/29 기준</p>
+      <h2>전체 예상 비용</h2>
+      <p class="big">약 835만 ~ 1,036만원<small>중간값 약 940만원 · 1 AUD ≒ 1,050원</small></p>
+      <div class="bar"><i style="width:29%"></i></div>
+      <div class="barlab"><span>결제 완료 ₩2,752,609</span><span>29%</span></div>
+      <div class="note">항공권을 <b>마일리지로 발권</b>한 게 이 예산의 핵심입니다.
+        4인 왕복이 <b>₩1,327,100</b>(유류할증·세금)에 끝났습니다 —
+        11월 인천~시드니 정상가로 4명이면 최소 600만원은 나옵니다.
+        <b>약 470만원을 아낀 셈</b>이고, 그래서 전체가 1,000만원 안쪽에 머뭅니다.</div>
+    </section>
+
+    <section class="sec">
+      <h2>✅ 이미 지출 <span class="chip">₩2,752,609</span></h2>
+      <div class="tblwrap"><table>
+        <tr><th>항목</th><th class="num">금액</th></tr>
+        <tr><td>✈️ 항공권 4명<br><span style="color:var(--ink-2);font-size:12.5px">3명분 ₩877,700 + 와이프 ₩449,400</span></td><td class="num">₩1,327,100</td></tr>
+        <tr><td>🏨 11/15 The Sebel Quay West</td><td class="num">₩1,078,509</td></tr>
+        <tr><td>🏨 11/16 The Carrington Hotel</td><td class="num">₩347,000</td></tr>
+        <tr><td><strong>소계</strong></td><td class="num"><strong>₩2,752,609</strong></td></tr>
+      </table></div>
+    </section>
+
+    <section class="sec">
+      <h2>남은 지출</h2>
+      <div class="tblwrap"><table>
+        <tr><th>항목</th><th class="num">최소</th><th class="num">최대</th></tr>
+        <tr><td><strong>🏨 남은 숙박</strong><br><span style="color:var(--ink-2);font-size:12.5px">남부 2박 + Zetland 4박</span></td><td class="num">219만</td><td class="num">264만</td></tr>
+        <tr><td><strong>🍽️ 식비 9일</strong><br><span style="color:var(--ink-2);font-size:12.5px">가장 불확실한 항목</span></td><td class="num">142만</td><td class="num">198만</td></tr>
+        <tr><td><strong>🚗 렌터카 4일</strong><br><span style="color:var(--ink-2);font-size:12.5px">면책보상·톨·부스터 포함</span></td><td class="num">60만</td><td class="num">103만</td></tr>
+        <tr><td><strong>🎫 입장권</strong></td><td class="num">50만</td><td class="num">77만</td></tr>
+        <tr><td>💳 기타<br><span style="color:var(--ink-2);font-size:12.5px">eSIM · 기념품 · 예비비</span></td><td class="num">40만</td><td class="num">60만</td></tr>
+        <tr><td>🚆 교통<br><span style="color:var(--ink-2);font-size:12.5px">공항 택시 왕복 + Opal</span></td><td class="num">25만</td><td class="num">25만</td></tr>
+        <tr><td>📄 비자·보험·서류</td><td class="num">24만</td><td class="num">34만</td></tr>
+        <tr><td><strong>소계</strong></td><td class="num"><strong>560만</strong></td><td class="num"><strong>761만</strong></td></tr>
+      </table></div>
+    </section>
+
+    <section class="sec">
+      <h2>확정된 금액</h2>
+      <p class="lead">추정이 아니라 <strong>실제 조사로 확인된</strong> 숫자입니다.</p>
+      <div class="tblwrap"><table>
+        <tr><th>항목</th><th class="num">AUD</th><th class="num">원화</th></tr>
+        <tr><td>Meriton Zetland 4박</td><td class="num">—</td><td class="num">₩1,844,112</td></tr>
+        <tr><td>남부 2박 — Windang</td><td class="num">—</td><td class="num">₩346,789</td></tr>
+        <tr><td>남부 2박 — BIG4 Kiama</td><td class="num">—</td><td class="num">₩799,914</td></tr>
+        <tr><td><strong>Scenic World</strong> 4인</td><td class="num">204.80</td><td class="num">₩215,040</td></tr>
+        <tr><td><strong>HARS 패밀리패스</strong></td><td class="num">55</td><td class="num">₩57,750</td></tr>
+        <tr><td>공항 택시 왕복</td><td class="num">120</td><td class="num">₩126,000</td></tr>
+        <tr><td>Opal 시티 4일</td><td class="num">약 115</td><td class="num">₩120,750</td></tr>
+        <tr><td>ETA 비자 4명</td><td class="num">80</td><td class="num">₩84,000</td></tr>
+        <tr><td>Royal NP 차량 입장</td><td class="num">12</td><td class="num">₩12,600</td></tr>
+      </table></div>
+      <div class="note"><b>HARS 항공박물관이 이번 여행 최고 가성비</b>입니다.
+        4인 <b>AUD 55</b>에 보잉 747-400 내부까지 들어갑니다.</div>
+    </section>
+
+    <section class="sec">
+      <h2>추정이 큰 항목 셋</h2>
+      <div class="keys">
+        <div class="key"><h3>🍽️ 식비 — 142만 ~ 198만</h3>
+          <p>가장 불확실합니다. 다만 <strong>주방이 세 곳</strong>(더세벨·남부 캐빈·Zetland)이라
+          아침을 자체 해결하면 하한에 가깝게 갑니다.
+          <strong>Fratelli Fresh 12세 이하 무료</strong>(Day 1·8)로 두 끼가 더 빠지고요.</p></div>
+        <div class="key"><h3>🚗 렌터카 — 60만 ~ 103만</h3>
+          <p>폭이 넓은 건 <strong>면책보상과 톨 관리 수수료가 업체별로 크게 달라서</strong>입니다.
+          톨 수수료만 하루 $3.30~50 차이가 납니다. <strong>부스터시트도 필수</strong>라 옵션값이 붙습니다.</p></div>
+        <div class="key"><h3>🏖️ 남부 2박 — 45만 차이</h3>
+          <p>아직 정하지 않은 유일한 숙박입니다. Windang ₩346,789 vs BIG4 ₩799,914 —
+          차이는 딱 하나, <strong>수영장·워터파크·점핑필로우</strong>입니다.</p></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <h2>💡 줄이려면</h2>
+      <div class="tblwrap"><table>
+        <tr><th>선택</th><th class="num">절감</th></tr>
+        <tr><td><strong>남부를 Windang으로</strong><br><span style="color:var(--ink-2);font-size:12.5px">대신 수영장 없음 — 호수·해변 물놀이로 대체</span></td><td class="num"><strong>−45만</strong></td></tr>
+        <tr><td>아침 전부 자체 해결<br><span style="color:var(--ink-2);font-size:12.5px">주방 있는 숙소가 세 곳</span></td><td class="num">−30~50만</td></tr>
+        <tr><td>루나파크 라이드패스 생략<br><span style="color:var(--ink-2);font-size:12.5px">입장은 무료 · 야경만 봐도 됨</span></td><td class="num">−21만</td></tr>
+        <tr><td>아이 <strong>실물 Opal 카드</strong> 구입<br><span style="color:var(--warn);font-size:12.5px">안 사면 아이도 성인 요금</span></td><td class="num">−4.5만</td></tr>
+      </table></div>
+      <div class="note">넷 다 하면 <b>약 1,000만 → 900만 아래</b>로 내려갑니다.
+        반대로 <b>안 줄여도 1,040만을 크게 넘지는 않습니다</b> — 항공권이 이미 해결됐기 때문입니다.</div>
+    </section>
+
+    <section class="sec">
+      <h2>환율 주의</h2>
+      <div class="note w">이 표는 <b>1 AUD ≒ 1,050원</b> 가정입니다.
+        현지 지출이 약 <b>AUD 4,500~6,000</b>이라 <b>환율이 50원 움직이면 22만~30만원</b>이 달라집니다.<br>
+        출발 직전에 시세를 한 번 더 확인하시고, <b>해외결제 수수료 없는 카드</b>를 쓰시면
+        1.5~2% 정도가 추가로 절약됩니다.</div>
     </section>
   </div>
 
