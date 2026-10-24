@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="바늘시계 보는 법을 배우는 게임">
+<meta name="theme-color" content="#EAF2F8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="시계 놀이">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>시헌이의 시계 놀이</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: a toy alarm clock on the left, a play panel on the right; stacks on phones.
+   Hour hand = tangerine, minute hand = blue, matching numbers on the dial. Single light theme by choice. */
+:root {
+  --paper: #EAF2F8;
+  --paper-dot: #D3E1EE;
+  --card: #FFFFFF;
+  --ink: #1E2A4A;
+  --ink-soft: #5B6788;
+  --line: #D5DFEA;
+  --hour: #F0603A;
+  --hour-tint: #FFE4DA;
+  --minute: #2F6FEB;
+  --minute-tint: #DDE8FF;
+  --sun: #FFC93C;
+  --sun-tint: #FFF3CF;
+  --good: #1F9D67;
+  --good-tint: #DCF5E9;
+  --bad: #E5484D;
+  --bad-tint: #FDE3E3;
+  --face: #FFFDF7;
+  --display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--paper);
+  background-image: radial-gradient(var(--paper-dot) 1.2px, transparent 1.2px);
+  background-size: 22px 22px;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  -webkit-tap-highlight-color: transparent;
+}
+.app {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding-block: 18px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 16px;
+}
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, .clock:focus-visible { outline: 3px solid var(--minute); outline-offset: 3px; }
+
+/* header */
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand h1 { font-family: var(--display); font-weight: 400; font-size: clamp(26px, 5vw, 36px); margin: 0; letter-spacing: -0.5px; text-wrap: balance; }
+.brand h1 .h { color: var(--hour); } .brand h1 .m { color: var(--minute); }
+.hud { display: flex; gap: 8px; align-items: center; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--card); border: 2px solid var(--line); border-radius: 999px;
+  padding: 6px 14px; font-family: var(--display); font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+.chip .star { color: var(--sun); font-size: 22px; line-height: 1; -webkit-text-stroke: 1px #E0A800; }
+.chip.btn { cursor: pointer; }
+.chip.btn:hover { border-color: var(--ink-soft); }
+
+/* tabs */
+nav.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tab {
+  border: 2px solid var(--line); background: var(--card); border-radius: 18px;
+  padding: 10px 8px; font-family: var(--display); font-size: 19px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  transition: transform .15s, border-color .15s, background .15s;
+}
+.tab small { font-family: var(--body); font-size: 13px; color: var(--ink-soft); }
+.tab:hover { transform: translateY(-2px); }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--card); border-color: var(--ink); }
+.tab[aria-selected="true"] small { color: #C9D3EA; }
+@media (max-width: 560px) { .tab { font-size: 16px; padding: 8px 4px; } .tab small { display: none; } }
+
+/* main */
+main { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 800px) { main { grid-template-columns: minmax(0, 1fr); } }
+.stage {
+  background: var(--card); border-radius: 28px; border: 2px solid var(--line);
+  padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 10px;
+  position: relative;
+}
+.clock { width: 100%; max-width: 460px; aspect-ratio: 240 / 252; touch-action: none; user-select: none; border-radius: 24px; }
+.clock.draggable { cursor: grab; }
+.clock.dragging { cursor: grabbing; }
+.hand { transform-box: view-box; transform-origin: 0px 0px; }
+.anim .hand { transition: transform .7s cubic-bezier(.3,1.4,.5,1); }
+.hand.active .hand-body { filter: drop-shadow(0 0 4px rgba(30,42,74,.35)); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; font-size: 15px; color: var(--ink-soft); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 22px; height: 7px; border-radius: 4px; display: inline-block; }
+.nudges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.nudge {
+  border: 2px solid var(--line); background: var(--card); border-radius: 12px;
+  padding: 6px 12px; font-family: var(--display); font-size: 16px;
+}
+.nudge.h { color: var(--hour); } .nudge.m { color: var(--minute); }
+.nudge:hover { background: var(--paper); }
+
+.panel {
+  background: var(--card); border-radius: 28px; border: 2px solid var(--line);
+  padding: 22px; display: flex; flex-direction: column; gap: 16px; min-width: 0;
+}
+.eyebrow { font-size: 13px; letter-spacing: 1.5px; color: var(--ink-soft); text-transform: uppercase; }
+.panel h2 { font-family: var(--display); font-weight: 400; font-size: 28px; margin: 0; text-wrap: balance; line-height: 1.25; }
+.panel p { margin: 0; line-height: 1.6; color: var(--ink-soft); }
+
+.levels { display: flex; gap: 6px; flex-wrap: wrap; }
+.lv {
+  border: 2px solid var(--line); background: var(--card); border-radius: 14px;
+  padding: 6px 10px; font-family: var(--display); font-size: 15px;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.lv b { font-weight: 400; width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--paper); font-size: 13px; }
+.lv[aria-pressed="true"] { border-color: var(--minute); background: var(--minute-tint); }
+.lv[aria-pressed="true"] b { background: var(--minute); color: #fff; }
+.lv.cleared b { background: var(--sun); color: var(--ink); }
+
+.progress { display: flex; gap: 6px; align-items: center; }
+.progress .dot { width: 26px; height: 26px; border-radius: 50%; background: var(--paper); border: 2px dashed var(--line); display: grid; place-items: center; font-size: 15px; color: transparent; transition: all .3s; }
+.progress .dot.on { background: var(--sun); border: 2px solid #E9AE16; color: var(--ink); transform: scale(1.06); }
+.progress .lbl { font-size: 14px; color: var(--ink-soft); margin-left: 4px; }
+
+/* reading */
+.reading { display: flex; flex-direction: column; gap: 6px; padding: 16px; border-radius: 20px; background: var(--paper); }
+.reading .big { font-family: var(--display); font-size: clamp(40px, 9vw, 58px); line-height: 1.05; font-variant-numeric: tabular-nums; }
+.reading .big .h { color: var(--hour); } .reading .big .m { color: var(--minute); }
+.reading .digital { font-family: var(--display); font-size: 20px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.explain { display: grid; gap: 8px; }
+.explain div { display: flex; gap: 10px; align-items: flex-start; line-height: 1.5; }
+.explain .sw { flex: none; width: 12px; height: 12px; border-radius: 3px; margin-top: 6px; }
+
+.toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+.toggle { border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 14px; font-size: 15px; display: inline-flex; gap: 8px; align-items: center; }
+.toggle .sw2 { width: 30px; height: 18px; border-radius: 9px; background: var(--line); position: relative; transition: background .2s; }
+.toggle .sw2::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .2s; }
+.toggle[aria-pressed="true"] .sw2 { background: var(--good); }
+.toggle[aria-pressed="true"] .sw2::after { left: 14px; }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-main {
+  border: none; border-radius: 18px; padding: 14px 22px;
+  font-family: var(--display); font-size: 22px;
+  background: var(--ink); color: var(--card);
+  box-shadow: 0 5px 0 #0D152B; transition: transform .1s, box-shadow .1s;
+}
+.btn-main:active { transform: translateY(4px); box-shadow: 0 1px 0 #0D152B; }
+.btn-main.go { background: var(--good); box-shadow: 0 5px 0 #11714A; }
+.btn-main.go:active { box-shadow: 0 1px 0 #11714A; }
+.btn-soft { border: 2px solid var(--line); background: var(--card); border-radius: 18px; padding: 12px 18px; font-family: var(--display); font-size: 19px; }
+.btn-soft:hover { background: var(--paper); }
+
+/* quiz options */
+.options { display: grid; gap: 10px; }
+.opt {
+  border: 3px solid var(--line); background: var(--card); border-radius: 20px;
+  padding: 14px 18px; text-align: left; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  font-family: var(--display); font-size: 28px; transition: transform .12s, border-color .2s, background .2s;
+}
+.opt small { font-size: 18px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.opt:hover:not(:disabled) { border-color: var(--minute); transform: translateX(3px); }
+.opt.right { border-color: var(--good); background: var(--good-tint); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-tint); opacity: .75; }
+.opt:disabled { cursor: default; }
+
+.feedback { border-radius: 18px; padding: 14px 16px; line-height: 1.6; display: flex; gap: 12px; align-items: flex-start; }
+.feedback .face { font-size: 34px; line-height: 1; }
+.feedback b { font-family: var(--display); font-weight: 400; font-size: 22px; display: block; }
+.feedback.good { background: var(--good-tint); }
+.feedback.bad { background: var(--bad-tint); }
+.feedback.info { background: var(--sun-tint); }
+
+.scene { display: flex; gap: 14px; align-items: center; padding: 16px; border-radius: 20px; background: var(--sun-tint); }
+.scene .ic { font-size: 46px; line-height: 1; }
+.scene .t { font-size: 16px; color: var(--ink-soft); }
+.scene .goal { font-family: var(--display); font-size: clamp(30px, 6vw, 40px); line-height: 1.15; }
+.scene .goal .h { color: var(--hour); } .scene .goal .m { color: var(--minute); }
+
+/* stickers */
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 10px; }
+.stk { aspect-ratio: 1; border-radius: 18px; display: grid; place-items: center; font-size: 38px; background: var(--paper); border: 2px dashed var(--line); }
+.stk.got { background: var(--sun-tint); border: 2px solid var(--sun); }
+.stk.lock { font-family: var(--display); font-size: 22px; color: var(--ink-soft); }
+.stk.new { animation: pop .7s cubic-bezier(.3,1.6,.5,1); }
+
+.shake { animation: shake .4s; }
+@keyframes shake { 20%,60% { transform: translateX(-8px); } 40%,80% { transform: translateX(8px); } }
+@keyframes pop { 0% { transform: scale(.2) rotate(-20deg); } 100% { transform: scale(1) rotate(0); } }
+
+/* toast */
+.toast {
+  position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(140%);
+  background: var(--ink); color: var(--card); border-radius: 22px; padding: 14px 20px;
+  display: flex; align-items: center; gap: 12px; font-family: var(--display); font-size: 20px;
+  box-shadow: 0 10px 30px rgba(30,42,74,.3); transition: transform .4s cubic-bezier(.3,1.4,.5,1), opacity .3s; z-index: 30; opacity: 0;
+  max-width: calc(100% - 32px);
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast .em { font-size: 40px; }
+canvas#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
+footer { text-align: center; font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+footer a { color: var(--minute); }
+@media (prefers-reduced-motion: reduce) {
+  .anim .hand, .tab, .opt, .toast, .progress .dot { transition: none; }
+  .shake, .stk.new { animation: none; }
+}
+
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+[hidden] { display: none !important; }
+html { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+button { touch-action: manipulation; }
+.install { display: flex; gap: 10px; align-items: center; background: var(--sun-tint); border: 2px solid var(--sun); border-radius: 18px; padding: 10px 14px; font-size: 15px; line-height: 1.5; }
+.install span { flex: 1; min-width: 0; }
+.install button { border: none; background: transparent; font-size: 20px; padding: 4px 8px; }
+</style>
+
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="app">
+  <div class="install" id="install" hidden><span><b>홈 화면에 추가</b>하면 앱처럼 전체 화면으로 열려요. 아이폰·아이패드: 공유 버튼 → "홈 화면에 추가" · 안드로이드: 메뉴 ⋮ → "홈 화면에 추가"</span><button id="installX" aria-label="닫기">✕</button></div>
+  <header>
+    <div class="brand">
+      <h1>시헌이의 <span class="h">시계</span> <span class="m">놀이</span></h1>
+    </div>
+    <div class="hud">
+      <span class="chip" title="모은 별"><span class="star">★</span><span id="starCount">0</span></span>
+      <button class="chip btn" id="awakeBtn" aria-pressed="true" title="게임하는 동안 화면이 꺼지지 않게 해요">화면 켜둠</button>
+      <button class="chip btn" id="soundBtn" aria-pressed="true">소리 켜짐</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-mode="explore" aria-selected="true">자유 놀이<small>바늘 움직여 보기</small></button>
+    <button class="tab" role="tab" data-mode="read" aria-selected="false">몇 시일까?<small>시계 읽기 퀴즈</small></button>
+    <button class="tab" role="tab" data-mode="set" aria-selected="false">시계 만들기<small>바늘 맞추기 미션</small></button>
+    <button class="tab" role="tab" data-mode="album" aria-selected="false">스티커<small>모은 보상</small></button>
+  </nav>
+
+  <main>
+    <section class="stage" id="stage">
+      <svg class="clock" id="clock" viewBox="-120 -132 240 252" tabindex="0" role="img" aria-label="아날로그 시계"></svg>
+      <div class="legend">
+        <span><i style="background:var(--hour)"></i>짧은 바늘 = 시</span>
+        <span><i style="background:var(--minute)"></i>긴 바늘 = 분</span>
+      </div>
+      <div class="nudges" id="nudges">
+        <button class="nudge h" data-d="-60">− 1시간</button>
+        <button class="nudge m" data-d="-5">− 5분</button>
+        <button class="nudge m" data-d="5">+ 5분</button>
+        <button class="nudge h" data-d="60">+ 1시간</button>
+      </div>
+    </section>
+    <section class="panel" id="panel"></section>
+  </main>
+
+  <footer>긴 바늘을 손가락으로 빙글빙글 돌려 보세요. 긴 바늘이 한 바퀴 돌면 짧은 바늘은 숫자 한 칸을 가요.<br>
+    참고한 코드: <a href="https://github.com/ericmjl/teaching-clock" target="_blank" rel="noopener">ericmjl/teaching-clock</a></footer>
+</div>
+<div class="toast" id="toast"><span class="em" id="toastEm"></span><span id="toastTxt"></span></div>
+
+<script>
+(() => {
+const NS = 'http://www.w3.org/2000/svg';
+const $ = s => document.querySelector(s);
+const svg = $('#clock');
+const panel = $('#panel');
+
+const LEVELS = [
+  { name: '정각', tip: '긴 바늘이 12에 있으면 "정각"이에요.', mins: [0] },
+  { name: '30분', tip: '긴 바늘이 6에 있으면 30분, "반"이라고도 해요.', mins: [0, 30] },
+  { name: '15분', tip: '긴 바늘이 3이면 15분, 9면 45분이에요.', mins: [0, 15, 30, 45] },
+  { name: '5분', tip: '숫자 한 칸은 5분! 5, 10, 15… 하고 세어 봐요.', mins: Array.from({ length: 12 }, (_, i) => i * 5) },
+  { name: '1분', tip: '작은 눈금 한 칸은 1분이에요.', mins: Array.from({ length: 60 }, (_, i) => i) },
+];
+const GOAL = 5;
+const STICKERS = ['🦁','🐯','🐻','🐼','🐰','🦊','🐸','🐧','🦉','🐨','🦖','🐳','🐙','🦄','🚀','🚒','🚂','⚽','🍉','🌈'];
+const SCENES = [
+  { ic: '🌅', t: '아침에 일어나는 시간', hours: [7] },
+  { ic: '🍳', t: '아침 먹는 시간', hours: [7, 8] },
+  { ic: '🎒', t: '학교 가는 시간', hours: [8] },
+  { ic: '🍙', t: '점심 먹는 시간', hours: [12, 1] },
+  { ic: '🛝', t: '놀이터 가는 시간', hours: [3, 4] },
+  { ic: '⚽', t: '축구 하는 시간', hours: [2, 4, 5] },
+  { ic: '🎨', t: '그림 그리는 시간', hours: [10, 11] },
+  { ic: '📺', t: '만화 보는 시간', hours: [5, 6] },
+  { ic: '🍝', t: '저녁 먹는 시간', hours: [6, 7] },
+  { ic: '📚', t: '책 읽는 시간', hours: [7, 8] },
+  { ic: '🛁', t: '목욕하는 시간', hours: [8] },
+  { ic: '🌙', t: '잠자는 시간', hours: [9] },
+];
+const PRAISE = ['정답! 시헌이 최고!', '와, 정말 잘했어!', '척척박사 시헌이!', '맞았어! 시계 박사네!', '멋져요! 별 하나 더!', '딩동댕! 완벽해!'];
+const OOPS = ['아깝다! 다시 해 볼까?', '괜찮아, 한 번 더!', '거의 다 왔어!'];
+
+const S = {
+  mode: 'explore', level: 0, total: 180, showMin: true, showHelp: true, sound: true, awake: true,
+  progress: [0, 0, 0, 0, 0], stars: 0, stickers: 0, q: null, hint: false,
+};
+const KEY = 'siheon-clock-v1';
+try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d) Object.assign(S, { level: d.level ?? 0, progress: d.progress ?? S.progress, stars: d.stars ?? 0, stickers: d.stickers ?? 0, showMin: d.showMin ?? true, showHelp: d.showHelp ?? true, sound: d.sound ?? true, awake: d.awake ?? true, mode: d.mode ?? 'explore' }); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ level: S.level, progress: S.progress, stars: S.stars, stickers: S.stickers, showMin: S.showMin, showHelp: S.showHelp, sound: S.sound, awake: S.awake, mode: S.mode })); } catch (e) {} };
+
+/* ---------- helpers ---------- */
+const rand = a => a[Math.floor(Math.random() * a.length)];
+const mod = (n, m) => ((n % m) + m) % m;
+const pt = (deg, r) => [r * Math.sin(deg * Math.PI / 180), -r * Math.cos(deg * Math.PI / 180)];
+const hm = total => { const t = mod(Math.round(total), 720); return { h: Math.floor(t / 60) || 12, m: t % 60 }; };
+const toTotal = (h, m) => (h % 12) * 60 + m;
+const pad = n => String(n).padStart(2, '0');
+const say = (h, m) => m === 0 ? `${h}시` : `${h}시 ${m}분`;
+const sayHTML = (h, m) => m === 0 ? `<span class="h">${h}시</span> 정각` : `<span class="h">${h}시</span> <span class="m">${m}분</span>`;
+const digital = (h, m) => `${h}:${pad(m)}`;
+const gwa = n => [1, 3, 6, 7, 8, 10, 11].includes(n) ? '과' : '와'; // 받침 있는 숫자 + 과
+const el = (tag, attrs = {}, parent) => { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; };
+
+function explainHour(h, m) {
+  if (m === 0) return `짧은 바늘이 <b>${h}</b>을 딱 가리키니까 <b>${h}시</b>`;
+  const n = h % 12 + 1;
+  return `짧은 바늘이 <b>${h}${gwa(h)} ${n} 사이</b>에 있으니까 <b>${h}시</b> (아직 ${n}시가 안 됐어요)`;
+}
+function explainMin(m) {
+  if (m === 0) return `긴 바늘이 <b>12</b>에 있으니까 <b>정각</b>`;
+  if (m % 5 === 0) return `긴 바늘이 숫자 <b>${m / 5}</b>에 있으니까 5씩 세면 <b>${m}분</b>`;
+  const n = Math.floor(m / 5);
+  return n === 0 ? `긴 바늘이 12에서 작은 눈금 <b>${m}칸</b> 갔으니까 <b>${m}분</b>`
+                 : `긴 바늘이 숫자 ${n}(${n * 5}분)에서 작은 눈금 <b>${m % 5}칸</b> 더 갔으니까 <b>${m}분</b>`;
+}
+
+/* ---------- sound ---------- */
+let ac = null;
+function tone(freq, dur = .12, type = 'sine', vol = .18, delay = 0) {
+  if (!S.sound) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + .02);
+  } catch (e) {}
+}
+const sfx = {
+  tick: () => tone(1800, .03, 'square', .04),
+  good: () => { tone(784, .15, 'triangle', .2); tone(988, .15, 'triangle', .2, .1); tone(1319, .3, 'triangle', .2, .2); },
+  bad: () => { tone(260, .18, 'sine', .2); tone(200, .25, 'sine', .2, .14); },
+  fanfare: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, .2, 'triangle', .18, i * .11)),
+};
+
+/* ---------- clock drawing ---------- */
+let hourHand, minHand, ghostH, ghostM, wedge, arc, minLabels, hourNums = [];
+function buildClock() {
+  // alarm-clock bells and legs
+  const back = el('g', {}, svg);
+  el('path', { d: 'M-70 -96 a34 34 0 0 1 48 -20 z', fill: 'var(--sun)', stroke: 'var(--ink)', 'stroke-width': 5, 'stroke-linejoin': 'round' }, back);
+  el('path', { d: 'M70 -96 a34 34 0 0 0 -48 -20 z', fill: 'var(--sun)', stroke: 'var(--ink)', 'stroke-width': 5, 'stroke-linejoin': 'round' }, back);
+  el('line', { x1: -60, y1: -96, x2: -50, y2: -86, stroke: 'var(--ink)', 'stroke-width': 6, 'stroke-linecap': 'round' }, back);
+  el('line', { x1: 60, y1: -96, x2: 50, y2: -86, stroke: 'var(--ink)', 'stroke-width': 6, 'stroke-linecap': 'round' }, back);
+  el('rect', { x: -9, y: -125, width: 18, height: 14, rx: 4, fill: 'var(--ink)' }, back);
+  el('line', { x1: -60, y1: 82, x2: -78, y2: 112, stroke: 'var(--ink)', 'stroke-width': 8, 'stroke-linecap': 'round' }, back);
+  el('line', { x1: 60, y1: 82, x2: 78, y2: 112, stroke: 'var(--ink)', 'stroke-width': 8, 'stroke-linecap': 'round' }, back);
+  // case + face
+  el('circle', { r: 108, fill: 'var(--hour)' }, svg);
+  el('circle', { r: 108, fill: 'none', stroke: 'var(--ink)', 'stroke-width': 5 }, svg);
+  el('circle', { r: 97, fill: 'var(--face)', stroke: 'var(--ink)', 'stroke-width': 3 }, svg);
+
+  // helpers (under ticks)
+  wedge = el('path', { fill: 'var(--hour-tint)' }, svg);
+  arc = el('path', { fill: 'none', stroke: 'var(--minute-tint)', 'stroke-width': 12 }, svg);
+
+  // ticks
+  for (let i = 0; i < 60; i++) {
+    const big = i % 5 === 0;
+    const [x1, y1] = pt(i * 6, 86), [x2, y2] = pt(i * 6, big ? 77 : 82);
+    el('line', { x1, y1, x2, y2, stroke: big ? 'var(--ink)' : 'var(--ink-soft)', 'stroke-width': big ? 3 : 1.4, 'stroke-linecap': 'round' }, svg);
+  }
+  // minute labels (blue, outer)
+  minLabels = el('g', {}, svg);
+  for (let i = 0; i < 12; i++) {
+    const [x, y] = pt(i * 30, 91.5);
+    const t = el('text', { x, y, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: 'var(--minute)', 'font-size': 7.5, 'font-family': 'Jua, sans-serif' }, minLabels);
+    t.textContent = i === 0 ? '0' : i * 5;
+  }
+  // hour numbers
+  for (let i = 1; i <= 12; i++) {
+    const [x, y] = pt(i * 30, 63);
+    const t = el('text', { x, y: y + 1, 'text-anchor': 'middle', 'dominant-baseline': 'central', fill: 'var(--ink)', 'font-size': 21, 'font-family': 'Jua, sans-serif' }, svg);
+    t.textContent = i; hourNums[i] = t;
+  }
+  const brand = el('text', { x: 0, y: 34, 'text-anchor': 'middle', fill: 'var(--ink-soft)', 'font-size': 8, 'font-family': 'Jua, sans-serif', 'letter-spacing': 1 }, svg);
+  brand.textContent = 'SIHEON';
+
+  const mkHand = (len, tail, w, color, ghost) => {
+    const g = el('g', { class: 'hand' }, svg);
+    if (ghost) g.setAttribute('opacity', .35);
+    const body = el('g', { class: 'hand-body' }, g);
+    el('line', { x1: 0, y1: tail, x2: 0, y2: -len, stroke: color, 'stroke-width': w, 'stroke-linecap': 'round', ...(ghost ? { 'stroke-dasharray': '4 4' } : {}) }, body);
+    el('circle', { cx: 0, cy: -len + 2, r: w * .9, fill: color }, body);
+    if (!ghost) el('line', { x1: 0, y1: 0, x2: 0, y2: -len, stroke: 'transparent', 'stroke-width': 26, 'stroke-linecap': 'round' }, g);
+    return g;
+  };
+  ghostH = mkHand(48, 0, 9, 'var(--hour)', true);
+  ghostM = mkHand(76, 0, 5, 'var(--minute)', true);
+  hourHand = mkHand(48, 10, 9, 'var(--hour)');
+  minHand = mkHand(76, 14, 5, 'var(--minute)');
+  hourHand.dataset.hand = 'hour'; minHand.dataset.hand = 'minute';
+  el('circle', { r: 7, fill: 'var(--ink)' }, svg);
+  el('circle', { r: 2.5, fill: 'var(--sun)' }, svg);
+}
+
+function render() {
+  const { h, m } = hm(S.total);
+  hourHand.style.transform = `rotate(${S.total * 0.5}deg)`;
+  minHand.style.transform = `rotate(${S.total * 6}deg)`;
+  minLabels.style.display = S.showMin ? '' : 'none';
+  const help = S.showHelp && S.mode !== 'read';
+  // hour wedge between h and h+1
+  const hi = h % 12;
+  const [ax, ay] = pt(hi * 30, 72), [bx, by] = pt(hi * 30 + 30, 72);
+  wedge.setAttribute('d', `M0 0 L${ax} ${ay} A72 72 0 0 1 ${bx} ${by} Z`);
+  wedge.style.display = help ? '' : 'none';
+  // minute arc 12 → minute hand
+  if (help && m > 0) {
+    const [ex, ey] = pt(m * 6, 82);
+    arc.setAttribute('d', m === 60 ? '' : `M0 -82 A82 82 0 ${m > 30 ? 1 : 0} 1 ${ex} ${ey}`);
+    arc.style.display = '';
+  } else arc.style.display = 'none';
+  hourNums.forEach((t, i) => t && t.setAttribute('fill', help && (i === h) ? 'var(--hour)' : 'var(--ink)'));
+  // ghost target hands
+  const showGhost = S.mode === 'set' && S.hint && S.q;
+  ghostH.style.display = ghostM.style.display = showGhost ? '' : 'none';
+  if (showGhost) { ghostH.style.transform = `rotate(${S.q.total * .5}deg)`; ghostM.style.transform = `rotate(${S.q.total * 6}deg)`; }
+  svg.setAttribute('aria-label', S.mode === 'read' ? '문제 시계' : `시계: ${say(h, m)}`);
+  if (S.mode === 'explore') updateExplore();
+}
+
+function setTime(t, animate = true) {
+  // move to nearest equivalent so hands don't spin backwards a long way
+  const target = mod(t, 720);
+  let base = S.total - mod(S.total, 720) + target;
+  if (base - S.total > 360) base -= 720; else if (S.total - base > 360) base += 720;
+  svg.classList.toggle('anim', animate);
+  S.total = base; render();
+}
+
+/* ---------- dragging ---------- */
+let drag = null;
+const canDrag = () => S.mode === 'explore' || (S.mode === 'set' && S.q && !S.q.done);
+const snapStep = () => S.mode === 'explore' ? 1 : (S.level === 4 ? 1 : 5);
+function pointerAngle(e) {
+  const r = svg.getBoundingClientRect();
+  // viewBox center (0,0) sits at x=120/240, y=132/252 of the box
+  const cx = r.left + r.width * (120 / 240), cy = r.top + r.height * (132 / 252);
+  const dx = e.clientX - cx, dy = e.clientY - cy;
+  return { a: mod(Math.atan2(dx, -dy) * 180 / Math.PI, 360), d: Math.hypot(dx, dy) / (r.width / 240) };
+}
+const angDiff = (a, b) => { const d = Math.abs(mod(a - b, 360)); return Math.min(d, 360 - d); };
+svg.addEventListener('pointerdown', e => {
+  if (!canDrag()) return;
+  const { a, d } = pointerAngle(e);
+  if (d > 112) return;
+  let hand = e.target.closest('.hand')?.dataset.hand;
+  if (!hand) {
+    const dm = angDiff(a, mod(S.total * 6, 360)), dh = angDiff(a, mod(S.total * .5, 360));
+    hand = (d < 55 && dh < dm + 20) ? 'hour' : (dm <= dh ? 'minute' : 'hour');
+  }
+  drag = { hand, last: a, step: Math.floor(S.total / 5) };
+  svg.classList.remove('anim'); svg.classList.add('dragging');
+  (hand === 'hour' ? hourHand : minHand).classList.add('active');
+  svg.setPointerCapture(e.pointerId);
+  e.preventDefault();
+});
+svg.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const { a } = pointerAngle(e);
+  if (drag.hand === 'minute') {
+    let delta = a - drag.last;
+    if (delta > 180) delta -= 360; else if (delta < -180) delta += 360;
+    S.total += delta / 6;
+  } else {
+    let diff = a * 2 - mod(S.total, 720);
+    diff = mod(diff + 360, 720) - 360;
+    S.total += diff;
+  }
+  drag.last = a;
+  const st = Math.floor(S.total / 5);
+  if (st !== drag.step) { drag.step = st; sfx.tick(); }
+  render();
+});
+const endDrag = () => {
+  if (!drag) return;
+  hourHand.classList.remove('active'); minHand.classList.remove('active');
+  svg.classList.remove('dragging');
+  drag = null;
+  const st = snapStep();
+  svg.classList.add('anim');
+  S.total = Math.round(S.total / st) * st;
+  render();
+};
+svg.addEventListener('pointerup', endDrag);
+svg.addEventListener('pointercancel', endDrag);
+svg.addEventListener('keydown', e => {
+  if (!canDrag()) return;
+  const st = snapStep();
+  const map = { ArrowRight: st, ArrowUp: st, ArrowLeft: -st, ArrowDown: -st, PageUp: 60, PageDown: -60 };
+  if (map[e.key] != null) { e.preventDefault(); nudge(map[e.key]); }
+});
+function nudge(d) {
+  if (!canDrag()) return;
+  svg.classList.add('anim');
+  const st = Math.abs(d) === 60 ? 1 : snapStep();
+  S.total = Math.round((S.total + d) / st) * st;
+  sfx.tick(); render();
+}
+document.querySelectorAll('.nudge').forEach(b => b.addEventListener('click', () => nudge(+b.dataset.d)));
+
+/* ---------- fx ---------- */
+const cv = $('#fx'), cx2 = cv.getContext('2d');
+let parts = [], raf = 0;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function confetti(n = 90) {
+  if (reduce) return;
+  cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
+  const cols = ['#F0603A', '#2F6FEB', '#FFC93C', '#1F9D67', '#FF8FB1'];
+  for (let i = 0; i < n; i++) parts.push({
+    x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .45,
+    vx: (Math.random() - .5) * 14, vy: -Math.random() * 14 - 4, r: Math.random() * 6 + 4,
+    c: rand(cols), rot: Math.random() * 6, vr: (Math.random() - .5) * .4, life: 1, star: Math.random() < .3,
+  });
+  if (!raf) raf = requestAnimationFrame(step);
+}
+function step() {
+  const dpr = devicePixelRatio;
+  cx2.setTransform(dpr, 0, 0, dpr, 0, 0);
+  cx2.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 40);
+  for (const p of parts) {
+    p.vy += .45; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= .008;
+    cx2.save(); cx2.translate(p.x, p.y); cx2.rotate(p.rot); cx2.globalAlpha = Math.min(1, p.life * 2); cx2.fillStyle = p.c;
+    if (p.star) { cx2.beginPath(); for (let k = 0; k < 10; k++) { const rr = k % 2 ? p.r * .45 : p.r * 1.1, an = k * Math.PI / 5; cx2.lineTo(Math.sin(an) * rr, -Math.cos(an) * rr); } cx2.fill(); }
+    else cx2.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2);
+    cx2.restore();
+  }
+  raf = parts.length ? requestAnimationFrame(step) : 0;
+}
+let toastT;
+function toast(em, txt) {
+  $('#toastEm').textContent = em; $('#toastTxt').textContent = txt;
+  $('#toast').classList.add('show'); clearTimeout(toastT);
+  toastT = setTimeout(() => $('#toast').classList.remove('show'), 2600);
+}
+
+/* ---------- rewards ---------- */
+function award() {
+  S.stars++;
+  S.progress[S.level] = Math.min(GOAL, S.progress[S.level] + 1);
+  const cleared = S.progress[S.level] === GOAL && !S.q.clearedShown;
+  const newSticker = Math.min(STICKERS.length, Math.floor(S.stars / 5));
+  let msg = null;
+  if (newSticker > S.stickers) { S.stickers = newSticker; msg = ['new', STICKERS[newSticker - 1]]; }
+  save(); updateHud();
+  sfx.good(); confetti(cleared ? 160 : 70);
+  if (msg) setTimeout(() => { toast(msg[1], '새 스티커를 받았어요!'); sfx.fanfare(); }, 500);
+  else if (cleared) setTimeout(() => { toast('🏆', `${LEVELS[S.level].name} 단계 통과!`); sfx.fanfare(); }, 400);
+  return cleared;
+}
+function updateHud() {
+  $('#starCount').textContent = S.stars;
+  $('#soundBtn').textContent = S.sound ? '소리 켜짐' : '소리 꺼짐';
+  $('#soundBtn').setAttribute('aria-pressed', S.sound);
+}
+$('#soundBtn').addEventListener('click', () => { S.sound = !S.sound; save(); updateHud(); sfx.tick(); });
+
+/* ---------- keep the screen on while playing ---------- */
+let wakeLock = null;
+async function keepAwake() {
+  if (!S.awake || wakeLock || document.visibilityState !== 'visible' || !navigator.wakeLock) return updateAwake();
+  try {
+    wakeLock = await navigator.wakeLock.request('screen');
+    wakeLock.addEventListener('release', () => { wakeLock = null; updateAwake(); });
+  } catch (e) { wakeLock = null; }
+  updateAwake();
+}
+function updateAwake() {
+  const b = $('#awakeBtn');
+  b.hidden = !navigator.wakeLock;
+  b.setAttribute('aria-pressed', S.awake);
+  b.textContent = !S.awake ? '화면 자동 꺼짐' : wakeLock ? '화면 켜둠' : '화면 켜두기';
+}
+$('#awakeBtn').addEventListener('click', () => {
+  S.awake = !S.awake; save();
+  if (!S.awake && wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; }
+  keepAwake();
+});
+// browsers drop the lock when the tab hides; ask again on return and on every touch
+document.addEventListener('visibilitychange', keepAwake);
+document.addEventListener('pointerdown', keepAwake, true);
+document.addEventListener('click', keepAwake, true);
+
+/* ---------- panels ---------- */
+function levelsHTML() {
+  return `<div class="levels">${LEVELS.map((l, i) =>
+    `<button class="lv ${S.progress[i] >= GOAL ? 'cleared' : ''}" data-lv="${i}" aria-pressed="${i === S.level}"><b>${S.progress[i] >= GOAL ? '★' : i + 1}</b>${l.name}</button>`).join('')}</div>`;
+}
+function progressHTML() {
+  const p = S.progress[S.level];
+  return `<div class="progress">${Array.from({ length: GOAL }, (_, i) => `<span class="dot ${i < p ? 'on' : ''}">★</span>`).join('')}<span class="lbl">${p >= GOAL ? '통과! 다음 단계도 해 볼까?' : `${GOAL - p}개 더 맞히면 통과`}</span></div>`;
+}
+function bindLevels() {
+  panel.querySelectorAll('.lv').forEach(b => b.addEventListener('click', () => { S.level = +b.dataset.lv; save(); sfx.tick(); newQuestion(); }));
+}
+function nextLevelBtn() {
+  return S.progress[S.level] >= GOAL && S.level < 4 ? `<button class="btn-soft" id="nextLv">${LEVELS[S.level + 1].name} 단계로 →</button>` : '';
+}
+function bindNextLevel() {
+  const b = $('#nextLv'); if (b) b.addEventListener('click', () => { S.level++; save(); newQuestion(); });
+}
+
+/* explore */
+function showExplore() {
+  panel.innerHTML = `
+    <div class="eyebrow">자유 놀이</div>
+    <h2>바늘을 움직여 보세요</h2>
+    <div class="reading" aria-live="polite">
+      <div class="big" id="exBig"></div>
+      <div class="digital" id="exDig"></div>
+    </div>
+    <div class="explain" id="exExplain"></div>
+    <div class="toggles">
+      <button class="toggle" id="tMin" aria-pressed="${S.showMin}"><span class="sw2"></span>분 숫자 보기</button>
+      <button class="toggle" id="tHelp" aria-pressed="${S.showHelp}"><span class="sw2"></span>도움 색칠</button>
+    </div>
+    <div class="row">
+      <button class="btn-soft" id="nowBtn">지금 몇 시?</button>
+      <button class="btn-soft" id="rndBtn">아무 시각이나</button>
+    </div>`;
+  $('#tMin').onclick = () => { S.showMin = !S.showMin; save(); showExplore(); render(); };
+  $('#tHelp').onclick = () => { S.showHelp = !S.showHelp; save(); showExplore(); render(); };
+  $('#nowBtn').onclick = () => { const d = new Date(); setTime(toTotal(d.getHours() % 12 || 12, d.getMinutes())); sfx.good(); };
+  $('#rndBtn').onclick = () => { setTime(Math.floor(Math.random() * 144) * 5); sfx.tick(); };
+  updateExplore();
+}
+function updateExplore() {
+  const b = $('#exBig'); if (!b) return;
+  const { h, m } = hm(S.total);
+  b.innerHTML = sayHTML(h, m);
+  $('#exDig').textContent = `디지털 시계로는 ${digital(h, m)}${m === 30 ? ` · ${h}시 반` : ''}`;
+  $('#exExplain').innerHTML = `
+    <div><span class="sw" style="background:var(--hour)"></span><span>${explainHour(h, m)}</span></div>
+    <div><span class="sw" style="background:var(--minute)"></span><span>${explainMin(m)}</span></div>`;
+}
+
+/* quiz: read the clock */
+function genTime(prevTotal) {
+  let t, tries = 0;
+  do {
+    const h = 1 + Math.floor(Math.random() * 12), m = rand(LEVELS[S.level].mins);
+    t = toTotal(h, m);
+  } while (t === prevTotal && tries++ < 10);
+  return t;
+}
+function wrongOptions(t) {
+  const { h, m } = hm(t);
+  const c = [];
+  c.push(toTotal(h % 12 + 1, m));                 // 다음 시로 착각
+  if (m % 5 === 0) c.push(toTotal(m === 0 ? 12 : m / 5, (h * 5) % 60)); // 두 바늘 헷갈림
+  c.push(toTotal((h + 10) % 12 + 1, m));          // 이전 시
+  const others = LEVELS[Math.max(S.level, 1)].mins.filter(x => x !== m);
+  c.push(toTotal(h, rand(others)));
+  c.push(toTotal(h, (m + 30) % 60));
+  const uniq = [...new Set(c.map(x => mod(x, 720)))].filter(x => x !== t);
+  const out = [];
+  if (uniq.length) out.push(uniq.shift());          // 가장 흔한 실수 하나는 꼭
+  while (out.length < 2 && uniq.length) out.push(uniq.splice(Math.floor(Math.random() * uniq.length), 1)[0]);
+  return out;
+}
+function newQuestion() {
+  S.hint = false;
+  if (S.mode === 'read') {
+    const t = genTime(S.q?.total);
+    const opts = [t, ...wrongOptions(t)].sort(() => Math.random() - .5);
+    S.q = { total: t, opts, tries: 0, done: false };
+    setTime(t);
+    showRead();
+  } else if (S.mode === 'set') {
+    const useScene = Math.random() < .6;
+    let scene = null, t;
+    if (useScene) {
+      scene = rand(SCENES);
+      t = toTotal(rand(scene.hours), rand(LEVELS[S.level].mins));
+      if (t === S.q?.total) t = genTime(t);
+    } else t = genTime(S.q?.total);
+    while (t === 0) t = genTime(0); // 12시는 시작 위치라 제외
+    S.q = { total: t, scene, tries: 0, done: false };
+    setTime(0);
+    showSet();
+  }
+  render();
+}
+function showRead(feedback = '') {
+  const q = S.q;
+  panel.innerHTML = `
+    <div class="eyebrow">시계 읽기 퀴즈 · ${S.level + 1}단계</div>
+    ${levelsHTML()}
+    <h2>시계가 몇 시를 가리키나요?</h2>
+    <p>${LEVELS[S.level].tip}</p>
+    <div class="options">${q.opts.map(o => { const { h, m } = hm(o); return `<button class="opt" data-t="${o}"><span>${say(h, m)}</span><small>${digital(h, m)}</small></button>`; }).join('')}</div>
+    <div id="fb" aria-live="polite">${feedback}</div>
+    ${progressHTML()}`;
+  bindLevels();
+  panel.querySelectorAll('.opt').forEach(b => b.addEventListener('click', () => answerRead(b)));
+}
+function answerRead(btn) {
+  const q = S.q; if (q.done) return;
+  const t = +btn.dataset.t;
+  const { h, m } = hm(q.total);
+  if (t === q.total) {
+    q.done = true;
+    btn.classList.add('right');
+    panel.querySelectorAll('.opt').forEach(b => b.disabled = true);
+    let cleared = false;
+    if (q.tries === 0) cleared = award(); else sfx.good();
+    $('#fb').innerHTML = `<div class="feedback good"><span class="face">😄</span><div><b>${q.tries === 0 ? rand(PRAISE) : '맞았어! 잘 찾았어!'}</b>${explainHour(h, m)}, ${explainMin(m)}.</div></div>
+      <div class="row" style="margin-top:12px"><button class="btn-main go" id="nextQ">다음 문제</button>${nextLevelBtn()}</div>`;
+    panel.querySelector('.progress').outerHTML = progressHTML();
+    panel.querySelector('.levels').outerHTML = levelsHTML(); bindLevels();
+    $('#nextQ').onclick = newQuestion; $('#nextQ').focus(); bindNextLevel();
+    if (cleared) q.clearedShown = true;
+  } else {
+    q.tries++;
+    btn.classList.add('wrong', 'shake'); btn.disabled = true;
+    sfx.bad();
+    $('#fb').innerHTML = `<div class="feedback bad"><span class="face">🤔</span><div><b>${rand(OOPS)}</b>${q.tries === 1 ? '짧은 바늘(주황)부터 보고, 다음에 긴 바늘(파랑)을 봐요.' : explainHour(h, m) + '.'}</div></div>`;
+  }
+}
+
+/* set the clock */
+function showSet(feedback = '') {
+  const q = S.q; const { h, m } = hm(q.total);
+  panel.innerHTML = `
+    <div class="eyebrow">시계 만들기 미션 · ${S.level + 1}단계</div>
+    ${levelsHTML()}
+    <div class="scene">
+      <span class="ic">${q.scene ? q.scene.ic : '⏰'}</span>
+      <div><div class="t">${q.scene ? `시헌이의 ${q.scene.t}` : '바늘을 움직여서 만들어 보세요'}</div>
+      <div class="goal">${sayHTML(h, m)}</div></div>
+    </div>
+    <p>긴 바늘(파랑)을 돌리면 짧은 바늘도 같이 움직여요. 다 만들었으면 확인을 눌러요.</p>
+    <div class="row">
+      <button class="btn-main go" id="checkBtn">확인!</button>
+      <button class="btn-soft" id="hintBtn">${S.hint ? '힌트 숨기기' : '힌트 보기'}</button>
+    </div>
+    <div id="fb" aria-live="polite">${feedback}</div>
+    ${progressHTML()}`;
+  bindLevels();
+  $('#checkBtn').onclick = checkSet;
+  $('#hintBtn').onclick = () => {
+    S.hint = !S.hint; render();
+    $('#hintBtn').textContent = S.hint ? '힌트 숨기기' : '힌트 보기';
+    if (S.hint) $('#fb').innerHTML = `<div class="feedback info"><span class="face">💡</span><div><b>점선 바늘을 따라 해 봐요</b>${explainHour(h, m)}, ${explainMin(m)}.</div></div>`;
+  };
+}
+function checkSet() {
+  const q = S.q; if (q.done) return;
+  const now = mod(Math.round(S.total), 720);
+  const { h, m } = hm(q.total);
+  const cur = hm(now);
+  if (now === q.total) {
+    q.done = true;
+    let cleared = false;
+    if (q.tries === 0 && !q.usedHint) cleared = award(); else { sfx.good(); confetti(40); }
+    if (cleared) q.clearedShown = true;
+    S.hint = false; render();
+    $('#fb').innerHTML = `<div class="feedback good"><span class="face">🎉</span><div><b>${q.tries === 0 && !q.usedHint ? rand(PRAISE) : '해냈다! 정답이야!'}</b>${say(h, m)}${m === 0 ? '를' : '을'} 멋지게 만들었어요.${q.tries || q.usedHint ? ' 다음엔 힌트 없이 한 번에 해서 별을 받아 볼까?' : ''}</div></div>
+      <div class="row" style="margin-top:12px"><button class="btn-main go" id="nextQ">다음 미션</button>${nextLevelBtn()}</div>`;
+    $('#checkBtn').disabled = true; $('#hintBtn').disabled = true;
+    panel.querySelector('.progress').outerHTML = progressHTML();
+    panel.querySelector('.levels').outerHTML = levelsHTML(); bindLevels();
+    $('#nextQ').onclick = newQuestion; $('#nextQ').focus(); bindNextLevel();
+  } else {
+    q.tries++;
+    sfx.bad();
+    $('#stage').classList.remove('shake'); void $('#stage').offsetWidth; $('#stage').classList.add('shake');
+    let tip;
+    if (cur.h !== h && cur.m === m) tip = `긴 바늘은 맞았어요! 짧은 바늘을 확인해 봐요. ${explainHour(h, m)}.`;
+    else if (cur.m !== m && cur.h === h) tip = `짧은 바늘은 좋아요! 긴 바늘을 확인해 봐요. ${explainMin(m)}.`;
+    else tip = `지금 시계는 <b>${say(cur.h, cur.m)}</b>${cur.m === 0 ? '예요' : '이에요'}. 먼저 긴 바늘을 ${m === 0 ? '12' : m % 5 === 0 ? m / 5 : '맞는 눈금'}에 놓아 보세요.`;
+    $('#fb').innerHTML = `<div class="feedback bad"><span class="face">🤔</span><div><b>${rand(OOPS)}</b>${tip}</div></div>`;
+  }
+}
+// remember hint usage for star rules
+const _hint = () => { if (S.q) S.q.usedHint = S.q.usedHint || S.hint; };
+panel.addEventListener('click', e => { if (e.target.id === 'hintBtn') _hint(); });
+
+/* album */
+function showAlbum() {
+  const next = 5 - (S.stars % 5);
+  panel.innerHTML = `
+    <div class="eyebrow">스티커 앨범</div>
+    <h2>${S.stickers}개 모았어요!</h2>
+    <p>${S.stickers >= STICKERS.length ? '모든 스티커를 다 모았어요. 시계 박사 시헌이!' : `별 ${next}개를 더 모으면 새 스티커가 나와요. 문제를 한 번에 맞히면 별을 받아요.`}</p>
+    <div class="album">${STICKERS.map((s, i) => i < S.stickers ? `<div class="stk got" title="스티커 ${i + 1}">${s}</div>` : `<div class="stk lock">?</div>`).join('')}</div>
+    <div class="eyebrow">단계별 통과</div>
+    <div class="explain">${LEVELS.map((l, i) => `<div><span class="sw" style="background:${S.progress[i] >= GOAL ? 'var(--sun)' : 'var(--line)'}"></span><span><b>${i + 1}단계 ${l.name}</b> · 별 ${S.progress[i]} / ${GOAL}</span></div>`).join('')}</div>
+    <div class="row"><button class="btn-soft" id="resetBtn">처음부터 다시 하기</button></div>
+    <div id="resetConfirm"></div>`;
+  $('#resetBtn').onclick = () => {
+    $('#resetConfirm').innerHTML = `<div class="feedback info"><span class="face">⚠️</span><div><b>별과 스티커를 모두 지울까요?</b><div class="row" style="margin-top:8px"><button class="btn-soft" id="yesReset">네, 지울래요</button><button class="btn-soft" id="noReset">아니요</button></div></div></div>`;
+    $('#yesReset').onclick = () => { S.stars = 0; S.stickers = 0; S.progress = [0, 0, 0, 0, 0]; S.level = 0; save(); updateHud(); showAlbum(); };
+    $('#noReset').onclick = () => { $('#resetConfirm').innerHTML = ''; };
+  };
+}
+
+/* ---------- mode switching ---------- */
+function setMode(mode) {
+  S.mode = mode; save();
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.mode === mode));
+  $('#nudges').hidden = !(mode === 'explore' || mode === 'set');
+  svg.classList.toggle('draggable', mode === 'explore' || mode === 'set');
+  S.q = null; S.hint = false;
+  if (mode === 'explore') { showExplore(); render(); }
+  else if (mode === 'album') { showAlbum(); render(); }
+  else newQuestion();
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { sfx.tick(); setMode(t.dataset.mode); }));
+
+buildClock();
+updateHud();
+S.total = toTotal(3, 15);
+setMode(['explore', 'read', 'set', 'album'].includes(S.mode) ? S.mode : 'explore');
+keepAwake();
+})();
+/* ---------- home-screen hint (only in a normal browser tab) ---------- */
+(() => {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  let closed = false; try { closed = localStorage.getItem('clock-install-x') === '1'; } catch (e) {}
+  const b = document.getElementById('install');
+  b.hidden = standalone || closed;
+  document.getElementById('installX').onclick = () => { b.hidden = true; try { localStorage.setItem('clock-install-x', '1'); } catch (e) {} };
+})();
+</script>
+
+</body>
+</html>
