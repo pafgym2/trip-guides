@@ -222,6 +222,19 @@ main { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); g
 canvas#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
 footer { text-align: center; font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
 footer a { color: var(--minute); }
+@media (max-width: 800px) {
+  .clock { max-width: min(100%, calc(40vh * 240 / 252)); max-width: min(100%, calc(40svh * 240 / 252)); }
+  .stage { padding: 8px 10px 10px; gap: 6px; border-radius: 22px; }
+  .legend { font-size: 13px; }
+  .panel { padding: 16px; gap: 12px; border-radius: 22px; }
+  .panel > .eyebrow:first-child { display: none; }
+  .panel h2 { font-size: 23px; }
+  .levels { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline: -4px; padding: 2px 4px; }
+  .lv { flex: none; }
+  .opt { padding: 10px 16px; font-size: 25px; }
+  .howto { display: none; }
+  .scene { padding: 12px; } .scene .ic { font-size: 38px; }
+}
 @media (prefers-reduced-motion: reduce) {
   .anim .hand, .tab, .opt, .toast, .progress .dot { transition: none; }
   .shake, .stk.new { animation: none; }
@@ -419,9 +432,9 @@ function buildClock() {
     if (!ghost) el('line', { x1: 0, y1: 0, x2: 0, y2: -len, stroke: 'transparent', 'stroke-width': 26, 'stroke-linecap': 'round' }, g);
     return g;
   };
-  ghostH = mkHand(48, 0, 9, 'var(--hour)', true);
+  ghostH = mkHand(42, 0, 9, 'var(--hour)', true);
   ghostM = mkHand(76, 0, 5, 'var(--minute)', true);
-  hourHand = mkHand(48, 10, 9, 'var(--hour)');
+  hourHand = mkHand(42, 10, 9, 'var(--hour)');
   minHand = mkHand(76, 14, 5, 'var(--minute)');
   hourHand.dataset.hand = 'hour'; minHand.dataset.hand = 'minute';
   el('circle', { r: 7, fill: 'var(--ink)' }, svg);
@@ -716,6 +729,7 @@ function newQuestion() {
     showSet();
   }
   render();
+  showClockTop();
 }
 function showRead(feedback = '') {
   const q = S.q;
@@ -744,13 +758,13 @@ function answerRead(btn) {
       <div class="row" style="margin-top:12px"><button class="btn-main go" id="nextQ">다음 문제</button>${nextLevelBtn()}</div>`;
     panel.querySelector('.progress').outerHTML = progressHTML();
     panel.querySelector('.levels').outerHTML = levelsHTML(); bindLevels();
-    $('#nextQ').onclick = newQuestion; $('#nextQ').focus(); bindNextLevel();
+    $('#nextQ').onclick = newQuestion; $('#nextQ').focus({ preventScroll: true }); showFb(); bindNextLevel();
     if (cleared) q.clearedShown = true;
   } else {
     q.tries++;
     btn.classList.add('wrong', 'shake'); btn.disabled = true;
     sfx.bad();
-    $('#fb').innerHTML = `<div class="feedback bad"><span class="face">🤔</span><div><b>${rand(OOPS)}</b>${q.tries === 1 ? '짧은 바늘(주황)부터 보고, 다음에 긴 바늘(파랑)을 봐요.' : explainHour(h, m) + '.'}</div></div>`;
+    $('#fb').innerHTML = `<div class="feedback bad"><span class="face">🤔</span><div><b>${rand(OOPS)}</b>${q.tries === 1 ? '짧은 바늘(주황)부터 보고, 다음에 긴 바늘(파랑)을 봐요.' : explainHour(h, m) + '.'}</div></div>`; showFb();
   }
 }
 
@@ -765,7 +779,7 @@ function showSet(feedback = '') {
       <div><div class="t">${q.scene ? `시헌이의 ${q.scene.t}` : '바늘을 움직여서 만들어 보세요'}</div>
       <div class="goal">${sayHTML(h, m)}</div></div>
     </div>
-    <p>긴 바늘(파랑)을 돌리면 짧은 바늘도 같이 움직여요. 다 만들었으면 확인을 눌러요.</p>
+    <p class="howto">긴 바늘(파랑)을 돌리면 짧은 바늘도 같이 움직여요. 다 만들었으면 확인을 눌러요.</p>
     <div class="row">
       <button class="btn-main go" id="checkBtn">확인!</button>
       <button class="btn-soft" id="hintBtn">${S.hint ? '힌트 숨기기' : '힌트 보기'}</button>
@@ -796,7 +810,7 @@ function checkSet() {
     $('#checkBtn').disabled = true; $('#hintBtn').disabled = true;
     panel.querySelector('.progress').outerHTML = progressHTML();
     panel.querySelector('.levels').outerHTML = levelsHTML(); bindLevels();
-    $('#nextQ').onclick = newQuestion; $('#nextQ').focus(); bindNextLevel();
+    $('#nextQ').onclick = newQuestion; $('#nextQ').focus({ preventScroll: true }); showFb(); bindNextLevel();
   } else {
     q.tries++;
     sfx.bad();
@@ -805,7 +819,7 @@ function checkSet() {
     if (cur.h !== h && cur.m === m) tip = `긴 바늘은 맞았어요! 짧은 바늘을 확인해 봐요. ${explainHour(h, m)}.`;
     else if (cur.m !== m && cur.h === h) tip = `짧은 바늘은 좋아요! 긴 바늘을 확인해 봐요. ${explainMin(m)}.`;
     else tip = `지금 시계는 <b>${say(cur.h, cur.m)}</b>${cur.m === 0 ? '예요' : '이에요'}. 먼저 긴 바늘을 ${m === 0 ? '12' : m % 5 === 0 ? m / 5 : '맞는 눈금'}에 놓아 보세요.`;
-    $('#fb').innerHTML = `<div class="feedback bad"><span class="face">🤔</span><div><b>${rand(OOPS)}</b>${tip}</div></div>`;
+    $('#fb').innerHTML = `<div class="feedback bad"><span class="face">🤔</span><div><b>${rand(OOPS)}</b>${tip}</div></div>`; showFb();
   }
 }
 // remember hint usage for star rules
@@ -831,6 +845,13 @@ function showAlbum() {
   };
 }
 
+/* ---------- phone: keep clock + question on one screen ---------- */
+let booted = false;
+const narrow = () => matchMedia('(max-width: 800px)').matches;
+const scrollOpts = block => ({ block, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+function showClockTop() { if (booted && narrow()) $('#stage').scrollIntoView(scrollOpts('start')); }
+function showFb() { if (narrow()) $('#fb').scrollIntoView(scrollOpts('nearest')); }
+
 /* ---------- mode switching ---------- */
 function setMode(mode) {
   S.mode = mode; save();
@@ -848,6 +869,7 @@ buildClock();
 updateHud();
 S.total = toTotal(3, 15);
 setMode(['explore', 'read', 'set', 'album'].includes(S.mode) ? S.mode : 'explore');
+booted = true;
 keepAwake();
 })();
 /* ---------- home-screen hint (only in a normal browser tab) ---------- */
