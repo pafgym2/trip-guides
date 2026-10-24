@@ -187,7 +187,7 @@ main { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); g
 
 .feedback { border-radius: 18px; padding: 14px 16px; line-height: 1.6; display: flex; gap: 12px; align-items: flex-start; }
 .feedback .face { font-size: 34px; line-height: 1; }
-.feedback b { font-family: var(--display); font-weight: 400; font-size: 22px; display: block; }
+.feedback > div > b:first-child { font-family: var(--display); font-weight: 400; font-size: 22px; display: block; }
 .feedback.good { background: var(--good-tint); }
 .feedback.bad { background: var(--bad-tint); }
 .feedback.info { background: var(--sun-tint); }
@@ -234,6 +234,45 @@ footer a { color: var(--minute); }
   .opt { padding: 10px 16px; font-size: 25px; }
   .howto { display: none; }
   .scene { padding: 12px; } .scene .ic { font-size: 38px; }
+}
+/* phone quiz/mission: whole game fits one screen, the clock takes whatever height is left */
+@media (max-width: 800px) {
+  body.one { overflow: hidden; }
+  body.one .app {
+    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    padding-block: 8px; gap: 8px;
+  }
+  body.one .install, body.one footer, body.one .legend, body.one .panel > p, body.one .panel > .eyebrow { display: none !important; }
+  body.one header { flex-wrap: nowrap; }
+  body.one .brand h1 { font-size: 21px; white-space: nowrap; }
+  body.one .chip { padding: 4px 10px; font-size: 15px; }
+  body.one #awakeBtn { display: none; }
+  body.one .tab { padding: 6px 4px; font-size: 15px; border-radius: 14px; }
+  body.one main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+  body.one .stage { flex: 1 1 0; min-height: 46%; padding: 6px; gap: 6px; }
+  body.one .clock { flex: 1 1 0; min-height: 0; width: 100%; max-width: 100%; aspect-ratio: auto; }
+  body.one .nudge { padding: 4px 10px; font-size: 15px; }
+  body.one .panel { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px; gap: 8px; }
+  body.one .panel h2 { font-size: 20px; }
+  body.one .panel > * { flex-shrink: 0; }
+  body.one .lv { padding: 4px 8px; font-size: 14px; }
+  body.one .options { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  body.one .opt { flex-direction: column; justify-content: center; gap: 2px; padding: 10px 4px; font-size: 20px; text-align: center; border-radius: 16px; }
+  body.one .opt small { font-size: 14px; }
+  body.one .opt:hover:not(:disabled) { transform: none; }
+  body.one .feedback { padding: 8px 12px; gap: 8px; font-size: 14px; line-height: 1.45; }
+  body.one .feedback .face { font-size: 24px; }
+  body.one .feedback > div > b:first-child { font-size: 17px; }
+  body.one .feedback + .row { margin-top: 8px !important; }
+  body.one .btn-main { padding: 10px 18px; font-size: 19px; }
+  body.one .btn-soft { padding: 8px 14px; font-size: 16px; }
+  body.one .scene { padding: 8px 12px; gap: 10px; }
+  body.one .scene .ic { font-size: 30px; }
+  body.one .scene .t { font-size: 14px; }
+  body.one .scene .goal { font-size: 26px; }
+  body.one .progress .dot { width: 18px; height: 18px; font-size: 11px; }
+  body.one .progress .lbl { font-size: 13px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .anim .hand, .tab, .opt, .toast, .progress .dot { transition: none; }
@@ -482,10 +521,11 @@ const canDrag = () => S.mode === 'explore' || (S.mode === 'set' && S.q && !S.q.d
 const snapStep = () => S.mode === 'explore' ? 1 : (S.level === 4 ? 1 : 5);
 function pointerAngle(e) {
   const r = svg.getBoundingClientRect();
-  // viewBox center (0,0) sits at x=120/240, y=132/252 of the box
-  const cx = r.left + r.width * (120 / 240), cy = r.top + r.height * (132 / 252);
+  // the 240×252 viewBox is scaled to fit and centered in the box; its (0,0) is 120 right, 132 down
+  const k = Math.min(r.width / 240, r.height / 252);
+  const cx = r.left + r.width / 2, cy = r.top + r.height / 2 + (132 - 126) * k;
   const dx = e.clientX - cx, dy = e.clientY - cy;
-  return { a: mod(Math.atan2(dx, -dy) * 180 / Math.PI, 360), d: Math.hypot(dx, dy) / (r.width / 240) };
+  return { a: mod(Math.atan2(dx, -dy) * 180 / Math.PI, 360), d: Math.hypot(dx, dy) / k };
 }
 const angDiff = (a, b) => { const d = Math.abs(mod(a - b, 360)); return Math.min(d, 360 - d); };
 svg.addEventListener('pointerdown', e => {
@@ -849,12 +889,15 @@ function showAlbum() {
 let booted = false;
 const narrow = () => matchMedia('(max-width: 800px)').matches;
 const scrollOpts = block => ({ block, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-function showClockTop() { if (booted && narrow()) $('#stage').scrollIntoView(scrollOpts('start')); }
-function showFb() { if (narrow()) $('#fb').scrollIntoView(scrollOpts('nearest')); }
+const oneScreen = () => document.body.classList.contains('one') && narrow();
+function showClockTop() { if (oneScreen()) return; if (booted && narrow()) $('#stage').scrollIntoView(scrollOpts('start')); }
+function showFb() { if (oneScreen()) return; if (narrow()) $('#fb').scrollIntoView(scrollOpts('nearest')); }
 
 /* ---------- mode switching ---------- */
 function setMode(mode) {
   S.mode = mode; save();
+  document.body.classList.toggle('one', mode === 'read' || mode === 'set');
+  scrollTo(0, 0);
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.mode === mode));
   $('#nudges').hidden = !(mode === 'explore' || mode === 'set');
   svg.classList.toggle('draggable', mode === 'explore' || mode === 'set');
