@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="description" content="자음과 모음으로 글자를 만들고 낱말을 읽는 한글 게임">
+<meta name="theme-color" content="#F3F8F1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="한글 놀이">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>시헌이의 한글 놀이</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&family=Noto+Sans+KR:wght@700&display=swap">
+<style>
+/* Layout: picture + 깍두기 notebook letter boxes on the left, letter tiles on the right; stacks on phones.
+   자음 = coral, 모음 = blue, 받침 = amber, the colour code Korean first-grade books use. Single light theme by choice. */
+:root {
+  --paper: #F3F8F1;
+  --grid: #CFE5D3;
+  --grid-strong: #8FC49C;
+  --card: #FFFFFF;
+  --ink: #1F2B24;
+  --ink-soft: #5D6E63;
+  --line: #D8E6DB;
+  --cons: #EF5B4C;
+  --cons-tint: #FFE3DE;
+  --vowel: #3D7BE0;
+  --vowel-tint: #DEE9FF;
+  --jong: #E8A21E;
+  --jong-tint: #FFF1D1;
+  --good: #1F9D67;
+  --good-tint: #DCF5E9;
+  --bad: #E5484D;
+  --bad-tint: #FDE3E3;
+  --display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --body: "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  --letter: "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+  color-scheme: light;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px; background-position: -1px -1px;
+  -webkit-tap-highlight-color: transparent;
+}
+.app {
+  max-width: 1060px; margin: 0 auto; padding-block: 18px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 16px;
+}
+button { font: inherit; color: inherit; cursor: pointer; touch-action: manipulation; }
+button:focus-visible { outline: 3px solid var(--vowel); outline-offset: 3px; }
+
+header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(26px, 5vw, 36px); margin: 0; letter-spacing: -0.5px; white-space: nowrap; }
+h1 .c { color: var(--cons); } h1 .v { color: var(--vowel); }
+.hud { display: flex; gap: 8px; align-items: center; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--card); border: 2px solid var(--line);
+  border-radius: 999px; padding: 6px 14px; font-family: var(--display); font-size: 18px; font-variant-numeric: tabular-nums;
+}
+.chip .star { color: #FFC93C; font-size: 22px; line-height: 1; -webkit-text-stroke: 1px #E0A800; }
+.chip.btn:hover { border-color: var(--ink-soft); }
+
+nav.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tab {
+  border: 2px solid var(--line); background: var(--card); border-radius: 18px; padding: 10px 8px;
+  font-family: var(--display); font-size: 19px; display: flex; flex-direction: column; align-items: center; gap: 2px;
+}
+.tab small { font-family: var(--body); font-size: 13px; color: var(--ink-soft); }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--card); border-color: var(--ink); }
+.tab[aria-selected="true"] small { color: #C6D6CB; }
+@media (max-width: 560px) { .tab { font-size: 16px; padding: 8px 4px; } .tab small { display: none; } }
+
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 800px) { main { grid-template-columns: minmax(0, 1fr); } }
+.stage, .panel { background: var(--card); border: 2px solid var(--line); border-radius: 28px; }
+.stage { padding: 18px 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 360px; }
+.panel { padding: 20px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel h2 { font-family: var(--display); font-weight: 400; font-size: 26px; margin: 0; line-height: 1.25; text-wrap: balance; }
+.panel p { margin: 0; color: var(--ink-soft); line-height: 1.6; }
+
+/* picture + letter boxes */
+.pic { font-size: clamp(72px, 16vw, 120px); line-height: 1.1; min-height: 1.1em; display: grid; place-items: center; }
+.pic.empty { font-family: var(--display); font-size: 20px; color: var(--ink-soft); min-height: 0; padding: 20px 0; }
+.pic.pop { animation: pop .6s cubic-bezier(.3,1.6,.5,1); }
+.word { display: flex; gap: 0; justify-content: center; flex-wrap: wrap; }
+.box {
+  --s: clamp(76px, 20vw, 112px);
+  width: var(--s); height: var(--s); display: grid; place-items: center;
+  border: 3px solid var(--grid-strong); margin-left: -3px; background: var(--card);
+  background-image:
+    linear-gradient(90deg, transparent calc(50% - 1px), var(--grid) calc(50% - 1px), var(--grid) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(transparent calc(50% - 1px), var(--grid) calc(50% - 1px), var(--grid) calc(50% + 1px), transparent calc(50% + 1px));
+  font-family: var(--letter); font-weight: 700; font-size: calc(var(--s) * .66); line-height: 1; color: var(--ink);
+}
+.box:first-child { margin-left: 0; }
+.box.cur { border-color: var(--vowel); position: relative; z-index: 1; box-shadow: 0 0 0 3px var(--vowel-tint); }
+.box.q { color: var(--grid-strong); font-family: var(--display); font-weight: 400; }
+.box.done { color: var(--good); }
+.box.part { color: var(--ink-soft); }
+.parts { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.slot {
+  min-width: 78px; border-radius: 14px; padding: 6px 10px; text-align: center; border: 2px dashed var(--line);
+  display: flex; flex-direction: column; align-items: center; gap: 0;
+}
+.slot b { font-family: var(--letter); font-size: 26px; line-height: 1.2; min-height: 1.2em; }
+.slot small { font-size: 12px; color: var(--ink-soft); }
+.slot.c { border-color: var(--cons); background: var(--cons-tint); } .slot.c b { color: var(--cons); }
+.slot.v { border-color: var(--vowel); background: var(--vowel-tint); } .slot.v b { color: var(--vowel); }
+.slot.j { border-color: var(--jong); background: var(--jong-tint); } .slot.j b { color: #B57800; }
+.slot.wait { border-style: dashed; background: transparent; }
+.slot.now { border-style: solid; box-shadow: 0 0 0 3px var(--paper); }
+.eq { font-family: var(--display); font-size: 20px; color: var(--ink-soft); text-align: center; min-height: 1.4em; }
+.eq .c { color: var(--cons); } .eq .v { color: var(--vowel); } .eq .j { color: #B57800; } .eq .r { color: var(--ink); }
+.say {
+  border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 18px;
+  font-family: var(--display); font-size: 18px; display: inline-flex; align-items: center; gap: 8px;
+}
+.say:hover { background: var(--paper); }
+.say svg { width: 20px; height: 20px; }
+
+/* tiles */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.step { border: 2px solid var(--line); background: var(--card); border-radius: 14px; padding: 6px 4px; font-family: var(--display); font-size: 16px; }
+.step[aria-pressed="true"].c { background: var(--cons); border-color: var(--cons); color: #fff; }
+.step[aria-pressed="true"].v { background: var(--vowel); border-color: var(--vowel); color: #fff; }
+.step[aria-pressed="true"].j { background: var(--jong); border-color: var(--jong); color: #fff; }
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(54px, 1fr)); gap: 8px; }
+.tiles.big { grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); }
+.tile {
+  aspect-ratio: 1; border-radius: 16px; border: 2px solid var(--line); background: var(--card); padding: 0; white-space: nowrap;
+  font-family: var(--letter); font-weight: 700; font-size: 28px; line-height: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  box-shadow: 0 4px 0 var(--line); transition: transform .08s, box-shadow .08s;
+}
+.tiles.big .tile { font-size: 36px; }
+.tile small { font-family: var(--body); font-weight: 400; font-size: 11px; color: var(--ink-soft); }
+.tile:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--line); }
+.tile.c { color: var(--cons); } .tile.v { color: var(--vowel); } .tile.j { color: #B57800; }
+.tile.sel.c { background: var(--cons-tint); border-color: var(--cons); }
+.tile.sel.v { background: var(--vowel-tint); border-color: var(--vowel); }
+.tile.sel.j { background: var(--jong-tint); border-color: var(--jong); }
+.tile.none { font-family: var(--display); font-weight: 400; font-size: 15px; color: var(--ink-soft); }
+.tile.used { opacity: .25; pointer-events: none; }
+.tile.hint { animation: glow 1s infinite; }
+@keyframes glow { 50% { box-shadow: 0 0 0 5px var(--jong); } }
+
+.levels { display: flex; gap: 6px; flex-wrap: wrap; }
+.lv { border: 2px solid var(--line); background: var(--card); border-radius: 14px; padding: 6px 10px; font-family: var(--display); font-size: 15px; display: inline-flex; align-items: center; gap: 6px; }
+.lv b { font-weight: 400; width: 22px; height: 22px; border-radius: 50%; display: inline-grid; place-items: center; background: var(--paper); font-size: 13px; }
+.lv[aria-pressed="true"] { border-color: var(--vowel); background: var(--vowel-tint); }
+.lv[aria-pressed="true"] b { background: var(--vowel); color: #fff; }
+.lv.cleared b { background: #FFC93C; color: var(--ink); }
+.progress { display: flex; gap: 6px; align-items: center; }
+.progress .dot { width: 26px; height: 26px; border-radius: 50%; background: var(--paper); border: 2px dashed var(--line); display: grid; place-items: center; font-size: 15px; color: transparent; }
+.progress .dot.on { background: #FFC93C; border: 2px solid #E9AE16; color: var(--ink); }
+.progress .lbl { font-size: 14px; color: var(--ink-soft); margin-left: 4px; }
+
+.options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.opt {
+  border: 3px solid var(--line); background: var(--card); border-radius: 20px; padding: 18px 6px;
+  font-family: var(--letter); font-weight: 700; font-size: clamp(24px, 6vw, 34px); line-height: 1.1; word-break: keep-all;
+}
+.opt:hover:not(:disabled) { border-color: var(--vowel); }
+.opt.right { border-color: var(--good); background: var(--good-tint); color: var(--good); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-tint); opacity: .7; }
+
+.row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.btn-main { border: none; border-radius: 18px; padding: 12px 22px; font-family: var(--display); font-size: 21px; background: var(--good); color: #fff; box-shadow: 0 5px 0 #11714A; }
+.btn-main:active { transform: translateY(4px); box-shadow: 0 1px 0 #11714A; }
+.btn-soft { border: 2px solid var(--line); background: var(--card); border-radius: 16px; padding: 9px 16px; font-family: var(--display); font-size: 17px; }
+.btn-soft:hover { background: var(--paper); }
+.feedback { border-radius: 18px; padding: 12px 16px; line-height: 1.55; display: flex; gap: 12px; align-items: flex-start; }
+.feedback .face { font-size: 30px; line-height: 1; }
+.feedback > div > b:first-child { font-family: var(--display); font-weight: 400; font-size: 21px; display: block; }
+.feedback.good { background: var(--good-tint); } .feedback.bad { background: var(--bad-tint); } .feedback.info { background: var(--jong-tint); }
+
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 10px; }
+.stk { aspect-ratio: 1; border-radius: 18px; display: grid; place-items: center; font-size: 36px; background: var(--paper); border: 2px dashed var(--line); }
+.stk.got { background: var(--jong-tint); border: 2px solid #FFC93C; }
+.stk.lock { font-family: var(--display); font-size: 22px; color: var(--ink-soft); }
+.chart { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.chart span { border-radius: 10px; padding: 6px 0; text-align: center; font-family: var(--letter); font-weight: 700; font-size: 20px; background: var(--paper); color: var(--grid-strong); }
+.chart span.seen { background: var(--cons-tint); color: var(--cons); }
+.chart.v span.seen { background: var(--vowel-tint); color: var(--vowel); }
+
+.shake { animation: shake .4s; }
+@keyframes shake { 20%,60% { transform: translateX(-7px); } 40%,80% { transform: translateX(7px); } }
+@keyframes pop { 0% { transform: scale(.3); } 100% { transform: scale(1); } }
+.toast {
+  position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%) translateY(140%); opacity: 0;
+  background: var(--ink); color: var(--card); border-radius: 22px; padding: 14px 20px; display: flex; align-items: center; gap: 12px;
+  font-family: var(--display); font-size: 20px; box-shadow: 0 10px 30px rgba(31,43,36,.3); transition: transform .4s cubic-bezier(.3,1.4,.5,1), opacity .3s; z-index: 30; max-width: calc(100% - 32px);
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+.toast .em { font-size: 40px; }
+canvas#fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 20; }
+.install { display: flex; gap: 10px; align-items: center; background: var(--jong-tint); border: 2px solid #FFC93C; border-radius: 18px; padding: 10px 14px; font-size: 15px; line-height: 1.5; }
+.install span { flex: 1; min-width: 0; }
+.install button { border: none; background: transparent; font-size: 20px; padding: 4px 8px; }
+footer { text-align: center; font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+footer a { color: var(--vowel); }
+
+/* phone: every game fits one screen; the picture area shrinks to whatever height is left */
+@media (max-width: 800px) {
+  body.one { overflow: hidden; }
+  body.one .app {
+    height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    padding-block: 8px; gap: 8px;
+  }
+  body.one .install, body.one footer, body.one .panel > p, body.one #awakeBtn { display: none !important; }
+  body.one header { flex-wrap: nowrap; }
+  body.one h1 { font-size: 21px; }
+  body.one .chip { padding: 4px 10px; font-size: 15px; }
+  body.one .tab { padding: 6px 4px; font-size: 15px; border-radius: 14px; }
+  body.one main { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
+  body.one .stage { flex: 1 1 0; min-height: 34%; padding: 8px; gap: 4px; border-radius: 22px; overflow: hidden; }
+  body.one .panel { flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 12px; gap: 10px; border-radius: 22px; }
+  body.one .panel > * { flex-shrink: 0; }
+  body.one .panel h2 { font-size: 19px; }
+  body.one .pic { font-size: min(9vh, 80px); font-size: min(9svh, 80px); }
+  body.one .pic.empty { font-size: 15px; padding: 4px 0; }
+  body.one .word { flex-wrap: nowrap; }
+  body.one .box { --s: min(11vh, 84px, calc((100vw - 150px) / var(--n, 1))); --s: min(11svh, 84px, calc((100vw - 150px) / var(--n, 1))); }
+  body.one .slot { min-width: 64px; padding: 3px 8px; }
+  body.one .slot b { font-size: 20px; }
+  body.one .eq { font-size: 17px; }
+  body.one .say { padding: 5px 14px; font-size: 15px; }
+  body.one .tiles { gap: 6px; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  body.one .tiles.big { grid-template-columns: repeat(auto-fit, minmax(54px, 1fr)); }
+  body.one .tile { font-size: 22px; border-radius: 12px; aspect-ratio: auto; height: 44px; }
+  body.one .tiles.big .tile { height: 56px; }
+  body.one .tiles.big .tile { font-size: 28px; }
+  body.one .tile small { display: none; }
+  body.one .lv { padding: 4px 8px; font-size: 14px; flex: none; }
+  body.one .levels { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  body.one .opt { padding: 12px 4px; font-size: 24px; }
+  body.one .feedback { padding: 8px 12px; gap: 8px; font-size: 14px; line-height: 1.45; }
+  body.one .feedback .face { font-size: 24px; }
+  body.one .feedback > div > b:first-child { font-size: 17px; }
+  body.one .btn-main { padding: 9px 18px; font-size: 18px; }
+  body.one .btn-soft { padding: 6px 12px; font-size: 15px; }
+  body.one .progress .dot { width: 18px; height: 18px; font-size: 11px; }
+  body.one .progress .lbl { font-size: 13px; }
+}
+/* short phones: picture beside the letter boxes, slots and the speak button on the next line */
+@media (max-width: 800px) and (max-height: 700px) {
+  body.one .stage { flex-direction: row; flex-wrap: wrap; align-content: center; column-gap: 10px; row-gap: 6px; }
+  body.one .eq { flex-basis: 100%; }
+  body.one .slot small { font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .shake, .pic.pop, .tile.hint { animation: none; }
+  .tile.hint { box-shadow: 0 0 0 5px var(--jong); }
+  .toast { transition: none; }
+}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="app">
+  <div class="install" id="install" hidden><span><b>홈 화면에 추가</b>하면 앱처럼 전체 화면으로 열리고, 인터넷 없이도 할 수 있어요. 아이폰·아이패드: 공유 버튼 → "홈 화면에 추가" · 안드로이드: 메뉴 ⋮ → "홈 화면에 추가"</span><button id="installX" aria-label="닫기">✕</button></div>
+  <header>
+    <h1>시헌이의 <span class="c">한글</span> <span class="v">놀이</span></h1>
+    <div class="hud">
+      <span class="chip" title="모은 별"><span class="star">★</span><span id="starCount">0</span></span>
+      <button class="chip btn" id="awakeBtn" aria-pressed="true">화면 켜둠</button>
+      <button class="chip btn" id="soundBtn" aria-pressed="true">소리 켜짐</button>
+    </div>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" data-mode="free" aria-selected="true">글자 만들기<small>자음 + 모음</small></button>
+    <button class="tab" role="tab" data-mode="listen" aria-selected="false">듣고 찾기<small>낱말 읽기 퀴즈</small></button>
+    <button class="tab" role="tab" data-mode="spell" aria-selected="false">낱말 완성<small>조각 맞추기 미션</small></button>
+    <button class="tab" role="tab" data-mode="album" aria-selected="false">스티커<small>모은 보상</small></button>
+  </nav>
+
+  <main>
+    <section class="stage" id="stage">
+      <div class="pic" id="pic"></div>
+      <div class="word" id="word" aria-live="polite"></div>
+      <div class="parts" id="parts"></div>
+      <div class="eq" id="eq"></div>
+      <button class="say" id="sayBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg><span>소리 듣기</span></button>
+    </section>
+    <section class="panel" id="panel"></section>
+  </main>
+
+  <footer>글자는 첫소리(자음) → 가운데소리(모음) → 끝소리(받침) 순서로 만들어요.<br>
+    참고한 코드: <a href="https://github.com/YURIVIEW/hangul-signal" target="_blank" rel="noopener">hangul-signal</a> ·
+    <a href="https://github.com/kimthegooner/kids-learn" target="_blank" rel="noopener">kids-learn</a> ·
+    <a href="https://github.com/e-/Hangul.js" target="_blank" rel="noopener">Hangul.js</a> ·
+    <a href="../clock/">시계 놀이</a></footer>
+</div>
+<div class="toast" id="toast"><span class="em" id="toastEm"></span><span id="toastTxt"></span></div>
+
+<script>
+(() => {
+const $ = s => document.querySelector(s);
+const panel = $('#panel');
+
+/* ---------- hangul: compose / decompose (Unicode 가 = 0xAC00) ---------- */
+const CHO = [...'ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ'];
+const JUNG = [...'ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ'];
+const JONG = ['', ...'ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ'];
+const compose = (c, v, j = '') => String.fromCharCode(0xAC00 + (CHO.indexOf(c) * 21 + JUNG.indexOf(v)) * 28 + JONG.indexOf(j));
+const split = ch => { const x = ch.charCodeAt(0) - 0xAC00; return { c: CHO[Math.floor(x / 588)], v: JUNG[Math.floor((x % 588) / 28)], j: JONG[x % 28] }; };
+const NAMES = { ㄱ: '기역', ㄲ: '쌍기역', ㄴ: '니은', ㄷ: '디귿', ㄸ: '쌍디귿', ㄹ: '리을', ㅁ: '미음', ㅂ: '비읍', ㅃ: '쌍비읍', ㅅ: '시옷', ㅆ: '쌍시옷', ㅇ: '이응', ㅈ: '지읒', ㅉ: '쌍지읒', ㅊ: '치읓', ㅋ: '키읔', ㅌ: '티읕', ㅍ: '피읖', ㅎ: '히읗' };
+const isCons = j => CHO.includes(j) || (JONG.includes(j) && j !== '');
+const jamoName = j => NAMES[j] || (JUNG.includes(j) ? compose('ㅇ', j) : j);
+const SIMILAR = [
+  [...'ㄱㅋㄲ'], [...'ㄷㅌㄸ'], [...'ㅂㅍㅃ'], [...'ㅈㅊㅉ'], [...'ㅅㅆ'], [...'ㄴㄹ'], [...'ㄴㄷ'], [...'ㅁㅇ'], [...'ㅇㅎ'], [...'ㅁㅂ'],
+  [...'ㅏㅓㅑ'], [...'ㅗㅜㅛ'], [...'ㅡㅣ'], [...'ㅐㅔ'], [...'ㅕㅑㅓ'], [...'ㅠㅜ'], [...'ㅘㅝ'], [...'ㅟㅚ'], [...'ㅗㅡ'],
+];
+const BASIC_C = [...'ㄱㄴㄷㄹㅁㅂㅅㅇㅈㅊㅋㅌㅍㅎ'], DOUBLE_C = [...'ㄲㄸㅃㅆㅉ'];
+const BASIC_V = [...'ㅏㅑㅓㅕㅗㅛㅜㅠㅡㅣㅐㅔ'];
+const SIMPLE_J = [...'ㄱㄴㄷㄹㅁㅂㅅㅇ'];
+function similar(j, pos) {
+  const pool = new Set();
+  SIMILAR.forEach(g => g.includes(j) && g.forEach(x => x !== j && pool.add(x)));
+  let arr = [...pool].filter(x => pos === 'v' ? JUNG.includes(x) : pos === 'c' ? CHO.includes(x) : SIMPLE_J.includes(x) || JONG.includes(x));
+  if (!arr.length) arr = (pos === 'v' ? BASIC_V : pos === 'c' ? BASIC_C : SIMPLE_J).filter(x => x !== j);
+  return arr;
+}
+
+/* ---------- words (그림 + 낱말). Level is worked out from the 받침 ---------- */
+const WORDS = [
+  ['나비','🦋'],['우유','🥛'],['오이','🥒'],['기차','🚂'],['바나나','🍌'],['포도','🍇'],['사자','🦁'],['하마','🦛'],['여우','🦊'],['토끼','🐰'],
+  ['모자','🧢'],['나무','🌳'],['개미','🐜'],['고래','🐳'],['거미','🕷️'],['피자','🍕'],['소','🐮'],['코','👃'],['치마','👗'],['시계','⏰'],
+  ['해','☀️'],['차','🚗'],['아기','👶'],['오리','🦆'],['가지','🍆'],['버스','🚌'],['키위','🥝'],['사과','🍎'],['코끼리','🐘'],['토마토','🍅'],
+  ['기타','🎸'],['바지','👖'],['새','🐦'],['배','⛵'],['쥐','🐭'],['무지개','🌈'],['고구마','🍠'],['피아노','🎹'],['해바라기','🌻'],['비','☔'],
+  ['곰','🐻'],['달','🌙'],['별','⭐'],['물','💧'],['공','⚽'],['손','✋'],['발','🦶'],['집','🏠'],['책','📚'],['꽃','🌸'],
+  ['빵','🍞'],['밥','🍚'],['문','🚪'],['산','⛰️'],['뱀','🐍'],['똥','💩'],['불','🔥'],['귤','🍊'],['말','🐴'],['컵','🥤'],
+  ['옷','👕'],['왕','👑'],['돈','💰'],['꿀','🍯'],['종','🔔'],['북','🥁'],['양','🐑'],['눈','⛄'],
+  ['사탕','🍬'],['수박','🍉'],['딸기','🍓'],['강아지','🐶'],['고양이','🐱'],['호랑이','🐯'],['비행기','✈️'],['병아리','🐤'],['거북이','🐢'],['원숭이','🐵'],
+  ['펭귄','🐧'],['연필','✏️'],['우산','☂️'],['신발','👟'],['풍선','🎈'],['선물','🎁'],['햄버거','🍔'],['기린','🦒'],['당근','🥕'],['양말','🧦'],
+  ['옥수수','🌽'],['오징어','🦑'],['문어','🐙'],['공룡','🦖'],['로봇','🤖'],['장갑','🧤'],['안경','👓'],['가방','🎒'],['달팽이','🐌'],['돌고래','🐬'],
+  ['소방차','🚒'],['사슴','🦌'],['다람쥐','🐿️'],['라면','🍜'],['축구공','⚽'],['자전거','🚲'],
+].map(([w, e]) => ({ w, e, lv: [...w].some(ch => split(ch).j) ? (w.length === 1 ? 1 : 2) : 0 }));
+const DICT = Object.fromEntries(WORDS.map(x => [x.w, x.e]));
+const LEVELS = [
+  { name: '받침 없는 낱말', short: '받침 없음', tip: '나비, 우유처럼 받침이 없는 낱말이에요.' },
+  { name: '받침 있는 한 글자', short: '받침 한 글자', tip: '곰, 달처럼 아래에 받침이 붙은 글자예요.' },
+  { name: '받침 있는 낱말', short: '받침 낱말', tip: '사탕, 수박처럼 받침이 들어간 낱말이에요.' },
+];
+const GOAL = 5;
+const STICKERS = ['🐶','🐱','🐹','🐻‍❄️','🐮','🐷','🐵','🐥','🦕','🐠','🦋','🐞','🌻','🍩','🍦','🧁','🚁','🚜','🏆','💎'];
+const PRAISE = ['정답! 시헌이 최고!', '와, 정말 잘 읽었어!', '한글 박사 시헌이!', '딩동댕! 완벽해!', '멋져요! 별 하나 더!'];
+const OOPS = ['아깝다! 다시 골라 볼까?', '괜찮아, 한 번 더!', '거의 다 왔어!'];
+
+const S = { mode: 'free', level: 0, progress: [0, 0, 0], stars: 0, stickers: 0, sound: true, awake: true, seen: [] };
+const KEY = 'siheon-hangul-v1';
+try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d) Object.assign(S, d); } catch (e) {}
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ mode: S.mode, level: S.level, progress: S.progress, stars: S.stars, stickers: S.stickers, sound: S.sound, awake: S.awake, seen: S.seen })); } catch (e) {} };
+const markSeen = (...js) => { js.forEach(j => j && !S.seen.includes(j) && S.seen.push(j)); save(); };
+
+const rand = a => a[Math.floor(Math.random() * a.length)];
+const shuffle = a => { const b = [...a]; for (let i = b.length - 1; i > 0; i--) { const k = Math.floor(Math.random() * (i + 1)); [b[i], b[k]] = [b[k], b[i]]; } return b; };
+const hasJong = t => { const ch = t.charCodeAt(t.length - 1); return ch >= 0xAC00 && ch <= 0xD7A3 && (ch - 0xAC00) % 28 > 0; };
+const josa = (t, withJong, without) => t + (hasJong(t) ? withJong : without); // 곰을 / 소를
+
+/* ---------- sound: effects + Korean speech ---------- */
+let ac = null;
+function tone(freq, dur = .12, type = 'sine', vol = .18, delay = 0) {
+  if (!S.sound) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const t = ac.currentTime + delay, o = ac.createOscillator(), g = ac.createGain();
+    o.type = type; o.frequency.value = freq; g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+    o.connect(g).connect(ac.destination); o.start(t); o.stop(t + dur + .02);
+  } catch (e) {}
+}
+const sfx = {
+  tap: () => tone(660, .05, 'triangle', .08),
+  good: () => { tone(784, .15, 'triangle', .2); tone(988, .15, 'triangle', .2, .1); tone(1319, .3, 'triangle', .2, .2); },
+  bad: () => { tone(260, .18, 'sine', .2); tone(200, .25, 'sine', .2, .14); },
+  fanfare: () => [523, 659, 784, 1047, 784, 1047].forEach((f, i) => tone(f, .2, 'triangle', .18, i * .11)),
+};
+const canSpeak = 'speechSynthesis' in window;
+let koVoice = null;
+function pickVoice() { if (!canSpeak) return; const vs = speechSynthesis.getVoices().filter(v => /^ko/i.test(v.lang)); koVoice = vs.find(v => /yuna|sora|google|female/i.test(v.name)) || vs[0] || null; }
+if (canSpeak) { pickVoice(); speechSynthesis.addEventListener?.('voiceschanged', pickVoice); }
+function speak(text, delay = 0) {
+  if (!S.sound || !canSpeak || !text) return;
+  setTimeout(() => {
+    try {
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'ko-KR'; if (koVoice) u.voice = koVoice; u.rate = .8; u.pitch = 1.1;
+      speechSynthesis.speak(u);
+    } catch (e) {}
+  }, delay);
+}
+
+/* ---------- fx ---------- */
+const cv = $('#fx'), g2 = cv.getContext('2d');
+let parts = [], raf = 0;
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function confetti(n = 80) {
+  if (reduce) return;
+  cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
+  const cols = ['#EF5B4C', '#3D7BE0', '#E8A21E', '#1F9D67', '#FF8FB1'];
+  for (let i = 0; i < n; i++) parts.push({ x: innerWidth / 2 + (Math.random() - .5) * 200, y: innerHeight * .4, vx: (Math.random() - .5) * 14, vy: -Math.random() * 14 - 4, r: Math.random() * 6 + 4, c: rand(cols), rot: Math.random() * 6, vr: (Math.random() - .5) * .4, life: 1 });
+  if (!raf) raf = requestAnimationFrame(step);
+}
+function step() {
+  g2.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0); g2.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter(p => p.life > 0 && p.y < innerHeight + 40);
+  for (const p of parts) {
+    p.vy += .45; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life -= .009;
+    g2.save(); g2.translate(p.x, p.y); g2.rotate(p.rot); g2.globalAlpha = Math.min(1, p.life * 2); g2.fillStyle = p.c; g2.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2); g2.restore();
+  }
+  raf = parts.length ? requestAnimationFrame(step) : 0;
+}
+let toastT;
+function toast(em, txt) { $('#toastEm').textContent = em; $('#toastTxt').textContent = txt; $('#toast').classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => $('#toast').classList.remove('show'), 2600); }
+function shakeEl(el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
+
+/* ---------- rewards ---------- */
+function award() {
+  S.stars++;
+  const was = S.progress[S.level];
+  S.progress[S.level] = Math.min(GOAL, was + 1);
+  const cleared = was < GOAL && S.progress[S.level] === GOAL;
+  const n = Math.min(STICKERS.length, Math.floor(S.stars / 5));
+  const got = n > S.stickers; if (got) S.stickers = n;
+  save(); updateHud(); sfx.good(); confetti(cleared ? 150 : 70);
+  if (got) setTimeout(() => { toast(STICKERS[n - 1], '새 스티커를 받았어요!'); sfx.fanfare(); }, 900);
+  else if (cleared) setTimeout(() => { toast('🏆', `${LEVELS[S.level].short} 통과!`); sfx.fanfare(); }, 900);
+}
+function updateHud() {
+  $('#starCount').textContent = S.stars;
+  $('#soundBtn').textContent = S.sound ? '소리 켜짐' : '소리 꺼짐';
+  $('#soundBtn').setAttribute('aria-pressed', S.sound);
+}
+$('#soundBtn').addEventListener('click', () => { S.sound = !S.sound; if (!S.sound && canSpeak) speechSynthesis.cancel(); save(); updateHud(); sfx.tap(); });
+
+/* ---------- stage helpers ---------- */
+const pic = $('#pic'), wordEl = $('#word'), partsEl = $('#parts'), eqEl = $('#eq'), sayBtn = $('#sayBtn');
+function setPic(emoji, placeholder = '') {
+  pic.className = 'pic' + (emoji ? ' pop' : ' empty');
+  pic.textContent = emoji || placeholder;
+}
+function boxes(list) { wordEl.style.setProperty('--n', list.length || 1); wordEl.innerHTML = list.map(b => `<div class="box ${b.cls || ''}">${b.t || ''}</div>`).join(''); }
+function slotsHTML(cur, needJong, now) {
+  const s = (cls, label, val, i) => `<div class="slot ${val ? cls : 'wait'} ${now === i ? 'now ' + cls : ''}"><b>${val || ''}</b><small>${label}</small></div>`;
+  return s('c', '첫소리', cur.c, 0) + s('v', '가운데소리', cur.v, 1) + (needJong ? s('j', '끝소리(받침)', cur.j, 2) : '');
+}
+function partial(cur) { return cur.c && cur.v ? compose(cur.c, cur.v, cur.j || '') : cur.c || ''; }
+let sayText = '';
+sayBtn.addEventListener('click', () => speak(sayText));
+
+/* ---------- levels / progress ---------- */
+function levelsHTML() {
+  return `<div class="levels">${LEVELS.map((l, i) => `<button class="lv ${S.progress[i] >= GOAL ? 'cleared' : ''}" data-lv="${i}" aria-pressed="${i === S.level}"><b>${S.progress[i] >= GOAL ? '★' : i + 1}</b>${l.short}</button>`).join('')}</div>`;
+}
+function progressHTML() {
+  const p = S.progress[S.level];
+  return `<div class="progress">${Array.from({ length: GOAL }, (_, i) => `<span class="dot ${i < p ? 'on' : ''}">★</span>`).join('')}<span class="lbl">${p >= GOAL ? '통과! 다음 단계도 해 볼까?' : `${GOAL - p}개 더 맞히면 통과`}</span></div>`;
+}
+function bindLevels() { panel.querySelectorAll('.lv').forEach(b => b.onclick = () => { S.level = +b.dataset.lv; save(); sfx.tap(); newQuestion(); }); }
+function refreshProgress() {
+  panel.querySelector('.progress').outerHTML = progressHTML();
+  panel.querySelector('.levels').outerHTML = levelsHTML(); bindLevels();
+}
+function nextLevelBtn() { return S.progress[S.level] >= GOAL && S.level < 2 ? `<button class="btn-soft" id="nextLv">${LEVELS[S.level + 1].short} →</button>` : ''; }
+function pickWord(prev) {
+  const pool = WORDS.filter(x => x.lv === S.level && x.w !== prev);
+  return rand(pool);
+}
+
+/* ---------- 1. 글자 만들기 (free) ---------- */
+const F = { c: '', v: '', j: '', step: 0, dbl: false };
+function showFree() {
+  const cur = { c: F.c, v: F.v, j: F.j };
+  const syl = partial(cur);
+  const found = F.c && F.v ? DICT[syl] : '';
+  setPic(found, F.c && F.v ? '' : '자음과 모음을 골라 글자를 만들어요');
+  if (!found && F.c && F.v) { pic.className = 'pic empty'; pic.textContent = ''; }
+  boxes([{ t: syl, cls: 'cur' }]);
+  partsEl.innerHTML = slotsHTML(cur, true, F.step);
+  eqEl.innerHTML = F.c && F.v
+    ? `<span class="c">${F.c}</span> + <span class="v">${F.v}</span>${F.j ? ` + <span class="j">${F.j}</span>` : ''} = <span class="r">${syl}</span>${found ? ` · ${josa(syl, '이다', '다')}!` : ''}`
+    : '';
+  sayText = syl ? (F.v ? syl : jamoName(F.c)) : '';
+  sayBtn.hidden = !syl || !canSpeak;
+
+  const list = F.step === 0 ? (F.dbl ? DOUBLE_C : BASIC_C) : F.step === 1 ? BASIC_V : ['', ...SIMPLE_J, ...'ㅈㅊㅌㅍㅎ'];
+  const pos = ['c', 'v', 'j'][F.step];
+  const curVal = [F.c, F.v, F.j][F.step];
+  panel.innerHTML = `
+    <h2>${['첫소리 자음을 골라요', '가운데소리 모음을 골라요', '받침을 붙여 볼까요?'][F.step]}</h2>
+    <div class="steps">
+      <button class="step c" data-step="0" aria-pressed="${F.step === 0}">1 첫소리</button>
+      <button class="step v" data-step="1" aria-pressed="${F.step === 1}" ${F.c ? '' : 'disabled'}>2 가운데소리</button>
+      <button class="step j" data-step="2" aria-pressed="${F.step === 2}" ${F.c && F.v ? '' : 'disabled'}>3 받침</button>
+    </div>
+    <div class="tiles">${list.map(j => j === ''
+      ? `<button class="tile none ${!F.j ? 'sel j' : ''}" data-j="">없음</button>`
+      : `<button class="tile ${pos} ${curVal === j ? 'sel' : ''}" data-j="${j}">${j}<small>${jamoName(j)}</small></button>`).join('')}</div>
+    <div class="row">
+      ${F.step === 0 ? `<button class="btn-soft" id="dblBtn">${F.dbl ? '기본 자음 보기' : '쌍자음 ㄲㄸㅃ 보기'}</button>` : ''}
+      <button class="btn-soft" id="clearBtn">처음부터</button>
+      <button class="btn-soft" id="luckyBtn">아무 글자나</button>
+    </div>`;
+  panel.querySelectorAll('.step').forEach(b => b.onclick = () => { F.step = +b.dataset.step; sfx.tap(); showFree(); });
+  panel.querySelectorAll('.tile').forEach(b => b.onclick = () => pickFree(b.dataset.j));
+  const dbl = $('#dblBtn'); if (dbl) dbl.onclick = () => { F.dbl = !F.dbl; showFree(); };
+  $('#clearBtn').onclick = () => { Object.assign(F, { c: '', v: '', j: '', step: 0 }); showFree(); };
+  $('#luckyBtn').onclick = () => {
+    const one = WORDS.filter(x => x.w.length === 1);
+    const s = split(rand(one).w);
+    Object.assign(F, { c: s.c, v: s.v, j: s.j, step: s.j ? 2 : 1 });
+    showFree(); speak(compose(s.c, s.v, s.j));
+  };
+}
+function pickFree(j) {
+  sfx.tap();
+  if (F.step === 0) { F.c = j; markSeen(j); if (F.v) { speak(compose(F.c, F.v, F.j)); } else { speak(jamoName(j)); F.step = 1; } }
+  else if (F.step === 1) { F.v = j; markSeen(j); speak(compose(F.c, F.v, F.j)); F.step = 2; }
+  else { F.j = j; speak(compose(F.c, F.v, F.j)); }
+  showFree();
+  const syl = F.c && F.v ? compose(F.c, F.v, F.j) : '';
+  if (syl && DICT[syl]) { confetti(30); sfx.good(); }
+}
+
+/* ---------- 2. 듣고 찾기 (listen) ---------- */
+let Q = null;
+function mutate(word) {
+  const chars = [...word];
+  const i = Math.floor(Math.random() * chars.length);
+  const s = split(chars[i]);
+  const r = Math.random();
+  if (r < .4) s.v = rand(similar(s.v, 'v'));
+  else if (r < .75 || (!s.j && S.level === 0)) s.c = rand(similar(s.c, 'c'));
+  else s.j = s.j ? (Math.random() < .5 ? '' : rand(similar(s.j, 'j').filter(x => JONG.includes(x)).concat(['']))) : rand(SIMPLE_J);
+  chars[i] = compose(s.c, s.v, s.j || '');
+  return chars.join('');
+}
+function newListen() {
+  const item = pickWord(Q?.item?.w);
+  const opts = new Set([item.w]); let guard = 0;
+  while (opts.size < 3 && guard++ < 50) opts.add(mutate(item.w));
+  Q = { kind: 'listen', item, opts: shuffle([...opts]), tries: 0, done: false };
+  showListen(); speak(item.w, 250);
+}
+function showListen() {
+  const { item } = Q;
+  setPic(item.e);
+  boxes([...item.w].map(ch => Q.done ? { t: ch, cls: 'done' } : { t: '?', cls: 'q' }));
+  partsEl.innerHTML = ''; eqEl.innerHTML = '';
+  sayText = item.w; sayBtn.hidden = !canSpeak;
+  panel.innerHTML = `
+    ${levelsHTML()}
+    <h2>${canSpeak ? '소리를 듣고 맞는 낱말을 골라요' : '그림에 맞는 낱말을 골라요'}</h2>
+    <p>${LEVELS[S.level].tip} 글자를 하나씩 천천히 읽어 봐요.</p>
+    <div class="options">${Q.opts.map(o => `<button class="opt" data-w="${o}">${o}</button>`).join('')}</div>
+    <div id="fb" aria-live="polite"></div>
+    ${progressHTML()}`;
+  bindLevels();
+  panel.querySelectorAll('.opt').forEach(b => b.onclick = () => answerListen(b));
+}
+function answerListen(btn) {
+  if (Q.done) return;
+  if (btn.dataset.w === Q.item.w) {
+    Q.done = true; btn.classList.add('right');
+    panel.querySelectorAll('.opt').forEach(b => b.disabled = true);
+    boxes([...Q.item.w].map(ch => ({ t: ch, cls: 'done' })));
+    [...Q.item.w].forEach(ch => { const s = split(ch); markSeen(s.c, s.v); });
+    if (Q.tries === 0) award(); else sfx.good();
+    speak(Q.item.w, 300);
+    $('#fb').innerHTML = `<div class="feedback good"><span class="face">😄</span><div><b>${Q.tries === 0 ? rand(PRAISE) : '맞았어! 잘 찾았어!'}</b>${Q.item.e} <b>${Q.item.w}</b>${hasJong(Q.item.w) ? '은' : '는'} ${[...Q.item.w].map(ch => { const s = split(ch); return `${s.c}+${s.v}${s.j ? '+' + s.j : ''}`; }).join(', ')}로 써요.</div></div>
+      <div class="row" style="margin-top:8px"><button class="btn-main" id="nextQ">다음 문제</button>${nextLevelBtn()}</div>`;
+    refreshProgress(); bindNext();
+  } else {
+    Q.tries++; btn.classList.add('wrong'); btn.disabled = true; shakeEl(btn); sfx.bad();
+    const diff = diffHint(btn.dataset.w, Q.item.w);
+    $('#fb').innerHTML = `<div class="feedback bad"><span class="face">🤔</span><div><b>${rand(OOPS)}</b>이건 <b>${btn.dataset.w}</b>${hasJong(btn.dataset.w) ? '이에요' : '예요'}. ${diff}</div></div>`;
+    speak(btn.dataset.w);
+  }
+}
+function diffHint(a, b) {
+  const A = [...a], B = [...b];
+  for (let i = 0; i < Math.max(A.length, B.length); i++) {
+    if (A[i] === B[i]) continue;
+    const x = split(A[i]), y = split(B[i]);
+    if (x.v !== y.v) return `${i + 1}번째 글자의 모음을 잘 봐요. <b>${x.v}</b>가 아니라 다른 모음이에요.`;
+    if (x.c !== y.c) return `${i + 1}번째 글자의 첫소리를 잘 봐요. <b>${x.c}</b>(${josa(jamoName(x.c), ')이', ')가')} 아니에요.`;
+    return `${i + 1}번째 글자의 받침을 잘 봐요.`;
+  }
+  return '';
+}
+
+/* ---------- 3. 낱말 완성 (spell) ---------- */
+function newSpell() {
+  const item = pickWord(Q?.item?.w);
+  Q = { kind: 'spell', item, sylls: [...item.w].map(split), si: 0, pi: 0, hint: false, misses: 0, done: false };
+  makeTiles(); showSpell(); speak(item.w, 250);
+}
+function needed(s) { return s.j ? [['c', s.c], ['v', s.v], ['j', s.j]] : [['c', s.c], ['v', s.v]]; }
+function makeTiles() {
+  const s = Q.sylls[Q.si];
+  const tiles = needed(s).map(([pos, j]) => ({ pos, j, ok: true }));
+  needed(s).forEach(([pos, j]) => {
+    const alt = similar(j, pos).filter(x => !tiles.some(t => t.j === x && t.pos === pos));
+    if (alt.length) tiles.push({ pos, j: rand(alt), ok: false });
+  });
+  if (tiles.length < 6) tiles.push({ pos: 'v', j: rand(BASIC_V.filter(x => !tiles.some(t => t.j === x))), ok: false });
+  Q.tiles = shuffle(tiles).map((t, i) => ({ ...t, id: i, used: false }));
+  Q.misses = 0;
+}
+function showSpell(feedback = '') {
+  const { item, sylls, si, pi } = Q;
+  setPic(item.e);
+  const cur = sylls[si] || {};
+  const got = { c: pi > 0 ? cur.c : '', v: pi > 1 ? cur.v : '', j: pi > 2 ? cur.j : '' };
+  boxes(sylls.map((s, i) => i < si || Q.done ? { t: compose(s.c, s.v, s.j), cls: 'done' } : i === si ? { t: partial(got), cls: 'cur part' } : { t: '', cls: '' }));
+  partsEl.innerHTML = Q.done ? '' : slotsHTML(got, !!cur.j, pi);
+  eqEl.innerHTML = '';
+  sayText = Q.done ? item.w : compose(cur.c, cur.v, cur.j);
+  sayBtn.hidden = !canSpeak;
+  const nextPos = needed(cur)[pi]?.[0];
+  panel.innerHTML = `
+    ${levelsHTML()}
+    <h2>${Q.done ? `${item.w} 완성!` : `${si + 1}번째 글자의 ${['첫소리를', '가운데소리를', '받침을'][pi]} 눌러요`}</h2>
+    <p>첫소리 → 가운데소리 → 받침 순서로 눌러요. 모르면 <b>소리 듣기</b>를 눌러 봐요.</p>
+    ${Q.done ? '' : `<div class="tiles big">${Q.tiles.map(t => `<button class="tile ${t.pos} ${t.used ? 'used' : ''}" data-id="${t.id}">${t.j}<small>${jamoName(t.j)}</small></button>`).join('')}</div>
+    <div class="row"><button class="btn-soft" id="hintBtn">힌트</button><span style="color:var(--ink-soft);font-size:14px">지금 찾을 조각: <b style="color:var(--${nextPos === 'c' ? 'cons' : nextPos === 'v' ? 'vowel' : 'jong'})">${nextPos === 'c' ? '자음' : nextPos === 'v' ? '모음' : '받침'}</b></span></div>`}
+    <div id="fb" aria-live="polite">${feedback}</div>
+    ${progressHTML()}`;
+  bindLevels();
+  panel.querySelectorAll('.tile').forEach(b => b.onclick = () => tapSpell(+b.dataset.id, b));
+  const hb = $('#hintBtn'); if (hb) hb.onclick = () => { Q.hint = true; glowRight(); speak(sayText); };
+}
+function glowRight() {
+  const [pos, j] = needed(Q.sylls[Q.si])[Q.pi];
+  const t = Q.tiles.find(t => !t.used && t.j === j);
+  if (t) panel.querySelector(`.tile[data-id="${t.id}"]`)?.classList.add('hint');
+}
+function tapSpell(id, btn) {
+  if (Q.done) return;
+  const t = Q.tiles[id];
+  const [pos, j] = needed(Q.sylls[Q.si])[Q.pi];
+  if (t.j === j) {
+    t.used = true; Q.pi++; sfx.tap(); markSeen(j);
+    const s = Q.sylls[Q.si];
+    if (Q.pi >= needed(s).length) {
+      speak(compose(s.c, s.v, s.j));
+      Q.si++; Q.pi = 0;
+      if (Q.si >= Q.sylls.length) return finishSpell();
+      makeTiles();
+    } else if (Q.pi === 1) speak(jamoName(j));
+    else speak(compose(s.c, s.v));
+    showSpell();
+  } else {
+    Q.misses++; sfx.bad(); shakeEl(btn);
+    speak(jamoName(t.j));
+    const want = pos === 'c' ? '첫소리 자음' : pos === 'v' ? '가운데소리 모음' : '받침';
+    const tileIsVowel = JUNG.includes(t.j), needVowel = pos === 'v';
+    const msg = tileIsVowel !== needVowel ? `지금은 <b>${want}</b>을 찾을 차례예요.` : `이건 <b>${t.j}</b>(${josa(jamoName(t.j), ')이에요', ')예요')}. 소리를 듣고 다시 찾아봐요.`;
+    $('#fb').innerHTML = `<div class="feedback bad"><span class="face">🤔</span><div><b>${rand(OOPS)}</b>${msg}</div></div>`;
+    if (Q.misses >= 2) glowRight();
+  }
+}
+function finishSpell() {
+  Q.done = true;
+  const star = !Q.hint;
+  if (star) award(); else { sfx.good(); confetti(40); }
+  showSpell(`<div class="feedback good"><span class="face">🎉</span><div><b>${star ? rand(PRAISE) : '해냈다! 완성!'}</b>${Q.item.e} <b>${Q.item.w}</b>${hasJong(Q.item.w) ? '을' : '를'} 만들었어요.${star ? '' : ' 다음엔 힌트 없이 해서 별을 받아 볼까?'}</div></div>
+    <div class="row" style="margin-top:8px"><button class="btn-main" id="nextQ">다음 낱말</button>${nextLevelBtn()}</div>`);
+  speak(Q.item.w, 700);
+  bindNext();
+}
+function bindNext() {
+  $('#nextQ').onclick = newQuestion; $('#nextQ').focus({ preventScroll: true });
+  const b = $('#nextLv'); if (b) b.onclick = () => { S.level++; save(); newQuestion(); };
+}
+
+/* ---------- album ---------- */
+function showAlbum() {
+  setPic(S.stickers ? STICKERS[S.stickers - 1] : '⭐');
+  wordEl.innerHTML = ''; partsEl.innerHTML = ''; eqEl.innerHTML = `별 ${S.stars}개 · 스티커 ${S.stickers}개`; sayBtn.hidden = true;
+  const next = 5 - (S.stars % 5);
+  panel.innerHTML = `
+    <h2>${S.stickers}개 모았어요!</h2>
+    <p>${S.stickers >= STICKERS.length ? '스티커를 다 모았어요. 한글 박사 시헌이!' : `별 ${next}개를 더 모으면 새 스티커가 나와요.`}</p>
+    <div class="album">${STICKERS.map((s, i) => i < S.stickers ? `<div class="stk got">${s}</div>` : `<div class="stk lock">?</div>`).join('')}</div>
+    <h2 style="font-size:19px">만나 본 자음 · 모음</h2>
+    <div class="chart">${BASIC_C.map(j => `<span class="${S.seen.includes(j) ? 'seen' : ''}">${j}</span>`).join('')}</div>
+    <div class="chart v">${BASIC_V.slice(0, 10).map(j => `<span class="${S.seen.includes(j) ? 'seen' : ''}">${j}</span>`).join('')}</div>
+    <div class="row"><button class="btn-soft" id="resetBtn">처음부터 다시 하기</button></div>
+    <div id="resetConfirm"></div>`;
+  $('#resetBtn').onclick = () => {
+    $('#resetConfirm').innerHTML = `<div class="feedback info"><span class="face">⚠️</span><div><b>별과 스티커를 모두 지울까요?</b><div class="row" style="margin-top:8px"><button class="btn-soft" id="yesReset">네, 지울래요</button><button class="btn-soft" id="noReset">아니요</button></div></div></div>`;
+    $('#yesReset').onclick = () => { Object.assign(S, { stars: 0, stickers: 0, progress: [0, 0, 0], level: 0, seen: [] }); save(); updateHud(); showAlbum(); };
+    $('#noReset').onclick = () => { $('#resetConfirm').innerHTML = ''; };
+  };
+}
+
+/* ---------- modes ---------- */
+function newQuestion() { if (S.mode === 'listen') newListen(); else if (S.mode === 'spell') newSpell(); }
+function setMode(mode) {
+  S.mode = mode; save(); Q = null;
+  if (canSpeak) speechSynthesis.cancel();
+  document.body.classList.toggle('one', mode !== 'album');
+  scrollTo(0, 0);
+  document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.mode === mode));
+  if (mode === 'free') showFree(); else if (mode === 'album') showAlbum(); else newQuestion();
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { sfx.tap(); setMode(t.dataset.mode); }));
+
+/* ---------- keep the screen on while playing ---------- */
+let wakeLock = null;
+async function keepAwake() {
+  if (!S.awake || wakeLock || document.visibilityState !== 'visible' || !navigator.wakeLock) return updateAwake();
+  try { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; updateAwake(); }); } catch (e) { wakeLock = null; }
+  updateAwake();
+}
+function updateAwake() {
+  const b = $('#awakeBtn'); b.hidden = !navigator.wakeLock; b.setAttribute('aria-pressed', S.awake);
+  b.textContent = !S.awake ? '화면 자동 꺼짐' : wakeLock ? '화면 켜둠' : '화면 켜두기';
+}
+$('#awakeBtn').addEventListener('click', () => { S.awake = !S.awake; save(); if (!S.awake && wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } keepAwake(); });
+document.addEventListener('visibilitychange', keepAwake);
+document.addEventListener('pointerdown', keepAwake, true);
+
+/* ---------- home-screen hint + offline ---------- */
+(() => {
+  const standalone = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  let closed = false; try { closed = localStorage.getItem('hangul-install-x') === '1'; } catch (e) {}
+  $('#install').hidden = standalone || closed;
+  $('#installX').onclick = () => { $('#install').hidden = true; try { localStorage.setItem('hangul-install-x', '1'); } catch (e) {} };
+})();
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('./sw.js').then(() => navigator.serviceWorker.ready).then(reg => {
+    // fonts loaded before the worker took over: hand their URLs over so they are saved too
+    const send = () => reg.active && reg.active.postMessage({ type: 'cache', urls: performance.getEntriesByType('resource').map(e => e.name).filter(u => /fonts\.(googleapis|gstatic)\.com/.test(u)) });
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(send);
+    addEventListener('pagehide', send);
+  }).catch(() => {});
+}
+
+updateHud();
+setMode(['free', 'listen', 'spell', 'album'].includes(S.mode) ? S.mode : 'free');
+keepAwake();
+})();
+</script>
+</body>
+</html>
