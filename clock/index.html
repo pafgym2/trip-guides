@@ -153,6 +153,7 @@ main { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); g
 .explain .sw { flex: none; width: 12px; height: 12px; border-radius: 3px; margin-top: 6px; }
 
 .toggles { display: flex; gap: 8px; flex-wrap: wrap; }
+.ex-ctrls { display: flex; flex-direction: column; gap: 16px; }
 .toggle { border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 7px 14px; font-size: 15px; display: inline-flex; gap: 8px; align-items: center; }
 .toggle .sw2 { width: 30px; height: 18px; border-radius: 9px; background: var(--line); position: relative; transition: background .2s; }
 .toggle .sw2::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #fff; transition: left .2s; }
@@ -271,6 +272,16 @@ footer a { color: var(--minute); }
   body.one .scene .ic { font-size: 30px; }
   body.one .scene .t { font-size: 14px; }
   body.one .scene .goal { font-size: 26px; }
+  body.one .reading { flex-direction: row; flex-wrap: wrap; align-items: baseline; column-gap: 12px; row-gap: 0; padding: 8px 14px; border-radius: 16px; }
+  body.one .reading .big { font-size: 34px; }
+  body.one .reading .digital { font-size: 15px; }
+  body.one .explain { gap: 4px; font-size: 14px; }
+  body.one .explain div { line-height: 1.35; }
+  body.one .explain .sw { margin-top: 4px; }
+  body.one .ex-title { display: none; }
+  body.one .ex-ctrls { flex-direction: row; gap: 6px; flex-wrap: wrap; }
+  body.one .toggle { padding: 5px 10px; font-size: 14px; }
+  body.one .ex-ctrls .btn-soft { padding: 5px 12px; font-size: 15px; border-radius: 999px; }
   body.one .progress .dot { width: 18px; height: 18px; font-size: 11px; }
   body.one .progress .lbl { font-size: 13px; }
 }
@@ -693,12 +704,13 @@ function bindNextLevel() {
 function showExplore() {
   panel.innerHTML = `
     <div class="eyebrow">자유 놀이</div>
-    <h2>바늘을 움직여 보세요</h2>
+    <h2 class="ex-title">바늘을 움직여 보세요</h2>
     <div class="reading" aria-live="polite">
       <div class="big" id="exBig"></div>
       <div class="digital" id="exDig"></div>
     </div>
     <div class="explain" id="exExplain"></div>
+    <div class="ex-ctrls">
     <div class="toggles">
       <button class="toggle" id="tMin" aria-pressed="${S.showMin}"><span class="sw2"></span>분 숫자 보기</button>
       <button class="toggle" id="tHelp" aria-pressed="${S.showHelp}"><span class="sw2"></span>도움 색칠</button>
@@ -706,6 +718,7 @@ function showExplore() {
     <div class="row">
       <button class="btn-soft" id="nowBtn">지금 몇 시?</button>
       <button class="btn-soft" id="rndBtn">아무 시각이나</button>
+    </div>
     </div>`;
   $('#tMin').onclick = () => { S.showMin = !S.showMin; save(); showExplore(); render(); };
   $('#tHelp').onclick = () => { S.showHelp = !S.showHelp; save(); showExplore(); render(); };
@@ -896,7 +909,7 @@ function showFb() { if (oneScreen()) return; if (narrow()) $('#fb').scrollIntoVi
 /* ---------- mode switching ---------- */
 function setMode(mode) {
   S.mode = mode; save();
-  document.body.classList.toggle('one', mode === 'read' || mode === 'set');
+  document.body.classList.toggle('one', mode !== 'album');
   scrollTo(0, 0);
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.mode === mode));
   $('#nudges').hidden = !(mode === 'explore' || mode === 'set');
