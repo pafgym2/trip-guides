@@ -936,6 +936,15 @@ keepAwake();
   b.hidden = standalone || closed;
   document.getElementById('installX').onclick = () => { b.hidden = true; try { localStorage.setItem('clock-install-x', '1'); } catch (e) {} };
 })();
+/* ---------- offline: save the game on this device ---------- */
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('./sw.js').then(() => navigator.serviceWorker.ready).then(reg => {
+    // fonts loaded before the worker took over: hand their URLs over so they are saved too
+    const send = () => reg.active && reg.active.postMessage({ type: 'cache', urls: performance.getEntriesByType('resource').map(e => e.name).filter(u => /fonts\.(googleapis|gstatic)\.com/.test(u)) });
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(send);
+    addEventListener('pagehide', send);
+  }).catch(() => {});
+}
 </script>
 
 </body>
