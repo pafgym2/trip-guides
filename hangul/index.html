@@ -73,7 +73,8 @@ h1 .c { color: var(--cons); } h1 .v { color: var(--vowel); }
 .chip .star { color: #FFC93C; font-size: 22px; line-height: 1; -webkit-text-stroke: 1px #E0A800; }
 .chip.btn:hover { border-color: var(--ink-soft); }
 
-nav.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+nav.tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.tab .s { display: none; }
 .tab {
   border: 2px solid var(--line); background: var(--card); border-radius: 18px; padding: 10px 8px;
   font-family: var(--display); font-size: 19px; display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -81,7 +82,7 @@ nav.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .tab small { font-family: var(--body); font-size: 13px; color: var(--ink-soft); }
 .tab[aria-selected="true"] { background: var(--ink); color: var(--card); border-color: var(--ink); }
 .tab[aria-selected="true"] small { color: #C6D6CB; }
-@media (max-width: 560px) { .tab { font-size: 16px; padding: 8px 4px; } .tab small { display: none; } }
+@media (max-width: 560px) { .tab { font-size: 16px; padding: 8px 4px; } .tab small, .tab .l { display: none; } .tab .s { display: inline; } }
 
 main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 800px) { main { grid-template-columns: minmax(0, 1fr); } }
@@ -256,6 +257,26 @@ footer a { color: var(--vowel); }
   body.one .progress .dot { width: 18px; height: 18px; font-size: 11px; }
   body.one .progress .lbl { font-size: 13px; }
 }
+/* writing pad: a 깍두기 notebook square with a canvas on top */
+.pad { --s: 320px; position: relative; flex: none; border-width: 4px; margin: 0 auto; }
+.pad canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+.steps.two { grid-template-columns: repeat(2, 1fr); }
+.picker { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 2px 2px 6px; }
+.picker .tile { flex: none; width: 46px; height: 46px; aspect-ratio: auto; font-size: 22px; }
+.picker .tile.wrote::after { content: "★"; position: absolute; font-size: 10px; color: #E9AE16; transform: translate(14px, -15px); }
+.picker .tile { position: relative; }
+b.inline { font-family: inherit; font-size: inherit; display: inline !important; font-weight: 700; }
+#stage.writing { flex-direction: column !important; flex-wrap: nowrap !important; }
+#stage.writing .eq, #stage.writing .parts { display: none; }
+@media (max-width: 800px) {
+  body.one #stage.writing { min-height: 52%; }
+  body.one #stage.writing .say { display: none; }
+  body.one #stage.writing .pic { display: none; }
+  body.one #stage.writing .word .box { --s: 46px; border-width: 2px; margin-left: -2px; }
+  body.one .picker .tile { width: 40px; height: 40px; font-size: 19px; }
+  body.one .steps.two .step { padding: 4px; font-size: 14px; }
+}
+
 /* short phones: picture beside the letter boxes, slots and the speak button on the next line */
 @media (max-width: 800px) and (max-height: 700px) {
   body.one .stage { flex-direction: row; flex-wrap: wrap; align-content: center; column-gap: 10px; row-gap: 6px; }
@@ -283,10 +304,11 @@ footer a { color: var(--vowel); }
   </header>
 
   <nav class="tabs" role="tablist">
-    <button class="tab" role="tab" data-mode="free" aria-selected="true">글자 만들기<small>자음 + 모음</small></button>
-    <button class="tab" role="tab" data-mode="listen" aria-selected="false">듣고 찾기<small>낱말 읽기 퀴즈</small></button>
-    <button class="tab" role="tab" data-mode="spell" aria-selected="false">낱말 완성<small>조각 맞추기 미션</small></button>
-    <button class="tab" role="tab" data-mode="album" aria-selected="false">스티커<small>모은 보상</small></button>
+    <button class="tab" role="tab" data-mode="free" aria-selected="true"><span class="l">글자 만들기</span><span class="s">만들기</span><small>자음 + 모음</small></button>
+    <button class="tab" role="tab" data-mode="listen" aria-selected="false"><span class="l">듣고 찾기</span><span class="s">듣기</span><small>낱말 읽기 퀴즈</small></button>
+    <button class="tab" role="tab" data-mode="spell" aria-selected="false"><span class="l">낱말 완성</span><span class="s">완성</span><small>조각 맞추기 미션</small></button>
+    <button class="tab" role="tab" data-mode="write" aria-selected="false"><span class="l">따라 쓰기</span><span class="s">쓰기</span><small>손가락으로 쓰기</small></button>
+    <button class="tab" role="tab" data-mode="album" aria-selected="false"><span class="l">스티커</span><span class="s">스티커</span><small>모은 보상</small></button>
   </nav>
 
   <main>
@@ -295,6 +317,7 @@ footer a { color: var(--vowel); }
       <div class="word" id="word" aria-live="polite"></div>
       <div class="parts" id="parts"></div>
       <div class="eq" id="eq"></div>
+      <div class="pad box" id="pad" hidden><canvas id="pen" aria-label="글씨 쓰는 칸"></canvas></div>
       <button class="say" id="sayBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></svg><span>소리 듣기</span></button>
     </section>
     <section class="panel" id="panel"></section>
@@ -362,10 +385,10 @@ const STICKERS = ['🐶','🐱','🐹','🐻‍❄️','🐮','🐷','🐵','�
 const PRAISE = ['정답! 시헌이 최고!', '와, 정말 잘 읽었어!', '한글 박사 시헌이!', '딩동댕! 완벽해!', '멋져요! 별 하나 더!'];
 const OOPS = ['아깝다! 다시 골라 볼까?', '괜찮아, 한 번 더!', '거의 다 왔어!'];
 
-const S = { mode: 'free', level: 0, progress: [0, 0, 0], stars: 0, stickers: 0, sound: true, awake: true, seen: [] };
+const S = { mode: 'free', level: 0, progress: [0, 0, 0], stars: 0, stickers: 0, sound: true, awake: true, seen: [], wrote: [] };
 const KEY = 'siheon-hangul-v1';
 try { const d = JSON.parse(localStorage.getItem(KEY) || 'null'); if (d) Object.assign(S, d); } catch (e) {}
-const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ mode: S.mode, level: S.level, progress: S.progress, stars: S.stars, stickers: S.stickers, sound: S.sound, awake: S.awake, seen: S.seen })); } catch (e) {} };
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify({ mode: S.mode, level: S.level, progress: S.progress, stars: S.stars, stickers: S.stickers, sound: S.sound, awake: S.awake, seen: S.seen, wrote: S.wrote })); } catch (e) {} };
 const markSeen = (...js) => { js.forEach(j => j && !S.seen.includes(j) && S.seen.push(j)); save(); };
 
 const rand = a => a[Math.floor(Math.random() * a.length)];
@@ -431,11 +454,11 @@ function toast(em, txt) { $('#toastEm').textContent = em; $('#toastTxt').textCon
 function shakeEl(el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake'); }
 
 /* ---------- rewards ---------- */
-function award() {
+function award(levelBased = true) {
   S.stars++;
   const was = S.progress[S.level];
-  S.progress[S.level] = Math.min(GOAL, was + 1);
-  const cleared = was < GOAL && S.progress[S.level] === GOAL;
+  if (levelBased) S.progress[S.level] = Math.min(GOAL, was + 1);
+  const cleared = levelBased && was < GOAL && S.progress[S.level] === GOAL;
   const n = Math.min(STICKERS.length, Math.floor(S.stars / 5));
   const got = n > S.stickers; if (got) S.stickers = n;
   save(); updateHud(); sfx.good(); confetti(cleared ? 150 : 70);
@@ -706,20 +729,308 @@ function showAlbum() {
     <div id="resetConfirm"></div>`;
   $('#resetBtn').onclick = () => {
     $('#resetConfirm').innerHTML = `<div class="feedback info"><span class="face">⚠️</span><div><b>별과 스티커를 모두 지울까요?</b><div class="row" style="margin-top:8px"><button class="btn-soft" id="yesReset">네, 지울래요</button><button class="btn-soft" id="noReset">아니요</button></div></div></div>`;
-    $('#yesReset').onclick = () => { Object.assign(S, { stars: 0, stickers: 0, progress: [0, 0, 0], level: 0, seen: [] }); save(); updateHud(); showAlbum(); };
+    $('#yesReset').onclick = () => { Object.assign(S, { stars: 0, stickers: 0, progress: [0, 0, 0], level: 0, seen: [], wrote: [] }); save(); updateHud(); showAlbum(); };
     $('#noReset').onclick = () => { $('#resetConfirm').innerHTML = ''; };
   };
 }
 
+/* ---------- 4. 따라 쓰기 (write) ---------- */
+// Stroke order as drawn in Korean first-grade books, in a 100×100 box. Each stroke is a polyline; ring() makes ㅇ.
+const ring = (cx, cy, r) => Array.from({ length: 33 }, (_, i) => { const a = i / 32 * Math.PI * 2; return [cx - r * Math.sin(a), cy - r * Math.cos(a)]; });
+const STROKES = {
+  ㄱ: [[[22, 24], [76, 24], [76, 80]]],
+  ㄴ: [[[26, 20], [26, 76], [80, 76]]],
+  ㄷ: [[[26, 24], [76, 24]], [[26, 24], [26, 76], [78, 76]]],
+  ㄹ: [[[24, 20], [74, 20], [74, 48]], [[26, 48], [74, 48]], [[26, 48], [26, 78], [78, 78]]],
+  ㅁ: [[[26, 22], [26, 78]], [[26, 22], [74, 22], [74, 78]], [[26, 78], [74, 78]]],
+  ㅂ: [[[28, 18], [28, 80]], [[72, 18], [72, 80]], [[28, 50], [72, 50]], [[28, 80], [72, 80]]],
+  ㅅ: [[[50, 20], [22, 80]], [[40, 44], [78, 80]]],
+  ㅇ: [ring(50, 50, 28)],
+  ㅈ: [[[24, 24], [64, 24], [26, 80]], [[46, 48], [78, 80]]],
+  ㅊ: [[[50, 8], [52, 20]], [[24, 30], [64, 30], [26, 84]], [[46, 54], [78, 84]]],
+  ㅋ: [[[22, 24], [76, 24], [76, 80]], [[24, 52], [76, 52]]],
+  ㅌ: [[[26, 22], [76, 22]], [[26, 50], [76, 50]], [[26, 22], [26, 78], [78, 78]]],
+  ㅍ: [[[22, 24], [78, 24]], [[38, 24], [36, 76]], [[62, 24], [64, 76]], [[20, 76], [80, 76]]],
+  ㅎ: [[[50, 8], [50, 20]], [[24, 28], [76, 28]], ring(50, 60, 20)],
+  ㅏ: [[[42, 12], [42, 88]], [[42, 50], [70, 50]]],
+  ㅑ: [[[40, 12], [40, 88]], [[40, 38], [68, 38]], [[40, 62], [68, 62]]],
+  ㅓ: [[[30, 50], [58, 50]], [[58, 12], [58, 88]]],
+  ㅕ: [[[30, 38], [60, 38]], [[30, 62], [60, 62]], [[60, 12], [60, 88]]],
+  ㅗ: [[[50, 30], [50, 60]], [[14, 60], [86, 60]]],
+  ㅛ: [[[38, 32], [38, 60]], [[62, 32], [62, 60]], [[14, 60], [86, 60]]],
+  ㅜ: [[[14, 40], [86, 40]], [[50, 40], [50, 74]]],
+  ㅠ: [[[14, 40], [86, 40]], [[38, 40], [38, 74]], [[62, 40], [62, 74]]],
+  ㅡ: [[[12, 50], [88, 50]]],
+  ㅣ: [[[50, 12], [50, 88]]],
+  ㅐ: [[[34, 12], [34, 88]], [[34, 50], [56, 50]], [[66, 12], [66, 88]]],
+  ㅔ: [[[24, 50], [46, 50]], [[46, 12], [46, 88]], [[68, 12], [68, 88]]],
+};
+const WOOPS = ['아깝다! 다시 써 볼까?', '괜찮아, 한 번 더!', '거의 다 왔어!'];
+const WRITE_ORDER = [...BASIC_C, ...BASIC_V];
+const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+function resample(poly, n = 48) {
+  const seg = poly.slice(1).map((p, i) => dist(poly[i], p)), total = seg.reduce((a, b) => a + b, 0);
+  const out = [];
+  for (let k = 0; k <= n; k++) {
+    let d = total * k / n, i = 0;
+    while (i < seg.length - 1 && d > seg[i]) { d -= seg[i]; i++; }
+    const t = seg[i] ? Math.min(1, d / seg[i]) : 0;
+    out.push([poly[i][0] + (poly[i + 1][0] - poly[i][0]) * t, poly[i][1] + (poly[i + 1][1] - poly[i][1]) * t]);
+  }
+  return out;
+}
+// Did the child's line follow this stroke: right start, along the line, in the right direction?
+function judge(user, stroke) {
+  const path = resample(stroke), closed = dist(stroke[0], stroke[stroke.length - 1]) < 2;
+  if (user.length < 3) return 'short';
+  if (dist(user[0], path[0]) > 20) return 'start';
+  const near = user.map(u => { let bi = 0, bd = 1e9; path.forEach((p, i) => { const d = dist(u, p); if (d < bd) { bd = d; bi = i; } }); return { i: bi, d: bd }; });
+  const mean = near.reduce((a, x) => a + x.d, 0) / near.length;
+  const covered = path.filter(p => user.some(u => dist(u, p) < 14)).length / path.length;
+  let fwd = 0, steps = 0;
+  near.forEach((x, k) => {
+    if (!k || (closed && (dist(user[k], path[0]) < 16))) return;
+    steps++; if (x.i >= near[k - 1].i - 1) fwd++;
+  });
+  if (steps > 3 && fwd / steps < .7) return 'dir';
+  if (mean > 11 || covered < .75) return 'path';
+  if (!closed && dist(user[user.length - 1], path[path.length - 1]) > 22) return 'path';
+  return 'ok';
+}
+
+const W = { sub: 'jamo', jamo: 'ㄱ', done: 0, fails: 0, ink: [], item: null, si: 0, demo: false, finished: false };
+const pad = $('#pad'), pen = $('#pen'), pctx = pen.getContext('2d');
+let drawing = null, padPx = 0;
+const INK = '#1F2B24';
+function fitPad() {
+  if (pad.hidden) return;
+  const st = $('#stage'), cs = getComputedStyle(st);
+  const innerW = st.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  let size = Math.min(innerW, 440);
+  if (document.body.classList.contains('one') && matchMedia('(max-width: 800px)').matches) {
+    const kids = [...st.children].filter(el => el !== pad && !el.hidden && getComputedStyle(el).display !== 'none');
+    const used = kids.reduce((a, el) => a + el.getBoundingClientRect().height, 0) + parseFloat(cs.rowGap || 0) * kids.length;
+    size = Math.min(innerW, st.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - used - 2);
+  }
+  size = Math.max(120, Math.floor(size));
+  if (size === padPx) return;
+  padPx = size;
+  pad.style.width = pad.style.height = size + 'px';
+  pen.width = pen.height = Math.round(size * devicePixelRatio);
+  drawPad();
+}
+new ResizeObserver(() => fitPad()).observe($('#stage'));
+const strokeColor = j => JUNG.includes(j) ? '#3D7BE0' : '#EF5B4C';
+function line(ctx, pts, width, color, dash) {
+  ctx.save(); ctx.lineWidth = width; ctx.strokeStyle = color; ctx.lineCap = ctx.lineJoin = 'round';
+  if (dash) ctx.setLineDash(dash);
+  ctx.beginPath(); pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.stroke(); ctx.restore();
+}
+function startMark(ctx, stroke, n, active) {
+  const [x, y] = stroke[0];
+  ctx.save();
+  ctx.fillStyle = active ? '#1F9D67' : '#C7D8CB';
+  ctx.beginPath(); ctx.arc(x, y, active ? 5.5 : 4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.font = `${active ? 7 : 5.5}px Jua, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(n, x, y + .4);
+  if (active) { // arrow head at the end of the stroke
+    const p = resample(stroke), a = p[p.length - 4], b = p[p.length - 1], ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    ctx.fillStyle = '#1F9D67'; ctx.translate(b[0], b[1]); ctx.rotate(ang);
+    ctx.beginPath(); ctx.moveTo(4, 0); ctx.lineTo(-4, -4.5); ctx.lineTo(-4, 4.5); ctx.closePath(); ctx.fill();
+  }
+  ctx.restore();
+}
+function drawPad(demo) {
+  const k = pen.width / 100;
+  pctx.setTransform(1, 0, 0, 1, 0, 0); pctx.clearRect(0, 0, pen.width, pen.height);
+  pctx.setTransform(k, 0, 0, k, 0, 0);
+  if (W.sub === 'jamo') {
+    const strokes = STROKES[W.jamo], col = strokeColor(W.jamo);
+    strokes.forEach((s, i) => line(pctx, s, 9, i < W.done ? col : i === W.done && !W.finished ? '#C9DCCD' : '#E5EEE7'));
+    if (demo) demo(pctx);
+    else if (!W.finished) strokes.forEach((s, i) => i >= W.done && startMark(pctx, s, i + 1, i === W.done));
+  } else if (W.item) {
+    pctx.save(); pctx.fillStyle = '#E2ECE4'; pctx.font = '700 80px "Noto Sans KR", sans-serif'; pctx.textAlign = 'center'; pctx.textBaseline = 'middle';
+    pctx.fillText(W.item.w[W.si] || '', 50, 54); pctx.restore();
+    W.ink.forEach(s => line(pctx, s, 6.5, INK));
+  }
+  if (drawing) line(pctx, drawing, W.sub === 'jamo' ? 7 : 6.5, INK);
+}
+function toN(e) { const r = pen.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * 100, (e.clientY - r.top) / r.height * 100]; }
+pen.addEventListener('pointerdown', e => {
+  if (W.demo || (W.sub === 'jamo' ? W.finished : !W.item || W.si >= W.item.w.length)) return;
+  drawing = [toN(e)]; pen.setPointerCapture(e.pointerId); e.preventDefault(); drawPad();
+});
+pen.addEventListener('pointermove', e => {
+  if (!drawing) return;
+  const p = toN(e); if (dist(p, drawing[drawing.length - 1]) > .8) { drawing.push(p); drawPad(); }
+});
+const penUp = () => {
+  if (!drawing) return;
+  const user = drawing; drawing = null;
+  if (W.sub === 'jamo') judgeStroke(user); else { W.ink.push(user); drawPad(); }
+};
+pen.addEventListener('pointerup', penUp); pen.addEventListener('pointercancel', penUp);
+
+function judgeStroke(user) {
+  const strokes = STROKES[W.jamo];
+  const res = judge(user, strokes[W.done]);
+  if (res === 'ok') {
+    W.done++; W.fails = 0; sfx.tap();
+    if (W.done >= strokes.length) {
+      W.finished = true; markSeen(W.jamo); speak(jamoName(W.jamo));
+      const first = !S.wrote.includes(W.jamo);
+      if (first) { S.wrote.push(W.jamo); award(false); } else { sfx.good(); confetti(40); }
+      fb(`<div class="feedback good"><span class="face">🎉</span><div><b>${rand(PRAISE)}</b><b class="inline">${W.jamo}</b>(${josa(jamoName(W.jamo), ')을', ')를')} ${first ? '처음 써서 별을 받았어요!' : '바르게 썼어요.'}</div></div>`);
+      showWriteJamoButtons();
+    } else fb(`<div class="feedback info"><span class="face">👍</span><div><b>좋아요!</b>이제 ${W.done + 1}번 초록 점에서 시작해요.</div></div>`);
+  } else {
+    W.fails++; sfx.bad();
+    const msg = { start: '<b class="inline">초록 점</b>에서 시작해요.', dir: '<b class="inline">화살표 방향</b>으로 그어요.', path: '연한 선을 따라 끝까지 그어요.', short: '조금 더 길게 그어요.' }[res];
+    fb(`<div class="feedback bad"><span class="face">🤔</span><div><b>${rand(WOOPS)}</b>${msg}${W.fails >= 2 ? ' <b class="inline">쓰는 순서 보기</b>를 눌러 봐요.' : ''}</div></div>`);
+  }
+  drawPad(); updateWriteTitle();
+}
+panel.addEventListener('click', e => { if (e.target.closest('.wsay')) speak(sayText); });
+function fb(html) { const el = $('#fb'); if (el) el.innerHTML = html; }
+function playDemo() {
+  if (W.demo) return;
+  W.demo = true; W.done = 0; W.finished = false; drawPad();
+  const strokes = STROKES[W.jamo], col = strokeColor(W.jamo), per = reduce ? 1 : 700;
+  let i = 0, t0 = performance.now();
+  const tick = now => {
+    const t = Math.min(1, (now - t0) / per);
+    drawPad(ctx => {
+      strokes.slice(0, i).forEach(s => line(ctx, s, 9, col));
+      const p = resample(strokes[i], 60), upto = p.slice(0, Math.max(2, Math.round(t * p.length)));
+      line(ctx, upto, 9, col);
+      const tip = upto[upto.length - 1];
+      ctx.fillStyle = '#1F9D67'; ctx.beginPath(); ctx.arc(tip[0], tip[1], 4.5, 0, Math.PI * 2); ctx.fill();
+    });
+    if (t >= 1) { i++; t0 = now; }
+    if (i < strokes.length) requestAnimationFrame(tick);
+    else { setTimeout(() => { W.demo = false; drawPad(); }, 400); }
+  };
+  speak(jamoName(W.jamo));
+  requestAnimationFrame(tick);
+}
+function updateWriteTitle() {
+  const h = $('#wTitle'); if (!h) return;
+  const n = STROKES[W.jamo]?.length || 0;
+  h.innerHTML = W.sub === 'jamo'
+    ? (W.finished ? `${W.jamo} 완성!` : `${W.jamo}(${jamoName(W.jamo)}) 쓰기 · ${n}획 중 ${W.done + 1}획`)
+    : (!W.item ? '' : W.si >= W.item.w.length ? `${W.item.w} 완성!` : `${W.item.e} ${W.item.w}의 ${W.si + 1}번째 글자 <b class="inline">${W.item.w[W.si]}</b>${hasJong(W.item.w[W.si]) ? '을' : '를'} 써요`);
+}
+function showWriteJamoButtons() {
+  const row = $('#wRow'); if (!row) return;
+  const i = WRITE_ORDER.indexOf(W.jamo);
+  row.innerHTML = W.finished
+    ? `<button class="btn-main" id="wNext">다음 글자 ${WRITE_ORDER[(i + 1) % WRITE_ORDER.length]} →</button><button class="btn-soft" id="wAgain">한 번 더</button>`
+    : `<button class="btn-soft" id="wDemo">쓰는 순서 보기</button><button class="btn-soft" id="wReset">지우기</button><button class="btn-soft wsay">소리</button>`;
+  const on = (id, f) => { const b = $('#' + id); if (b) b.onclick = f; };
+  on('wNext', () => pickJamo(WRITE_ORDER[(i + 1) % WRITE_ORDER.length]));
+  on('wAgain', () => pickJamo(W.jamo));
+  on('wDemo', playDemo);
+  on('wReset', () => pickJamo(W.jamo));
+}
+function pickJamo(j) {
+  Object.assign(W, { jamo: j, done: 0, fails: 0, finished: false, demo: false });
+  panel.querySelectorAll('.picker .tile').forEach(t => t.classList.toggle('sel', t.dataset.j === j));
+  fb(''); drawPad(); updateWriteTitle(); showWriteJamoButtons();
+  sayText = jamoName(j); speak(sayText);
+}
+function showWrite() {
+  const jamoMode = W.sub === 'jamo';
+  if (!jamoMode && !W.item) { W.item = pickWord(); W.si = 0; W.ink = []; }
+  pad.hidden = false;
+  partsEl.innerHTML = ''; eqEl.innerHTML = '';
+  if (jamoMode) { pic.className = 'pic empty'; pic.textContent = ''; pic.hidden = true; wordEl.innerHTML = ''; wordEl.hidden = true; sayText = jamoName(W.jamo); }
+  else {
+    pic.hidden = false; wordEl.hidden = false;
+    setPic(W.item.e);
+    boxes([...W.item.w].map((ch, i) => i < W.si ? { t: ch, cls: 'done' } : i === W.si ? { t: '', cls: 'cur' } : { t: '', cls: '' }));
+    sayText = W.item.w;
+  }
+  sayBtn.hidden = !canSpeak;
+  panel.innerHTML = `
+    <div class="steps two">
+      <button class="step c" data-sub="jamo" aria-pressed="${jamoMode}">자음·모음 쓰기</button>
+      <button class="step v" data-sub="word" aria-pressed="${!jamoMode}">낱말 쓰기</button>
+    </div>
+    ${jamoMode ? `<div class="picker">${WRITE_ORDER.map(j => `<button class="tile ${JUNG.includes(j) ? 'v' : 'c'} ${j === W.jamo ? 'sel' : ''} ${S.wrote.includes(j) ? 'wrote' : ''}" data-j="${j}">${j}</button>`).join('')}</div>` : levelsHTML()}
+    <h2 id="wTitle"></h2>
+    <p>${jamoMode ? '초록 점에서 시작해서 화살표 방향으로 한 획씩 그어요.' : '연한 글자 위에 손가락으로 따라 쓰고 "다 썼어요"를 눌러요.'}</p>
+    <div class="row" id="wRow">${jamoMode ? '' : '<button class="btn-main" id="wCheck">다 썼어요</button><button class="btn-soft" id="wClear">지우기</button><button class="btn-soft wsay">소리</button>'}</div>
+    <div id="fb" aria-live="polite"></div>
+    ${jamoMode ? '' : progressHTML()}`;
+  panel.querySelectorAll('.step').forEach(b => b.onclick = () => { W.sub = b.dataset.sub; sfx.tap(); if (W.sub === 'word' && !W.item) newWriteWord(); else showWrite(); });
+  if (jamoMode) {
+    panel.querySelectorAll('.picker .tile').forEach(b => b.onclick = () => { sfx.tap(); pickJamo(b.dataset.j); });
+    panel.querySelector('.picker .sel')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    showWriteJamoButtons();
+  } else {
+    bindLevels();
+    $('#wCheck').onclick = checkWord;
+    $('#wClear').onclick = () => { W.ink = []; fb(''); drawPad(); };
+  }
+  updateWriteTitle();
+  padPx = 0; requestAnimationFrame(fitPad);
+  if (!jamoMode && document.fonts) document.fonts.load('700 80px "Noto Sans KR"', W.item.w).then(drawPad).catch(() => {});
+}
+function newWriteWord() {
+  W.item = pickWord(W.item?.w); W.si = 0; W.ink = [];
+  showWrite(); speak(W.item.w, 250);
+}
+// Compare the child's ink with the grey letter at 120×120: enough of the letter covered, not much ink outside it.
+function checkWord() {
+  if (!W.ink.length) { fb(`<div class="feedback info"><span class="face">✏️</span><div><b>먼저 써 볼까요?</b>연한 글자 위를 손가락으로 따라 그어요.</div></div>`); return; }
+  const N = 120, mk = () => { const c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'); x.setTransform(N / 100, 0, 0, N / 100, 0, 0); return [c, x]; };
+  const ch = W.item.w[W.si];
+  const glyph = (x, grow) => { x.fillStyle = x.strokeStyle = '#000'; x.font = '700 80px "Noto Sans KR", sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(ch, 50, 54); if (grow) { x.lineWidth = grow; x.lineJoin = 'round'; x.strokeText(ch, 50, 54); } };
+  const [g, gx] = mk(); glyph(gx, 0);
+  const [gw, gwx] = mk(); glyph(gwx, 11);
+  const [ink, ix] = mk(); W.ink.forEach(s => line(ix, s, 6.5, '#000'));
+  const [inkW, iwx] = mk(); W.ink.forEach(s => line(iwx, s, 20, '#000'));
+  const A = c => c.getContext('2d').getImageData(0, 0, N, N).data;
+  const G = A(g), GW = A(gw), I = A(ink), IW = A(inkW);
+  let gTot = 0, gHit = 0, iTot = 0, iOut = 0;
+  for (let p = 3; p < G.length; p += 4) {
+    if (G[p] > 128) { gTot++; if (IW[p] > 128) gHit++; }
+    if (I[p] > 128) { iTot++; if (GW[p] < 128) iOut++; }
+  }
+  const cover = gTot ? gHit / gTot : 0, out = iTot ? iOut / iTot : 1;
+  if (cover >= .5 && out <= .4) {
+    sfx.tap(); speak(ch); W.si++; W.ink = [];
+    if (W.si >= W.item.w.length) {
+      award(); speak(W.item.w, 600);
+      setPic(W.item.e); boxes([...W.item.w].map(c => ({ t: c, cls: 'done' })));
+      fb(`<div class="feedback good"><span class="face">🎉</span><div><b>${rand(PRAISE)}</b>${W.item.e} <b class="inline">${W.item.w}</b>${hasJong(W.item.w) ? '을' : '를'} 다 썼어요.</div></div>`);
+      $('#wRow').innerHTML = `<button class="btn-main" id="nextQ">다음 낱말</button>${nextLevelBtn()}`;
+      refreshProgress(); bindNext();
+      drawPad(); updateWriteTitle();
+      return;
+    }
+    boxes([...W.item.w].map((c, i) => i < W.si ? { t: c, cls: 'done' } : i === W.si ? { t: '', cls: 'cur' } : { t: '', cls: '' }));
+    fb(`<div class="feedback info"><span class="face">👍</span><div><b>잘 썼어요!</b>다음 글자 <b class="inline">${W.item.w[W.si]}</b>${hasJong(W.item.w[W.si]) ? '을' : '를'} 써요.</div></div>`);
+    drawPad(); updateWriteTitle();
+  } else {
+    sfx.bad();
+    fb(`<div class="feedback bad"><span class="face">🤔</span><div><b>${rand(WOOPS)}</b>${cover < .5 ? '연한 글자를 더 꼼꼼히 채워서 써 봐요.' : '연한 글자 위에 맞춰서 써 봐요.'}</div></div>`);
+  }
+}
+
 /* ---------- modes ---------- */
-function newQuestion() { if (S.mode === 'listen') newListen(); else if (S.mode === 'spell') newSpell(); }
+function newQuestion() { if (S.mode === 'listen') newListen(); else if (S.mode === 'spell') newSpell(); else if (S.mode === 'write') { W.sub = 'word'; newWriteWord(); } }
 function setMode(mode) {
   S.mode = mode; save(); Q = null;
   if (canSpeak) speechSynthesis.cancel();
   document.body.classList.toggle('one', mode !== 'album');
   scrollTo(0, 0);
   document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.mode === mode));
-  if (mode === 'free') showFree(); else if (mode === 'album') showAlbum(); else newQuestion();
+  const writing = mode === 'write';
+  pad.hidden = !writing; $('#stage').classList.toggle('writing', writing);
+  if (!writing) { pic.hidden = false; wordEl.hidden = false; }
+  if (mode === 'free') showFree(); else if (mode === 'album') showAlbum(); else if (writing) showWrite(); else newQuestion();
 }
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { sfx.tap(); setMode(t.dataset.mode); }));
 
@@ -755,7 +1066,7 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
 }
 
 updateHud();
-setMode(['free', 'listen', 'spell', 'album'].includes(S.mode) ? S.mode : 'free');
+setMode(['free', 'listen', 'spell', 'write', 'album'].includes(S.mode) ? S.mode : 'free');
 keepAwake();
 })();
 </script>
