@@ -71,7 +71,7 @@ h1 .c { color: var(--cons); } h1 .v { color: var(--vowel); }
   border-radius: 999px; padding: 6px 14px; font-family: var(--display); font-size: 18px; font-variant-numeric: tabular-nums;
 }
 .chip .star { color: #FFC93C; font-size: 22px; line-height: 1; -webkit-text-stroke: 1px #E0A800; }
-.chip.btn:hover { border-color: var(--ink-soft); }
+@media (hover: hover) { .chip.btn:hover { border-color: var(--ink-soft); } }
 
 nav.tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
 .tab .s { display: none; }
@@ -129,7 +129,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap:
   border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 8px 18px;
   font-family: var(--display); font-size: 18px; display: inline-flex; align-items: center; gap: 8px;
 }
-.say:hover { background: var(--paper); }
+@media (hover: hover) { .say:hover { background: var(--paper); } }
 .say svg { width: 20px; height: 20px; }
 
 /* tiles */
@@ -174,7 +174,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap:
   border: 3px solid var(--line); background: var(--card); border-radius: 20px; padding: 18px 6px;
   font-family: var(--letter); font-weight: 700; font-size: clamp(24px, 6vw, 34px); line-height: 1.1; word-break: keep-all;
 }
-.opt:hover:not(:disabled) { border-color: var(--vowel); }
+@media (hover: hover) { .opt:hover:not(:disabled) { border-color: var(--vowel); } }
 .opt.right { border-color: var(--good); background: var(--good-tint); color: var(--good); }
 .opt.wrong { border-color: var(--bad); background: var(--bad-tint); opacity: .7; }
 
@@ -182,7 +182,7 @@ main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap:
 .btn-main { border: none; border-radius: 18px; padding: 12px 22px; font-family: var(--display); font-size: 21px; background: var(--good); color: #fff; box-shadow: 0 5px 0 #11714A; }
 .btn-main:active { transform: translateY(4px); box-shadow: 0 1px 0 #11714A; }
 .btn-soft { border: 2px solid var(--line); background: var(--card); border-radius: 16px; padding: 9px 16px; font-family: var(--display); font-size: 17px; }
-.btn-soft:hover { background: var(--paper); }
+@media (hover: hover) { .btn-soft:hover { background: var(--paper); } }
 .feedback { border-radius: 18px; padding: 12px 16px; line-height: 1.55; display: flex; gap: 12px; align-items: flex-start; }
 .feedback .face { font-size: 30px; line-height: 1; }
 .feedback > div > b:first-child { font-family: var(--display); font-weight: 400; font-size: 21px; display: block; }

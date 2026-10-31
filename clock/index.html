@@ -78,7 +78,7 @@ header { display: flex; align-items: center; justify-content: space-between; gap
 }
 .chip .star { color: var(--sun); font-size: 22px; line-height: 1; -webkit-text-stroke: 1px #E0A800; }
 .chip.btn { cursor: pointer; }
-.chip.btn:hover { border-color: var(--ink-soft); }
+@media (hover: hover) { .chip.btn:hover { border-color: var(--ink-soft); } }
 
 /* tabs */
 nav.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
@@ -89,7 +89,7 @@ nav.tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
   transition: transform .15s, border-color .15s, background .15s;
 }
 .tab small { font-family: var(--body); font-size: 13px; color: var(--ink-soft); }
-.tab:hover { transform: translateY(-2px); }
+@media (hover: hover) { .tab:hover { transform: translateY(-2px); } }
 .tab[aria-selected="true"] { background: var(--ink); color: var(--card); border-color: var(--ink); }
 .tab[aria-selected="true"] small { color: #C9D3EA; }
 @media (max-width: 560px) { .tab { font-size: 16px; padding: 8px 4px; } .tab small { display: none; } }
@@ -102,7 +102,7 @@ main { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); g
   padding: 14px; display: flex; flex-direction: column; align-items: center; gap: 10px;
   position: relative;
 }
-.clock { width: 100%; max-width: 460px; aspect-ratio: 240 / 252; touch-action: none; user-select: none; border-radius: 24px; }
+.clock { width: 100%; max-width: 460px; aspect-ratio: 240 / 252; touch-action: none; user-select: none; border-radius: 24px;  -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .clock.draggable { cursor: grab; }
 .clock.dragging { cursor: grabbing; }
 .hand { transform-box: view-box; transform-origin: 0px 0px; }
@@ -117,7 +117,7 @@ main { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); g
   padding: 6px 12px; font-family: var(--display); font-size: 16px;
 }
 .nudge.h { color: var(--hour); } .nudge.m { color: var(--minute); }
-.nudge:hover { background: var(--paper); }
+@media (hover: hover) { .nudge:hover { background: var(--paper); } }
 
 .panel {
   background: var(--card); border-radius: 28px; border: 2px solid var(--line);
@@ -171,7 +171,7 @@ main { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); g
 .btn-main.go { background: var(--good); box-shadow: 0 5px 0 #11714A; }
 .btn-main.go:active { box-shadow: 0 1px 0 #11714A; }
 .btn-soft { border: 2px solid var(--line); background: var(--card); border-radius: 18px; padding: 12px 18px; font-family: var(--display); font-size: 19px; }
-.btn-soft:hover { background: var(--paper); }
+@media (hover: hover) { .btn-soft:hover { background: var(--paper); } }
 
 /* quiz options */
 .options { display: grid; gap: 10px; }
@@ -181,7 +181,7 @@ main { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); g
   font-family: var(--display); font-size: 28px; transition: transform .12s, border-color .2s, background .2s;
 }
 .opt small { font-size: 18px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-.opt:hover:not(:disabled) { border-color: var(--minute); transform: translateX(3px); }
+@media (hover: hover) { .opt:hover:not(:disabled) { border-color: var(--minute); transform: translateX(3px); } }
 .opt.right { border-color: var(--good); background: var(--good-tint); }
 .opt.wrong { border-color: var(--bad); background: var(--bad-tint); opacity: .75; }
 .opt:disabled { cursor: default; }
@@ -250,7 +250,7 @@ footer a { color: var(--minute); }
   body.one .chip { padding: 4px 10px; font-size: 15px; }
   body.one #awakeBtn { display: none; }
   body.one .tab { padding: 6px 4px; font-size: 15px; border-radius: 14px; }
-  body.one main { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+  body.one main { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: stretch; gap: 8px; }
   body.one .stage { flex: 1 1 0; min-height: 46%; padding: 6px; gap: 6px; }
   body.one .clock { flex: 1 1 0; min-height: 0; width: 100%; max-width: 100%; aspect-ratio: auto; }
   body.one .nudge { padding: 4px 10px; font-size: 15px; }
@@ -922,6 +922,14 @@ function setMode(mode) {
 document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => { sfx.tick(); setMode(t.dataset.mode); }));
 
 buildClock();
+// iPhone Safari sometimes leaves an old copy of the clock on screen when the clock box changes size
+// (the answer panel grows or shrinks between questions); nudging the SVG forces a clean repaint.
+let repaintT = 0;
+new ResizeObserver(() => {
+  cancelAnimationFrame(repaintT);
+  svg.style.transform = 'translateZ(0)';
+  repaintT = requestAnimationFrame(() => requestAnimationFrame(() => { svg.style.transform = ''; }));
+}).observe(svg);
 updateHud();
 S.total = toTotal(3, 15);
 setMode(['explore', 'read', 'set', 'album'].includes(S.mode) ? S.mode : 'explore');
