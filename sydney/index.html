@@ -18,6 +18,24 @@ html{color-scheme:light dark}
 body{margin:0}
 img{max-width:100%}
 [hidden]{display:none!important}
+
+.wxday{background:var(--surface);border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin:0 0 11px;box-shadow:var(--shadow)}
+.wxday.today{border-color:var(--accent)}
+.wxhd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+.wxhd b{font-family:'Gothic A1',sans-serif;font-weight:800;font-size:15.5px}
+.wxhd span{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink-3);font-weight:600}
+.wxrow{display:grid;grid-template-columns:30px 1fr auto;gap:2px 10px;align-items:center;padding:7px 0;border-top:1px dashed var(--line)}
+.wxrow:first-of-type{border-top:0}
+.wxic{font-size:24px;line-height:1;grid-row:span 2}
+.wxpl{font-size:13.5px;font-weight:700}
+.wxtp{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:700;text-align:right;white-space:nowrap}
+.wxtp small{color:var(--ink-3);font-weight:600}
+.wxsub{font-size:12px;color:var(--ink-2);grid-column:2 / 4}
+.wxsub .rn{color:var(--accent-ink);font-weight:700}
+.wxsub .uv{color:var(--warn);font-weight:700}
+.wxtip{font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:7px 10px;margin-top:7px;line-height:1.5}
+.wxbadge{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--surface-2);border-radius:20px;padding:1px 8px;margin-left:2px}
+#wxstat{font-size:12px;color:var(--ink-3)}
 </style>
 </head>
 <body>
@@ -220,6 +238,7 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
   <nav role="tablist" aria-label="가이드 메뉴">
     <button role="tab" aria-selected="true" data-t="now">지금 할 일</button>
     <button role="tab" aria-selected="false" data-t="days">일정</button>
+    <button role="tab" aria-selected="false" data-t="wx">날씨</button>
     <button role="tab" aria-selected="false" data-t="move">이동</button>
     <button role="tab" aria-selected="false" data-t="stay">숙소</button>
     <button role="tab" aria-selected="false" data-t="cost">예산</button>
@@ -642,6 +661,24 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
       <div class="note">🏖️ <b>타롱가 동물원은 이번 구성에서 빠졌습니다.</b> (본다이는 Day 7에 들어갔습니다)
         대신 동물은 <b>Featherdale에서 직접 만지고</b>, 페리는 <b>밀슨스포인트 → 서큘러키</b>,
         케이블카는 <b>시닉월드</b>로 각각 채워집니다. 바다도 와타몰라·키아마·본다이로 충분합니다.</div>
+    </section>
+  </div>
+
+  <div class="panel" id="p-wx" role="tabpanel" hidden>
+    <section class="sec">
+      <p class="eyebrow">일자별 · 우리가 가는 곳</p>
+      <h2>날씨</h2>
+      <p class="lead">그날 들르는 곳마다 <strong>최고/최저 기온 · 비 올 확률 · 자외선</strong>을 보여줍니다. 열 때마다 최신 예보로 바뀝니다.</p>
+      <p id="wxstat">예보 불러오는 중…</p>
+      <div id="wxlist"></div>
+      <div class="note"><b>읽는 법</b><br>
+        · 예보는 <b>여행일이 가까울수록 정확</b>합니다. 열흘 넘게 남은 날은 참고만 하시고 출발 2~3일 전에 다시 보세요.<br>
+        · ☔ 숫자는 <b>그날 중 비가 올 가능성이 가장 높은 시간의 확률</b>입니다. 시드니 11월 비는 대개 짧은 소나기라, 40%라도 하루 종일 오는 경우는 드뭅니다.<br>
+        · ☀️ <b>UV 8 이상이면 '매우 높음'</b> — 11월 시드니는 맑으면 거의 매일 이렇습니다. 래시가드·모자·선크림을 2시간마다 발라 주세요.<br>
+        · 🌡️ <b>카툼바(블루마운틴)는 해발 1,000m</b>라 시드니보다 5~7도 낮고, 밤에는 10도 아래로 내려갑니다.</div>
+      <div class="note"><b>11월 평년 기온</b> (예보가 안 뜰 때 참고)<br>
+        시드니 시티·본다이 낮 23~24° / 밤 16~17° · 카툼바 낮 19~20° / 밤 9~10° · 남부해안(울릉공·윈당) 낮 22~23° / 밤 14~15°<br>
+        <span style="color:var(--ink-3)">예보 데이터: Open-Meteo (호주 기상청 BOM 등 여러 모델 종합)</span></div>
     </section>
   </div>
 
@@ -1573,6 +1610,77 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
 
   var dd=Math.ceil((new Date('2026-11-14T00:00:00+09:00')-Date.now())/864e5);
   document.querySelectorAll('.dday').forEach(function(e){ e.textContent = dd>0 ? 'D-'+dd : (dd===0 ? 'D-DAY' : '여행 중'); });
+})();
+</script>
+
+<script>
+(function(){
+  var P={
+    rocks:['더록스 (시티)',-33.859,151.209], fd:['Featherdale (시드니 서부)',-33.765,150.887],
+    kat:['카툼바 · 블루마운틴',-33.714,150.311], scb:['Sea Cliff Bridge',-34.255,150.975],
+    win:['Windang (남부해안)',-34.531,150.866], hars:['HARS · 앨비언파크',-34.561,150.776],
+    kia:['키아마 블로홀',-34.672,150.861], hb:['Helensburgh',-34.178,150.995],
+    city:['시티 (하이드파크)',-33.873,151.211], bondi:['본다이 비치',-33.891,151.277],
+    north:['더록스 · 노스시드니',-33.847,151.211], air:['시드니 공항',-33.940,151.175]
+  };
+  var D=[
+    ['2026-11-15','Day 1 · 도착 & 하버뷰','11/15 일',['rocks'],'야간비행 직후라 체온 조절이 어렵습니다. 얇은 겉옷 하나.'],
+    ['2026-11-16','Day 2 · 코알라 & 세 자매봉','11/16 월',['fd','kat'],'일몰(에코포인트) 땐 카툼바 최저기온 기준으로 입히세요 — 후리스 필수.'],
+    ['2026-11-17','Day 3 · 시닉월드 → 바다','11/17 화',['kat','scb','win'],'아침 계곡 안개면 워크웨이·레일웨이 먼저. 비 오면 Sea Cliff Bridge는 차로만.'],
+    ['2026-11-18','Day 4 · HARS · 블로홀 · BBQ','11/18 수',['hars','kia','win'],'블로홀은 파도·바람 센 날이 더 멋지지만 난간 안쪽에서만.'],
+    ['2026-11-19','Day 5 · 시티 복귀','11/19 목',['hb','city'],''],
+    ['2026-11-20','Day 6 · 오페라하우스 · 피시마켓','11/20 금',['city'],'야외 동선이 길어요. 비 확률 높으면 피시마켓·차이나타운(실내) 비중을 늘리세요.'],
+    ['2026-11-21','Day 7 · 본다이 아이스버그','11/21 토',['bondi'],'수영장은 날씨보다 파도·물때. 바람 세면 해변 그늘이 금방 추워집니다.'],
+    ['2026-11-22','Day 8 · 더록스 마켓 · 노스시드니 풀','11/22 일',['north'],'하버브리지 도보는 그늘이 없어요 — 자외선 최고치 확인.'],
+    ['2026-11-23','Day 9 · 귀국','11/23 월',['air'],'']
+  ];
+  var keys=[]; D.forEach(function(d){ d[3].forEach(function(k){ if(keys.indexOf(k)<0) keys.push(k); }); });
+  function ic(c){ if(c===0) return ['☀️','맑음']; if(c<=2) return ['🌤️','구름 조금']; if(c===3) return ['☁️','흐림'];
+    if(c<=48) return ['🌫️','안개']; if(c<=57) return ['🌦️','이슬비']; if(c<=67) return ['🌧️','비']; if(c<=77) return ['🌨️','눈'];
+    if(c<=82) return ['🌦️','소나기']; return ['⛈️','뇌우']; }
+  function uvw(u){ return u>=11?'극히 높음':u>=8?'매우 높음':u>=6?'높음':u>=3?'보통':'낮음'; }
+  var list=document.getElementById('wxlist'), st=document.getElementById('wxstat');
+  function render(data, when, cached){
+    var by={}; keys.forEach(function(k,i){ by[k]=data[i].daily; });
+    var today=new Date(Date.now()+11*36e5).toISOString().slice(0,10);
+    var h='';
+    D.forEach(function(d){
+      h+='<div class="wxday'+(d[0]===today?' today':'')+'"><div class="wxhd"><b>'+d[1]+'</b><span>'+d[2]+'</span></div>';
+      d[3].forEach(function(k){
+        var dl=by[k], i=dl.time.indexOf(d[0]);
+        if(i<0||dl.temperature_2m_max[i]==null){ h+='<div class="wxrow"><div class="wxic">·</div><div class="wxpl">'+P[k][0]+'</div><div class="wxtp"><small>예보 전</small></div></div>'; return; }
+        var w=ic(dl.weather_code[i]), rn=dl.precipitation_probability_max[i], uv=dl.uv_index_max[i], wd=dl.wind_speed_10m_max[i];
+        h+='<div class="wxrow"><div class="wxic">'+w[0]+'</div><div class="wxpl">'+P[k][0]+'</div>'+
+           '<div class="wxtp">'+Math.round(dl.temperature_2m_max[i])+'° <small>/ '+Math.round(dl.temperature_2m_min[i])+'°</small></div>'+
+           '<div class="wxsub">'+w[1]+' · <span class="rn">☔ '+(rn==null?'-':rn)+'%</span> · <span class="uv">UV '+(uv==null?'-':Math.round(uv))+' '+(uv==null?'':uvw(uv))+'</span> · 바람 '+(wd==null?'-':Math.round(wd))+'km/h</div></div>';
+      });
+      if(d[4]) h+='<div class="wxtip">'+d[4]+'</div>';
+      h+='</div>';
+    });
+    list.innerHTML=h;
+    st.textContent=(cached?'오프라인 — 저장된 예보 · ':'최신 예보 · ')+when+' 기준';
+    // 일정 탭 Day 머리에 배지
+    document.querySelectorAll('#p-days .dayhead').forEach(function(hd){
+      var dt=hd.querySelector('.dt'); if(!dt) return; var m=dt.textContent.match(/11\/(\d+)/); if(!m) return;
+      var dd='2026-11-'+m[1], day=D.filter(function(x){return x[0]===dd;})[0]; if(!day) return;
+      var k=day[3][day[3].length-1], dl=by[k], i=dl.time.indexOf(dd); if(i<0||dl.temperature_2m_max[i]==null) return;
+      var b=hd.querySelector('.wxbadge'); if(!b){ b=document.createElement('span'); b.className='wxbadge'; hd.appendChild(b); }
+      b.textContent=ic(dl.weather_code[i])[0]+' '+Math.round(dl.temperature_2m_max[i])+'°/'+Math.round(dl.temperature_2m_min[i])+'° ☔'+dl.precipitation_probability_max[i]+'%';
+    });
+  }
+  var url='https://api.open-meteo.com/v1/forecast?latitude='+keys.map(function(k){return P[k][1];}).join(',')+
+    '&longitude='+keys.map(function(k){return P[k][2];}).join(',')+
+    '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,wind_speed_10m_max'+
+    '&timezone=Australia%2FSydney&start_date=2026-11-15&end_date=2026-11-23';
+  var CK='syd.wx.v1';
+  function stamp(){ var d=new Date(); return (d.getMonth()+1)+'/'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+' (한국시간)'; }
+  fetch(url).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){
+    if(!Array.isArray(j)) j=[j]; var w=stamp(); render(j,w,false);
+    try{ localStorage.setItem(CK, JSON.stringify({w:w,j:j})); }catch(e){}
+  }).catch(function(){
+    try{ var c=JSON.parse(localStorage.getItem(CK)); if(c){ render(c.j,c.w,true); return; } }catch(e){}
+    st.textContent='예보를 불러오지 못했습니다. 인터넷 연결 후 다시 열어 주세요. (아래 평년 기온 참고)';
+  });
 })();
 </script>
 </body>
