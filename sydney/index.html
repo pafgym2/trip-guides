@@ -36,6 +36,12 @@ img{max-width:100%}
 .wxtip{font-size:12.5px;color:var(--ink-2);background:var(--surface-2);border-radius:8px;padding:7px 10px;margin-top:7px;line-height:1.5}
 .wxbadge{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--surface-2);border-radius:20px;padding:1px 8px;margin-left:2px}
 #wxstat{font-size:12px;color:var(--ink-3)}
+.wxhr{grid-column:2 / 4;display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin-top:6px}
+.wxhr div{text-align:center;font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-3);line-height:1.25}
+.wxhr em{display:block;font-style:normal;font-weight:700;font-size:10.5px;color:var(--ink-2)}
+.wxhr em.hi{color:var(--accent-ink)}
+.wxhr i{display:block;height:20px;background:var(--surface-2);border-radius:3px;position:relative;overflow:hidden;margin:1px 0}
+.wxhr i b{position:absolute;left:0;right:0;bottom:0;background:var(--accent);opacity:.75}
 </style>
 </head>
 <body>
@@ -1631,10 +1637,22 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
   function ic(c){ if(c===0) return ['☀️','맑음']; if(c<=2) return ['🌤️','구름 조금']; if(c===3) return ['☁️','흐림'];
     if(c<=48) return ['🌫️','안개']; if(c<=57) return ['🌦️','이슬비']; if(c<=67) return ['🌧️','비']; if(c<=77) return ['🌨️','눈'];
     if(c<=82) return ['🌦️','소나기']; return ['⛈️','뇌우']; }
+  var HRS=[6,8,10,12,14,16,18,20,22];
+  function hours(k,day){
+    var hh=hr[k]; if(!hh||!hh.time) return '';
+    var i0=hh.time.indexOf(day+'T00:00'); if(i0<0) return '';
+    var out='', any=false;
+    HRS.forEach(function(h){
+      var v=hh.precipitation_probability[i0+h];
+      if(v!=null) any=true;
+      out+='<div><em'+(v>=50?' class="hi"':'')+'>'+(v==null?'-':v)+'</em><i><b style="height:'+(v||0)+'%"></b></i>'+h+'시</div>';
+    });
+    return any?'<div class="wxhr" aria-label="시간대별 비 올 확률">'+out+'</div>':'';
+  }
   function uvw(u){ return u>=11?'극히 높음':u>=8?'매우 높음':u>=6?'높음':u>=3?'보통':'낮음'; }
   var list=document.getElementById('wxlist'), st=document.getElementById('wxstat');
   function render(data, when, cached){
-    var by={}; keys.forEach(function(k,i){ by[k]=data[i].daily; });
+    var by={}, hr={}; keys.forEach(function(k,i){ by[k]=data[i].daily; hr[k]=data[i].hourly; });
     var today=new Date(Date.now()+11*36e5).toISOString().slice(0,10);
     var h='';
     D.forEach(function(d){
@@ -1645,13 +1663,13 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
         var w=ic(dl.weather_code[i]), rn=dl.precipitation_probability_max[i], uv=dl.uv_index_max[i], wd=dl.wind_speed_10m_max[i];
         h+='<div class="wxrow"><div class="wxic">'+w[0]+'</div><div class="wxpl">'+P[k][0]+'</div>'+
            '<div class="wxtp">'+Math.round(dl.temperature_2m_max[i])+'° <small>/ '+Math.round(dl.temperature_2m_min[i])+'°</small></div>'+
-           '<div class="wxsub">'+w[1]+' · <span class="rn">☔ '+(rn==null?'-':rn)+'%</span> · <span class="uv">UV '+(uv==null?'-':Math.round(uv))+' '+(uv==null?'':uvw(uv))+'</span> · 바람 '+(wd==null?'-':Math.round(wd))+'km/h</div></div>';
+           '<div class="wxsub">'+w[1]+' · <span class="rn">☔ '+(rn==null?'-':rn)+'%</span> · <span class="uv">UV '+(uv==null?'-':Math.round(uv))+' '+(uv==null?'':uvw(uv))+'</span> · 바람 '+(wd==null?'-':Math.round(wd))+'km/h</div>'+hours(k,d[0])+'</div>';
       });
       if(d[4]) h+='<div class="wxtip">'+d[4]+'</div>';
       h+='</div>';
     });
     list.innerHTML=h;
-    st.textContent=(cached?'오프라인 — 저장된 예보 · ':'최신 예보 · ')+when+' 기준';
+    st.textContent=(cached?'오프라인 — 저장된 예보 · ':'최신 예보 · ')+when+' 기준 · 막대 = 시간대별 비 올 확률(%)';
     // 일정 탭 Day 머리에 배지
     document.querySelectorAll('#p-days .dayhead').forEach(function(hd){
       var dt=hd.querySelector('.dt'); if(!dt) return; var m=dt.textContent.match(/11\/(\d+)/); if(!m) return;
@@ -1664,8 +1682,8 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
   var url='https://api.open-meteo.com/v1/forecast?latitude='+keys.map(function(k){return P[k][1];}).join(',')+
     '&longitude='+keys.map(function(k){return P[k][2];}).join(',')+
     '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,uv_index_max,wind_speed_10m_max'+
-    '&timezone=Australia%2FSydney&start_date=2026-11-15&end_date=2026-11-23';
-  var CK='syd.wx.v1';
+    '&hourly=precipitation_probability&timezone=Australia%2FSydney&start_date=2026-11-15&end_date=2026-11-23';
+  var CK='syd.wx.v2';
   function stamp(){ var d=new Date(); return (d.getMonth()+1)+'/'+d.getDate()+' '+('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2)+' (한국시간)'; }
   fetch(url).then(function(r){ if(!r.ok) throw 0; return r.json(); }).then(function(j){
     if(!Array.isArray(j)) j=[j]; var w=stamp(); render(j,w,false);
