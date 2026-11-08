@@ -1637,6 +1637,7 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
   function ic(c){ if(c===0) return ['☀️','맑음']; if(c<=2) return ['🌤️','구름 조금']; if(c===3) return ['☁️','흐림'];
     if(c<=48) return ['🌫️','안개']; if(c<=57) return ['🌦️','이슬비']; if(c<=67) return ['🌧️','비']; if(c<=77) return ['🌨️','눈'];
     if(c<=82) return ['🌦️','소나기']; return ['⛈️','뇌우']; }
+  var hr={};
   var HRS=[6,8,10,12,14,16,18,20,22];
   function hours(k,day){
     var hh=hr[k]; if(!hh||!hh.time) return '';
@@ -1652,7 +1653,7 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
   function uvw(u){ return u>=11?'극히 높음':u>=8?'매우 높음':u>=6?'높음':u>=3?'보통':'낮음'; }
   var list=document.getElementById('wxlist'), st=document.getElementById('wxstat');
   function render(data, when, cached){
-    var by={}, hr={}; keys.forEach(function(k,i){ by[k]=data[i].daily; hr[k]=data[i].hourly; });
+    var by={}; hr={}; keys.forEach(function(k,i){ by[k]=data[i].daily; hr[k]=data[i].hourly; });
     var today=new Date(Date.now()+11*36e5).toISOString().slice(0,10);
     var h='';
     D.forEach(function(d){
