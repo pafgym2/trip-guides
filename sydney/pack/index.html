@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>시드니 짐 싸기</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--tx:#1b1f24;--sub:#6b7280;--ln:#e5e7eb;--ac:#2563eb;--ok:#16a34a;--warn-bg:#fef2f2;--warn-tx:#b91c1c;--info-bg:#eff6ff;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1115;--card:#1a1d23;--tx:#eceff4;--sub:#9aa3b2;--ln:#2a2f38;--ac:#60a5fa;--ok:#4ade80;--warn-bg:#3a1717;--warn-tx:#fca5a5;--info-bg:#17243a;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1115;--card:#1a1d23;--tx:#eceff4;--sub:#9aa3b2;--ln:#2a2f38;--ac:#60a5fa;--ok:#4ade80;--warn-bg:#3a1717;--warn-tx:#fca5a5;--info-bg:#17243a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR",sans-serif;font-size:16px;line-height:1.4}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);background:var(--bg);z-index:10}
+header{position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:12px 16px 10px;z-index:5;border-bottom:1px solid var(--ln)}
+h1{font-size:19px;margin:0 0 2px}
+.sub{color:var(--sub);font-size:13px}
+.bar{height:8px;background:var(--ln);border-radius:4px;margin-top:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .25s}
+main{padding:12px 12px 40px;max-width:640px;margin:0 auto}
+section{background:var(--card);border-radius:14px;margin-bottom:12px;padding:6px 0;border:1px solid var(--ln)}
+h2{font-size:16px;margin:0;padding:10px 14px 4px;display:flex;justify-content:space-between;align-items:center}
+h2 small{color:var(--sub);font-weight:500;font-size:13px}
+.g{padding:8px 14px 2px;font-size:13px;color:var(--ac);font-weight:600}
+label{display:flex;gap:12px;align-items:flex-start;padding:10px 14px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+label+label{border-top:1px solid var(--ln)}
+input{width:22px;height:22px;flex:none;margin:1px 0 0;accent-color:var(--ok)}
+input:checked+span{color:var(--sub);text-decoration:line-through}
+.note{margin:0 12px 12px;padding:12px 14px;border-radius:12px;font-size:14px}
+.warn{background:var(--warn-bg);color:var(--warn-tx)}
+.info{background:var(--info-bg)}
+button{width:100%;padding:12px;border:1px solid var(--ln);background:var(--card);color:var(--sub);border-radius:12px;font-size:14px}
+</style>
+</head>
+<body>
+<header>
+<h1>🧳 시드니 짐 싸기</h1>
+<div class="sub">11/14 토 20:00 출발 · 인천 T2 16:30까지 · <b id="cnt">0/0</b></div>
+<div class="bar"><i id="pb"></i></div>
+</header>
+<main>
+<div class="note info">✅ 이미 끝난 것: 여권·ETA·보험·숙소·렌터카·좌석·오토체크인·어린이 기내식·우유 정지·휴강 연락</div>
+<div id="root"></div>
+<div class="note warn">🚫 <b>가져가면 안 되는 것</b><br>고기·육포·고기 스프, 계란 든 음식, 과일·채소<br>→ 약·과자·김은 입국카드에 '예' 체크</div>
+<div class="note info">📱 <b>폰에 깔 앱</b><br>구글 지도(대중교통 + 오프라인 지도), Opal, Uber, DiDi, EatClub, 아시아나</div>
+<div class="note info">💾 체크는 <b>이 폰에만</b> 저장돼요.</div>
+<button id="reset">전체 체크 해제</button>
+</main>
+<script>
+const D=[
+["👛 몸에 지닐 것",[
+"여권 4개","한국 면허증 원본 + 국제운전면허증","카드 2장 + 호주달러 조금","모바일 탑승권","위스키 인도장 예약번호 (출국 후 먼저 수령)"]],
+["💊 약 (기내 가방, 원래 포장 + 영문 처방전)",[
+"첫째 약 / 아빠 약","둘째 감기약·콧물약·기침약·해열제","소화제·지사제·밴드·연고·체온계","멀미약·모기약","영어 약·음식 목록 (검역용)"]],
+["🎒 기내 가방",[
+"보조배터리 전부 (캐리어에 넣으면 안 됨)","충전기·케이블","멀티탭 + 호주 어댑터 2개","태블릿 2 + 이어폰 + 영상 미리 다운","카메라 + SD카드","목베개·안대·얇은 담요","껌·사탕","아이 겉옷 + 갈아입을 옷 1벌, 인형"]],
+["👕 옷 (5일치, 중간에 빨래 2번)",[
+"@아빠·엄마","반팔 4, 긴팔 1, 반바지 2, 긴바지 1",
+"@첫째","반팔 5, 긴팔 2, 반바지 3, 긴바지 2",
+"@둘째","반팔 6, 긴팔 2, 반바지 3, 긴바지 2",
+"@4명 공통","후리스 (블루마운틴 밤 8~10도)","얇은 바람막이","잠옷","모자","선글라스",
+"@속옷·양말","어른 5 (아빠·엄마)","첫째 6","둘째 7",
+"@기타","외식용 깔끔한 옷 1벌씩"]],
+["👟 신발",[
+"운동화 (신고 출발) — 아빠는 러닝화","애들 아쿠아슈즈 (바위 해변, 밑창 두꺼운 것)","슬리퍼 (숙소·캠핑장 샤워장)"]],
+["🏊 수영·물놀이",[
+"수영복 + 긴팔 래시가드 (물이 차가움)","수영모, 물안경","큰 비치타월 2장, 돗자리","젖은 옷용 지퍼백·방수백","아이스버그 사물함용 동전 + 작은 자물쇠","워터프루프 선크림 (아이용 따로)","둘째 팔튜브 1개"]],
+["🏃 러닝",[
+"러닝 양말 2~3","선데이런데이 반팔 2, 반바지","바람막이, 캡, 선글라스","무릎보호대"]],
+["🧴 생활",[
+"세면도구·로션·립밤","빨래세제 조금","지퍼백·에코백·물통·물티슈","차량용 폰 거치대, 차량용 충전기","라면·즉석밥·김 (고기·계란 든 것은 빼기!)","우산·우비"]],
+["🌙 금요일 밤",[
+"보조배터리 → 기내 가방","eSIM 설치","SD카드 비우기","가스·전기 확인","토요일 16:30까지 인천 T2"]]
+];
+const KEY="sydney-pack-v2";let S={};
+try{S=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){S={}}
+const root=document.getElementById("root");
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function esc(t){return t.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+D.forEach((sec,si)=>{
+const el=document.createElement("section");
+let h='<h2>'+sec[0]+' <small data-s="'+si+'"></small></h2>';
+sec[1].forEach((t,i)=>{
+if(t[0]==="@"){h+='<div class="g">'+esc(t.slice(1))+'</div>';return}
+const id=si+"-"+i;
+h+='<label><input type="checkbox" data-id="'+id+'" data-sec="'+si+'"'+(S[id]?" checked":"")+'><span>'+esc(t)+'</span></label>'});
+el.innerHTML=h;root.appendChild(el)});
+function upd(){
+const all=[...document.querySelectorAll("input[type=checkbox]")];
+const n=all.filter(x=>x.checked).length;
+document.getElementById("cnt").textContent=n+"/"+all.length;
+document.getElementById("pb").style.width=(all.length?n/all.length*100:0)+"%";
+D.forEach((_,si)=>{const a=all.filter(x=>x.dataset.sec==si);
+document.querySelector('small[data-s="'+si+'"]').textContent=a.filter(x=>x.checked).length+"/"+a.length})}
+root.addEventListener("change",e=>{const i=e.target;if(i.dataset.id){if(i.checked)S[i.dataset.id]=1;else delete S[i.dataset.id];save();upd()}});
+document.getElementById("reset").onclick=()=>{if(confirm("모든 체크를 해제할까요?")){S={};save();document.querySelectorAll("input[type=checkbox]").forEach(x=>x.checked=false);upd()}};
+upd();
+</script>
+</body>
+</html>
