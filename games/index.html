@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>우리집 게임방</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;1,700&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<style>
+/* Layout: one column of big tappable game cards, each with a drawn thumbnail; max 720px, 2 columns on wide screens */
+:root{--ink:#0d1117;--card:#161c26;--line:rgba(255,255,255,.12);--text:#f2f5f8;--muted:#98a3b0;--red:#e8322a;--ice:#3fc4ff;--amber:#ffb020;--green:#36d98a;
+  --f-disp:"Chakra Petch","Arial Narrow",system-ui,sans-serif;--f-body:"IBM Plex Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden}
+body{padding:calc(20px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+body{height:100vh;height:100dvh}
+main{max-width:720px;margin:0 auto;height:100%;display:flex;flex-direction:column}
+.kicker{font-family:var(--f-disp);font-size:12px;letter-spacing:.18em;color:var(--muted)}
+h1{font-family:var(--f-disp);font-style:italic;font-size:34px;line-height:1;margin:4px 0 4px}
+.lede{color:var(--muted);font-size:13px;margin:0 0 12px}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(0,1fr);gap:10px}
+a.game{min-height:0;display:flex;flex-direction:column;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;transition:transform .12s,border-color .12s}
+a.game:hover,a.game:focus-visible{transform:translateY(-2px);border-color:var(--ice);outline:none}
+a.game:active{transform:scale(.98)}
+.thumb{flex:1;min-height:40px;display:block;width:100%}
+.body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
+.nm{font-weight:700;font-size:17px}
+.tag{font-size:11.5px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted);white-space:nowrap}
+.ds{font-size:12.5px;color:#cdd5de;line-height:1.45;margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+@media (max-width:520px){.ds{display:none}.tag{font-size:10.5px;padding:2px 7px}}
+@media (max-height:560px){.ds,.lede{display:none}}
+.play{margin-top:2px;font-weight:700;font-size:13.5px;color:var(--ice)}
+.foot{margin:10px 0 0;font-size:11.5px;color:var(--muted)}
+</style>
+<main>
+  <div class="kicker">OUR GAMES</div>
+  <h1>우리집 게임방</h1>
+  <p class="lede">하고 싶은 게임을 눌러요. 게임 안의 「← 게임 목록」을 누르면 여기로 돌아와요.</p>
+  <div class="grid">
+    <a class="game" href="games/skate.html">
+      <canvas class="thumb" data-t="skate"></canvas>
+      <div class="body"><div class="top"><span class="nm">아이스 대시</span><span class="tag">쇼트트랙</span></div>
+      <p class="ds">222m부터 2000m까지. 체력을 나눠 쓰고, 코너는 블록 가까이. 포인트로 트리코·헬멧·스케이트를 사요.</p><span class="play">시작하기 →</span></div>
+    </a>
+    <a class="game" href="games/racing.html">
+      <canvas class="thumb" data-t="race"></canvas>
+      <div class="body"><div class="top"><span class="nm">에이펙스 스프린트</span><span class="tag">포뮬러 레이싱</span></div>
+      <p class="ds">서킷 8개, 쉬운 오벌부터 설산 블랙 피크까지. 우승해서 포인트로 엔진·니트로를 업그레이드해요.</p><span class="play">시작하기 →</span></div>
+    </a>
+    <a class="game" href="../clock/" target="_blank" rel="noopener">
+      <canvas class="thumb" data-t="clock"></canvas>
+      <div class="body"><div class="top"><span class="nm">시계 놀이</span><span class="tag">학습</span></div>
+      <p class="ds">바늘시계 읽기를 놀면서 배워요. 새 창에서 열려요.</p><span class="play">열기 ↗</span></div>
+    </a>
+    <a class="game" href="../hangul/" target="_blank" rel="noopener">
+      <canvas class="thumb" data-t="hangul"></canvas>
+      <div class="body"><div class="top"><span class="nm">한글 놀이</span><span class="tag">학습</span></div>
+      <p class="ds">자음·모음을 맞추며 한글을 익혀요. 새 창에서 열려요.</p><span class="play">열기 ↗</span></div>
+    </a>
+  </div>
+  <p class="foot">포인트와 기록은 이 기기에만 저장돼요.</p>
+</main>
+<script>
+function drawAll(){document.querySelectorAll('canvas.thumb').forEach(c=>{
+  const w=c.clientWidth||320,h=c.clientHeight||130,d=Math.min(2,devicePixelRatio||1);c.width=w*d;c.height=h*d;const g=c.getContext('2d');g.scale(d,d);
+  const t=c.dataset.t;
+  if(t==='skate'){g.fillStyle='#1b4fb0';g.fillRect(0,0,w,h);g.fillStyle='#eef6fc';rr(g,8,8,w-16,h-16,Math.min(50,(h-16)/2));g.fill();
+    g.strokeStyle='rgba(30,60,110,.25)';g.setLineDash([4,5]);rr(g,w*.22,h*.3,w*.56,h*.4,h*.2);g.stroke();g.setLineDash([]);
+    for(let i=0;i<7;i++){const a=-Math.PI/2+i*Math.PI/6;for(const s of[1,-1]){g.fillStyle='#1e2b3d';g.beginPath();g.arc(w/2+s*(w*.28-h*.2)+s*h*.2*Math.cos(a),h/2+h*.2*Math.sin(a)*s,2.5,0,7);g.fill();}}
+    ['#d7263d','#1f3c88','#16b39a','#7b4cd6'].forEach((col,i)=>{g.fillStyle=col;g.beginPath();g.ellipse(w*.3+i*w*.12,h*.82+(i%2)*4,8,5.5,0,0,7);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(w*.3+i*w*.12+7,h*.82+(i%2)*4,3.5,0,7);g.fill();});}
+  if(t==='race'){g.fillStyle='#2d5a27';g.fillRect(0,0,w,h);g.strokeStyle='#e8322a';g.lineWidth=30;g.beginPath();g.moveTo(-10,h*.75);g.bezierCurveTo(w*.3,h*.1,w*.6,h*1.1,w+10,h*.3);g.stroke();
+    g.strokeStyle='#3b3f46';g.lineWidth=24;g.stroke();g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=1.5;g.setLineDash([10,10]);g.stroke();g.setLineDash([]);
+    [['#e8322a',.38,.52],['#3fc4ff',.52,.6]].forEach(([col,x,y])=>{g.save();g.translate(w*x,h*y);g.rotate(.4);g.fillStyle=col;rr(g,-14,-5,28,10,4);g.fill();g.fillStyle='#111';g.fillRect(-12,-8,6,16);g.fillRect(6,-8,6,16);g.restore();});}
+  if(t==='clock'){g.fillStyle='#ffb020';g.fillRect(0,0,w,h);g.fillStyle='#fff';g.beginPath();const cr=Math.min(48,h*.4,w*.35);g.arc(w/2,h/2,cr,0,7);g.fill();g.strokeStyle='#222';g.lineWidth=4;g.stroke();
+    for(let i=0;i<12;i++){const a=i*Math.PI/6;g.fillStyle='#222';g.beginPath();g.arc(w/2+cr*.8*Math.sin(a),h/2-cr*.8*Math.cos(a),2.5,0,7);g.fill();}
+    g.lineCap='round';g.lineWidth=5;g.beginPath();g.moveTo(w/2,h/2);g.lineTo(w/2+cr*.38,h/2-cr*.3);g.stroke();g.lineWidth=3;g.beginPath();g.moveTo(w/2,h/2);g.lineTo(w/2,h/2-cr*.75);g.stroke();}
+  if(t==='hangul'){g.fillStyle='#36d98a';g.fillRect(0,0,w,h);g.font='700 '+Math.round(Math.min(54,h*.5,w*.24))+'px "IBM Plex Sans KR",sans-serif';g.textAlign='center';g.textBaseline='middle';
+    ['가','나','다'].forEach((ch,i)=>{g.fillStyle=['#0d1117','#fff','#0d1117'][i];g.fillText(ch,w/2+(i-1)*Math.min(70,w*.28),h/2+(i===1?-6:6));});}
+});}
+drawAll();let rz=0;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(drawAll,120);});
+function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+</script>
