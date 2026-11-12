@@ -44,7 +44,7 @@ button{width:100%;padding:12px;border:1px solid var(--ln);background:var(--card)
 <div id="root"></div>
 <div class="note warn">🚫 <b>가져가면 안 되는 것</b><br>고기·육포·고기 스프, 계란 든 음식, 과일·채소<br>→ 약·과자·김은 입국카드에 '예' 체크</div>
 <div class="note info">📱 <b>폰에 깔 앱</b><br>구글 지도(대중교통 + 오프라인 지도), Opal, Uber, DiDi, EatClub, 아시아나</div>
-<div class="note info">💾 체크는 <b>이 폰에만</b> 저장돼요.</div>
+<div class="note info">🔄 체크는 <b>이 링크를 연 모든 폰에 같이</b> 보여요. <span id="sync"></span></div>
 <button id="reset">전체 체크 해제</button>
 </main>
 <script>
@@ -73,7 +73,7 @@ const D=[
 ["🌙 금요일 밤",[
 "보조배터리 → 기내 가방","eSIM 설치","SD카드 비우기","가스·전기 확인","토요일 16:30까지 인천 T2"]]
 ];
-const KEY="sydney-pack-v2";let S={};
+const KEY="sydney-pack-v3";let S={};
 try{S=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){S={}}
 const root=document.getElementById("root");
 function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
@@ -93,8 +93,20 @@ document.getElementById("cnt").textContent=n+"/"+all.length;
 document.getElementById("pb").style.width=(all.length?n/all.length*100:0)+"%";
 D.forEach((_,si)=>{const a=all.filter(x=>x.dataset.sec==si);
 document.querySelector('small[data-s="'+si+'"]').textContent=a.filter(x=>x.checked).length+"/"+a.length})}
-root.addEventListener("change",e=>{const i=e.target;if(i.dataset.id){if(i.checked)S[i.dataset.id]=1;else delete S[i.dataset.id];save();upd()}});
-document.getElementById("reset").onclick=()=>{if(confirm("모든 체크를 해제할까요?")){S={};save();document.querySelectorAll("input[type=checkbox]").forEach(x=>x.checked=false);upd()}};
+const API="https://dzmxwsxcwtugnyyfvnja.supabase.co/rest/v1/pack_checks",AK="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6bXh3c3hjd3R1Z255eWZ2bmphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMzUxNjcsImV4cCI6MjA5NjgxMTE2N30.PkzQD7JJuFdtMGWzm2FC9HFzf1wVW1Wh9wg41SxJKzg",LIST="sydney2611";
+const HD={"apikey":AK,"Authorization":"Bearer "+AK,"Content-Type":"application/json"};
+const pend={};const sy=document.getElementById("sync");
+function msg(t){if(sy)sy.textContent=t}
+function push(id,v){pend[id]=Date.now();
+return fetch(API+"?on_conflict=list,item",{method:"POST",headers:Object.assign({Prefer:"resolution=merge-duplicates,return=minimal"},HD),body:JSON.stringify({list:LIST,item:id,checked:v,updated_at:new Date().toISOString()})})
+.then(r=>{if(!r.ok)throw 0;msg("")}).catch(()=>msg("(인터넷 연결 안 됨 — 이 폰에만 저장)"))}
+function pull(){return fetch(API+"?list=eq."+LIST+"&select=item,checked",{headers:HD,cache:"no-store"}).then(r=>r.json()).then(rows=>{
+const now=Date.now();rows.forEach(r=>{if(pend[r.item]&&now-pend[r.item]<4000)return;
+if(r.checked)S[r.item]=1;else delete S[r.item];
+const el=document.querySelector('input[data-id="'+r.item+'"]');if(el)el.checked=!!r.checked});save();upd();msg("")}).catch(()=>msg("(인터넷 연결 안 됨 — 이 폰에만 저장)"))}
+root.addEventListener("change",e=>{const i=e.target;if(i.dataset.id){if(i.checked)S[i.dataset.id]=1;else delete S[i.dataset.id];save();upd();push(i.dataset.id,i.checked)}});
+pull();setInterval(()=>{if(!document.hidden)pull()},4000);document.addEventListener("visibilitychange",()=>{if(!document.hidden)pull()});
+document.getElementById("reset").onclick=()=>{if(confirm("모든 체크를 해제할까요?")){S={};save();document.querySelectorAll("input[type=checkbox]").forEach(x=>{if(x.checked){x.checked=false;push(x.dataset.id,false)}});upd()}};
 upd();
 </script>
 </body>
