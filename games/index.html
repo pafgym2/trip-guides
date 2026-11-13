@@ -37,7 +37,7 @@ h1 b{font-weight:400;color:var(--tomato)}
 .count{font-family:var(--f-disp);font-size:14px;background:var(--ink);color:var(--ground);padding:6px 12px;border-radius:999px;white-space:nowrap;transform:rotate(3deg)}
 .row{display:grid;gap:12px;min-height:0}
 .games{grid-area:games;grid-template-columns:repeat(3,minmax(0,1fr))}
-.learn{grid-area:learn;grid-template-columns:repeat(2,minmax(0,1fr))}
+.learn{grid-area:learn;grid-template-columns:repeat(3,minmax(0,1fr))}
 .tile{position:relative;display:block;min-height:0;min-width:0;border:3px solid var(--ink);border-radius:20px;overflow:hidden;background:var(--c,var(--sky));color:var(--ink);text-decoration:none;
   box-shadow:0 6px 0 var(--ink);transition:transform .08s,box-shadow .08s}
 .tile:hover{transform:translateY(-2px);box-shadow:0 8px 0 var(--ink)}
@@ -70,7 +70,7 @@ footer{grid-area:foot;font-size:11.5px;font-weight:500;text-align:center;opacity
 <main>
   <header>
     <div><p class="kicker">MONGFAM · FAMILY ARCADE</p><h1>몽팸<b>게임</b>방</h1></div>
-    <span class="count">게임 6개</span>
+    <span class="count">게임 7개</span>
   </header>
 
   <a class="tile hero" href="games/plane3d.html" style="--c:var(--sky)">
@@ -88,6 +88,7 @@ footer{grid-area:foot;font-size:11.5px;font-weight:500;text-align:center;opacity
   <div class="row learn">
     <a class="tile" href="../clock/" style="--c:var(--orange)"><span class="tag">배우기</span><canvas data-t="clock"></canvas><span class="label"><span class="nm">시계 놀이</span></span></a>
     <a class="tile" href="../hangul/" style="--c:var(--mint)"><span class="tag">배우기</span><canvas data-t="hangul"></canvas><span class="label"><span class="nm">한글 놀이</span></span></a>
+    <a class="tile" href="../../dayoon-english/" style="--c:var(--violet)"><span class="tag">배우기</span><canvas data-t="eng"></canvas><span class="label"><span class="nm">영어 연습</span></span></a>
   </div>
 
   <footer>하고 싶은 게임을 눌러요. 포인트와 기록은 이 기기에만 저장돼요.</footer>
@@ -137,7 +138,12 @@ const D={
   g.fillStyle=INK;for(let i=0;i<12;i++){const a=i*Math.PI/6;g.beginPath();g.arc(cx+Math.sin(a)*r*.8,cy-Math.cos(a)*r*.8,i%3?1.4:2.4,0,TAU);g.fill();}
   const m=t*.6,hr=m/12;g.lineCap='round';g.lineWidth=4;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.sin(hr)*r*.45,cy-Math.cos(hr)*r*.45);g.stroke();g.strokeStyle='#ff5a4d';g.lineWidth=2.5;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.sin(m)*r*.72,cy-Math.cos(m)*r*.72);g.stroke();},
  hangul(g,w,h,t){g.fillStyle='#35c9a3';g.fillRect(0,0,w,h);const H=h-30,s=Math.max(12,Math.min(H*.62,w*.24));g.font='400 '+s+'px Jua,"Apple SD Gothic Neo",sans-serif';g.textAlign='center';g.textBaseline='middle';
-  ['가','나','다'].forEach((ch,i)=>{const x=w/2+(i-1)*s*1.05,y=H/2+2+Math.sin(t*2.2+i*1.1)*Math.min(5,H*.08);g.lineWidth=5;g.strokeStyle=INK;g.lineJoin='round';g.strokeText(ch,x,y);g.fillStyle=['#fffaf0','#ffd84d','#fffaf0'][i];g.fillText(ch,x,y);});}
+  ['가','나','다'].forEach((ch,i)=>{const x=w/2+(i-1)*s*1.05,y=H/2+2+Math.sin(t*2.2+i*1.1)*Math.min(5,H*.08);g.lineWidth=5;g.strokeStyle=INK;g.lineJoin='round';g.strokeText(ch,x,y);g.fillStyle=['#fffaf0','#ffd84d','#fffaf0'][i];g.fillText(ch,x,y);});},
+ eng(g,w,h,t){g.fillStyle='#7b5cf0';g.fillRect(0,0,w,h);const H=h-30,cx=w/2,cy=H/2+1+Math.sin(t*2)*Math.min(3,H*.05),bw=Math.max(30,Math.min(w*.74,H*1.9)),bh=Math.max(16,Math.min(H*.6,bw*.5));
+  g.fillStyle='#fffaf0';g.strokeStyle=INK;g.lineWidth=3;g.lineJoin='round';rr(g,cx-bw/2,cy-bh/2,bw,bh,Math.min(12,bh/2));g.fill();g.stroke();
+  g.beginPath();g.moveTo(cx-bw*.22,cy+bh/2-1);g.lineTo(cx-bw*.3,cy+bh/2+Math.min(9,H*.14));g.lineTo(cx-bw*.06,cy+bh/2-1);g.closePath();g.fill();g.stroke();g.fillRect(cx-bw*.21,cy+bh/2-3,bw*.14,3);
+  const s=Math.max(10,Math.min(bh*.62,bw*.26));g.font='400 '+s+'px Jua,"Apple SD Gothic Neo",sans-serif';g.textAlign='center';g.textBaseline='middle';
+  ['A','B','C'].forEach((ch,i)=>{g.fillStyle=['#ff5a4d','#1d1b3a','#3fae5a'][i];g.fillText(ch,cx+(i-1)*s*.82,cy+1+Math.sin(t*3+i)*1.5);});}
 };
 function draw(t){for(const o of cvs){o.g.clearRect(0,0,o.w,o.h);try{D[o.t](o.g,o.w,o.h,t);}catch(e){}}}
 size();draw(1.2);
