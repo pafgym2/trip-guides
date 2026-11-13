@@ -94,6 +94,10 @@ h2{font-family:var(--f-disp);font-style:italic;font-weight:700;font-size:34px;li
 .stars i{font-style:normal;color:rgba(255,255,255,.2)}
 .lvl{font-size:11px;color:var(--muted)}
 .lvl.d5{color:#ff6b6b;font-weight:700}
+.lvl.d6{color:#c77dff;font-weight:700}
+.stars.d6{color:#c77dff}
+.trk.nav{align-items:center;justify-content:center;text-align:center;font-weight:700;font-size:14px;line-height:1.35;color:var(--text,#fff);border-style:dashed}
+.trk.nav b{font-size:22px;display:block}
 .trk .meta{font-family:var(--f-disp);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .trk .meta b{color:var(--purple);font-weight:600}
 .go{width:100%;height:54px;border-radius:12px;border:0;background:var(--red);color:#fff;font:700 18px var(--f-body);letter-spacing:.04em}
@@ -210,7 +214,7 @@ h2{font-family:var(--f-disp);font-style:italic;font-weight:700;font-size:34px;li
   <div class="card">
     <button type="button" onclick="if(history.length>1)history.back();else location.href='../index.html'" style="align-self:flex-start;border:1px solid rgba(255,255,255,.2);background:transparent;color:inherit;border-radius:9px;padding:7px 12px;font:600 13px inherit;cursor:pointer">← 게임 목록</button>
     <div>
-      <div class="kicker">8 Circuits · 5 Cars · Top-down</div>
+      <div class="kicker">14 Circuits · 5 Cars · Top-down</div>
       <h1>APEX<br><em>SPRINT</em></h1>
       <div class="curb"></div>
     </div>
@@ -288,7 +292,7 @@ const $=id=>document.getElementById(id);
 const cv=$('game'), ctx=cv.getContext('2d'), mini=$('mini'), mctx=mini.getContext('2d');
 let dpr=1,cw=0,ch=0,miniCache=null;
 
-/* diff 1..5 · ai = AI pace factor · w = track width */
+/* diff 1..6 · ai = AI pace factor · w = track width */
 const TRACK_DEFS=[
   {id:'oval',name:'선샤인 오벌',diff:1,ai:.84,w:200,laps:4,style:'tree',g:['#4f9a45','#57a44c'],tc:['#2f7a35','#3e9147'],seed:3,
    pts:[[0,0],[1400,0],[2000,250],[2100,800],[1700,1150],[300,1150],[-300,900],[-400,350]]},
@@ -296,19 +300,31 @@ const TRACK_DEFS=[
    pts:[[0,0],[1300,-100],[2100,200],[2200,900],[1600,1300],[1100,1000],[600,1300],[-100,1200],[-450,600]]},
   {id:'harbor',name:'하버 링',diff:2,ai:.92,w:160,laps:3,style:'tree',g:['#3c7a3b','#428440'],tc:['#1f5a2c','#2c7a3c'],seed:7,
    pts:[[0,0],[900,0],[1700,0],[2300,150],[2500,600],[2250,1000],[1700,1050],[1400,1350],[1600,1800],[1300,2150],[700,2150],[300,1850],[450,1400],[200,1000],[-350,900],[-500,450],[-300,100]]},
+  {id:'beach',name:'코랄 비치',diff:2,ai:.90,w:175,laps:3,style:'rock',g:['#e2c98f','#e8d19b'],tc:['#b9935a','#caa56c'],seed:61,lake:[950,680,360,160],
+   pts:[[0,0],[1200,0],[1900,150],[2400,600],[2300,1200],[1700,1500],[1100,1300],[600,1600],[-100,1500],[-500,1000],[-450,400]]},
   {id:'canyon',name:'캐니언 런',diff:3,ai:.95,w:145,laps:3,style:'rock',g:['#b98a55','#c09260'],tc:['#7e5232','#946140'],seed:17,
    pts:[[0,0],[1000,0],[1400,250],[1800,0],[2600,0],[3000,400],[2700,900],[2000,850],[1600,1200],[900,1250],[300,1500],[-300,1200],[-200,600],[-500,250]]},
   {id:'pine',name:'파인 리지',diff:3,ai:.97,w:145,laps:3,style:'tree',g:['#2f6a3f','#357445'],tc:['#1d4f2c','#286238'],seed:21,
    pts:[[0,0],[1200,-100],[1700,200],[1600,700],[1100,800],[900,1200],[1300,1550],[1900,1500],[2300,1900],[2000,2400],[1200,2500],[500,2300],[100,1800],[400,1300],[-100,900],[-400,400]]},
+  {id:'dune',name:'듄 스피드웨이',diff:3,ai:.96,w:150,laps:3,style:'rock',g:['#d2a25f','#d9ab6b'],tc:['#99683a','#ad7a48'],seed:67,
+   pts:[[0,0],[1500,0],[2600,-100],[3200,300],[3100,900],[2400,1000],[2000,700],[1500,900],[1700,1400],[1200,1800],[400,1700],[-200,1900],[-700,1500],[-500,800],[-600,300]]},
   {id:'metro',name:'메트로 시가지',diff:4,ai:.99,w:132,laps:3,style:'block',g:['#454b54','#4b525b'],tc:['#2b3038','#5d6672'],seed:29,
    pts:[[0,0],[1100,0],[1250,150],[1250,700],[1400,850],[2000,850],[2150,1000],[2150,1600],[2000,1750],[700,1750],[550,1600],[550,1100],[400,950],[-200,950],[-350,800],[-350,150],[-200,0]]},
   {id:'serp',name:'서펜타인',diff:4,ai:1.01,w:132,laps:3,style:'tree',g:['#3b7d3a','#418640'],tc:['#205a2b','#2b6e36'],seed:41,
    pts:[[0,0],[800,0],[1200,300],[900,700],[1300,1000],[1900,800],[2300,1100],[2100,1600],[1500,1800],[1000,1600],[500,1900],[0,1700],[-300,1200],[0,800],[-400,400]]},
+  {id:'neon',name:'네온 나이트',diff:4,ai:1.0,w:128,laps:3,style:'block',g:['#1d2233','#22283b'],tc:['#141826','#ff3fa4'],seed:71,
+   pts:[[0,0],[1300,0],[1450,150],[1450,600],[1600,750],[2300,750],[2450,900],[2450,1400],[2300,1550],[1800,1550],[1650,1700],[1650,2200],[1500,2350],[600,2350],[450,2200],[450,1700],[300,1550],[-300,1550],[-450,1400],[-450,150],[-300,0]]},
   {id:'peak',name:'블랙 피크',diff:5,ai:1.05,w:118,laps:3,style:'pine',g:['#dfe6ea','#e9eef1'],tc:['#24443a','#2f5648'],seed:53,
-   pts:[[0,0],[900,0],[1300,200],[1100,550],[600,500],[450,800],[900,1050],[1500,900],[1800,1200],[1600,1650],[1100,1600],[800,1900],[300,1950],[-100,1600],[200,1200],[-200,900],[-450,500],[-300,150]]}
+   pts:[[0,0],[900,0],[1300,200],[1100,550],[600,500],[450,800],[900,1050],[1500,900],[1800,1200],[1600,1650],[1100,1600],[800,1900],[300,1950],[-100,1600],[200,1200],[-200,900],[-450,500],[-300,150]]},
+  {id:'volcano',name:'볼케이노',diff:5,ai:1.06,w:114,laps:3,style:'rock',g:['#3a2a28','#42302d'],tc:['#1f1513','#c2401f'],seed:73,
+   pts:[[0,0],[1000,0],[1400,-250],[1900,-100],[2000,400],[1600,650],[1900,1000],[2500,900],[2800,1300],[2500,1750],[1900,1600],[1500,1900],[1000,1700],[1100,1200],[600,1000],[300,1400],[-200,1500],[-500,1100],[-200,700],[-500,350]]},
+  {id:'glacier',name:'아이스 헤어핀',diff:6,ai:1.11,w:104,laps:3,style:'pine',g:['#cfe6f2','#dbeef7'],tc:['#1f4a5a','#2c6072'],seed:79,
+   pts:[[0,0],[1100,0],[1550,150],[1650,550],[1350,800],[600,800],[300,1075],[600,1350],[1400,1350],[1800,1600],[1750,2000],[1350,2200],[400,2200],[-150,2050],[-500,1550],[-400,800],[-550,300]]},
+  {id:'dragon',name:'드래곤 테일',diff:6,ai:1.14,w:98,laps:3,style:'tree',g:['#24402c','#294732'],tc:['#122318','#1b3323'],seed:83,
+   pts:[[0,0],[900,0],[1200,200],[1500,0],[1800,200],[2100,0],[2600,0],[3000,300],[2900,800],[2400,900],[2200,1300],[2600,1600],[3000,2000],[2600,2400],[2000,2200],[1700,1700],[1300,1500],[1000,1900],[1300,2400],[900,2700],[300,2500],[200,1900],[500,1400],[100,1000],[-400,1300],[-800,900],[-500,400]]}
 ];
-const DIFF_TXT=['','입문','쉬움','보통','어려움','최고난도'];
-const PTS_MULT=[0,1,1.3,1.7,2.2,3];
+const DIFF_TXT=['','입문','쉬움','보통','어려움','최고난도','전설'];
+const PTS_MULT=[0,1,1.3,1.7,2.2,3,4];
 const PTS_BASE=[100,60,40,25,15];
 const TEAMS=[
   {name:'스칼렛 레이싱 (나)',c1:'#e8322a',c2:'#ffffff',helm:'#ffd23f',skill:.96},
@@ -403,7 +419,7 @@ function loadRec(){try{return JSON.parse(localStorage.getItem(KEY))||{};}catch(e
 function saveRec(r){try{localStorage.setItem(KEY,JSON.stringify(r));}catch(e){}}
 let SAVE=loadRec();
 SAVE.points=SAVE.points|0;SAVE.wins=SAVE.wins|0;SAVE.items=SAVE.items||{};SAVE.paints=SAVE.paints||['scarlet'];SAVE.paint=SAVE.paint||'scarlet';SAVE.trails=SAVE.trails||['none'];SAVE.trail=SAVE.trail||'none';
-let trackSel=clamp(SAVE.lastTrack|0,0,TR.length-1);
+let trackSel=clamp(SAVE.lastTrack|0,0,TR.length-1);const PER=7;let trkPage=Math.floor(trackSel/PER);
 let soundOn=SAVE.sound!==false;
 const lv=id=>SAVE.items[id]|0;
 
@@ -883,19 +899,21 @@ function updateHud(){
 /* ---------- menu ---------- */
 function renderTrackList(){
   const box=$('trackList');box.innerHTML='';
-  TR.forEach((t,i)=>{const d=t.def,b=document.createElement('button');b.className='trk';b.setAttribute('aria-pressed',i===trackSel?'true':'false');
+  TR.forEach((t,i)=>{if(Math.floor(i/PER)!==trkPage){return;}const d=t.def,b=document.createElement('button');b.className='trk';b.setAttribute('aria-pressed',i===trackSel?'true':'false');
     const c=document.createElement('canvas');c.width=320;c.height=200;const o=c.getContext('2d');
     o.fillStyle=d.g[0];o.globalAlpha=.35;o.fillRect(0,0,320,200);o.globalAlpha=1;
     const m=trackLine(o,t,320,200,20,i===trackSel?'#e8322a':'#c3cad2',Math.max(5,d.w/18));
     o.fillStyle='#fff';o.fillRect(t.X[0]*m.sc+m.ox-3,t.Y[0]*m.sc+m.oy-10,6,20);
     const r=SAVE[d.id]||{};
     const top=document.createElement('span');top.className='top';
-    top.innerHTML='<span class="nm"></span><span class="stars">'+'★'.repeat(d.diff)+'<i>'+'★'.repeat(5-d.diff)+'</i></span>';
+    top.innerHTML='<span class="nm"></span><span class="stars d'+d.diff+'">'+'★'.repeat(Math.min(5,d.diff))+(d.diff>5?'+':'')+'<i>'+'★'.repeat(Math.max(0,5-d.diff))+'</i></span>';
     top.firstChild.textContent=d.name;
     const lvl=document.createElement('span');lvl.className='lvl d'+d.diff;lvl.textContent=DIFF_TXT[d.diff]+' · 포인트 ×'+PTS_MULT[d.diff];
     const meta=document.createElement('span');meta.className='meta';meta.innerHTML=(t.L*M_PER_U/1000).toFixed(2)+' km · '+'5랩 · 피트 1번 · 베스트 <b>'+(r.lap!=null?fmt(r.lap):'--')+'</b>';
     b.append(c,top,lvl,meta);b.addEventListener('click',()=>{if(trackSel===i)return;trackSel=i;SAVE.lastTrack=i;saveRec(SAVE);toAttract();});box.appendChild(b);
     if(i===trackSel){const inf=$('trkInfo');if(inf)inf.innerHTML=d.name+' · '+lvl.textContent+' · '+meta.innerHTML;}});
+  const nb=document.createElement('button');nb.className='trk nav';const pages=Math.ceil(TR.length/PER);
+  nb.innerHTML=trkPage<pages-1?'<b>🔥</b>더 어려운<br>서킷 →':'<b>🌱</b>← 쉬운<br>서킷';nb.addEventListener('click',()=>{trkPage=(trkPage+1)%pages;renderTrackList();});box.appendChild(nb);
 }
 
 /* ---------- loop ---------- */
@@ -911,7 +929,7 @@ function frame(now){
 resize();toAttract();requestAnimationFrame(frame);
 
 window.__apex={get state(){return state},get player(){return player},get cars(){return cars},get raceTime(){return raceTime},get track(){return T},tracks:TR,
-  start(i){if(i!=null)trackSel=i;startRace();},auto(on){autoPilot=!!on;},speed(n){speedMul=n;},pit(){togglePit();},nitro(){fireNitro();},
+  start(i){if(i!=null){trackSel=i;trkPage=Math.floor(i/PER);}startRace();},page(n){trkPage=n;renderTrackList();},auto(on){autoPilot=!!on;},speed(n){speedMul=n;},pit(){togglePit();},nitro(){fireNitro();},
   sim(sec){for(let i=0;i<sec/STEP;i++)step(STEP);},draw(){render(0);updateHud();},
   addPoints(n){SAVE.points+=n;saveRec(SAVE);renderWallet();},get save(){return SAVE}};
 })();
