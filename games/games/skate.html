@@ -1,8 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <meta charset="utf-8">
-<meta name="robots" content="noindex,nofollow">
-
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>아이스 대시</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -409,7 +408,8 @@ let state='menu', sk=[], me=null, raceT=0, D=0, U0=0, evIdx=0, lgIdx=SAVE.league
 let setT=0, gunAt=0, falseCount=0, lastBell=false, hintsShown={}, slideHintT=0, autoPilot=false, speedMul=1;
 const keys={push:false,glide:false,in:false,out:false};
 let kickReq=false, stopped=false, knocks=[];
-let missions=[],passes=0,lastPlace=0,passPts=0,zoomed=true,camX=0,camY=0,camZ=1,shakeT=0,sprays=[];
+let missions=[],passes=0,lastPlace=0,passPts=0,zoomed=true,camX=0,camY=0,camZ=1,shakeT=0,sprays=[],stars=[],starN=0,photoDone=false;
+const STAR_P=1,MEDAL=['','🥇','🥈','🥉'];
 function finPlace(){return sk.filter(s=>s.fin&&!s.dq).sort((a,b)=>a.time-b.time).indexOf(me)+1;}
 function skMissionPool(){const E=EVENTS[evIdx];const pool=[
  {t:'추월 2번 하기',ok:()=>passes>=2},
@@ -417,6 +417,8 @@ function skMissionPool(){const E=EVENTS[evIdx];const pool=[
  {t:'날 내밀기 성공',ok:()=>me.st.kick==='good'},
  {t:'3위 안에 들기',ok:()=>me.fin&&!me.dq&&finPlace()<=3,end:true},
  {t:'지후보다 먼저 들어오기',ok:()=>{const j=sk.find(x=>x.name==='지후');return me.fin&&!me.dq&&(!j||!j.fin||j.time>me.time);},end:true,big:true}];
+ {const n=Math.min(12,Math.round(E.laps*4));pool.push({t:'별 '+n+'개 모으기',ok:()=>starN>=n});}
+ pool.push({t:'안 넘어지고 완주',ok:()=>me.fin&&!me.dq&&me.st.falls===0,end:true});
  if(E.m>=500)pool.push({t:'드래프팅 8초',ok:()=>me.st.draft>=8});
  if(E.m>=1000)pool.push({t:'체력 바닥 안 내기',ok:()=>me.fin&&me.st.empty<.3,end:true});
  return pool;}
@@ -431,7 +433,8 @@ function playerStats(L){
 }
 function newRace(li,ei,withPlayer){
   lgIdx=li;evIdx=ei;const L=LEAGUES[li],E=EVENTS[ei];
-  D=E.laps*LAP;U0=UF-D;raceT=0;sk=[];knocks=[];lastBell=false;hintsShown={};slideHintT=0;kickReq=false;
+  D=E.laps*LAP;U0=UF-D;raceT=0;sk=[];knocks=[];stars=[];starN=0;photoDone=false;
+  if(withPlayer){const C=Math.PI*RM;for(const f of[.25,.5,.75]){stars.push({u:LS+C*f,d:.6,lap:-1},{u:2*LS+C+C*f,d:.6,lap:-1});}stars.push({u:LS*.5,d:1.4,lap:-1},{u:LS+C+LS*.5,d:1.4,lap:-1});}lastBell=false;hintsShown={};slideHintT=0;kickReq=false;
   const n=withPlayer?5:4;
   const lanes=[...Array(n).keys()].sort(()=>Math.random()-.5);
   const names=AI_NAMES.slice().sort(()=>Math.random()-.5);
@@ -504,6 +507,7 @@ function step(dt){
     s.P+=s.v*dt*(p.c?RM/(R+s.d):1);
     s.ph+=s.v*dt*.9;
     if(s.v>s.st.maxv)s.st.maxv=s.v;
+    if(s.me&&state==='race'&&stars.length){const u=(((U0+s.P)%LAP)+LAP)%LAP,lap=Math.floor(s.P/LAP);for(const q of stars){if(q.lap===lap)continue;let du=Math.abs(q.u-u);du=Math.min(du,LAP-du);if(du<.9&&Math.abs(q.d-s.d)<.8){q.lap=lap;starN++;if(!autoPilot)beep(1568,.07,'triangle',.08);}}}
     if(s.kick>0)s.kick-=dt;
     // 랩 기록
     while(s.P>=s.nextLap&&s.nextLap<=D+1e-6){s.laps.push(raceT);s.nextLap+=LAP;}
@@ -598,8 +602,13 @@ function finishRace(){if(state!=='race')return;state='done';
   let earned=0;
   const misRes=missions.map(m=>({t:m.t,ok:!me.dq&&!!m.ok(),p:misPts(m)}));
   const misSum=misRes.filter(m=>m.ok).reduce((a,m)=>a+m.p,0);
-  lastBonus={pass:me.dq?0:passPts,mis:misSum,res:misRes};
-  if(!me.dq){earned=Math.round(PTS[place-1]*L.mult*E.f/5)*5+(isPB?30:0)+passPts+misSum;pr.pts+=earned;if(place===1)pr.wins++;if(isPB)pr.pb[key]=me.time;}
+  pr.medals=pr.medals||{};pr.troph=pr.troph||{};
+  const starPts=me.dq?0:starN*STAR_P;let streakPts=0,trophy=0,newMedal=0;
+  if(place===1){pr.streak=(pr.streak|0)+1;if(pr.streak>=2)streakPts=Math.min(50,pr.streak*10);}else pr.streak=0;
+  if(place>=1&&place<=3){const m0=pr.medals[key];if(!m0||place<m0){pr.medals[key]=place;newMedal=place;}}
+  if(!pr.troph[L.id]&&EVENTS.every(e=>pr.medals[L.id+'-'+e.m]===1)){pr.troph[L.id]=1;trophy=300;}
+  lastBonus={pass:me.dq?0:passPts,mis:misSum,res:misRes,star:starPts,starN:starN,streak:streakPts,streakN:pr.streak|0,trophy:trophy,newMedal:newMedal};
+  if(!me.dq){earned=Math.round(PTS[place-1]*L.mult*E.f/5)*5+(isPB?30:0)+passPts+misSum+starPts+streakPts+trophy;pr.pts+=earned;if(place===1)pr.wins++;if(isPB)pr.pb[key]=me.time;}
   pr.races++;save();
   showResults(order,place,earned,isPB,old);
 }
@@ -733,6 +742,7 @@ function render(){
   let tx=0,ty=0,tz=1;if(follow){const p=pos(U0+me.P,me.d);tx=p.x;ty=p.y;tz=2.3;}
   camX+=(tx-camX)*.12;camY+=(ty-camY)*.12;camZ+=(tz-camZ)*.08;
   worldTf();if(shakeT>0){shakeT-=1/60;ctx.translate(rnd(-.3,.3),rnd(-.3,.3));}drawRink();
+  if(me&&stars.length&&['race','set','hold','paused'].includes(state)){const lap=Math.floor(me.P/LAP);ctx.fillStyle='#ffd23f';ctx.strokeStyle='rgba(120,80,0,.55)';ctx.lineWidth=.04;for(const q of stars){if(q.lap===lap)continue;const p=pos(q.u,q.d);ctx.beginPath();for(let i=0;i<10;i++){const a=i*Math.PI/5+raceT*1.5,r=i%2?.14:.32;ctx[i?'lineTo':'moveTo'](p.x+Math.cos(a)*r,p.y+Math.sin(a)*r);}ctx.closePath();ctx.fill();ctx.stroke();}}
   if(state!=='paused')for(const s of sk){if(!s.started||s.fallT>0||s.v<2)continue;const hard=(s.eff===2&&!s.fin)||s.slide;if(!hard||Math.random()>.7)continue;
     const p=pos(U0+s.P,s.d),bx=-Math.cos(p.h),by=-Math.sin(p.h),side=s.slide?-1:(Math.sin(s.ph)>0?1:-1),nx=-Math.sin(p.h)*side,ny=Math.cos(p.h)*side,k=s.slide?2.2:1;
     sprays.push({x:p.x+bx*.5+nx*.35,y:p.y+by*.5+ny*.35,vx:(bx*.5+nx*k)*rnd(.6,1.6),vy:(by*.5+ny*k)*rnd(.6,1.6),t:rnd(.3,.55)});}
@@ -763,7 +773,7 @@ function updHud(dt){
   if(hudT>0)return;hudT=.12;
   const st=standings();const place=st.indexOf(me)+1;
   $('hPos').innerHTML=place+'<small>/'+sk.length+'</small>';
-  let fl='';if(me.draft)fl+='<span class="dr">드래프팅 · 체력 절약</span>';if(me.slide)fl+='<span class="sl">코너 밀림</span>';if(me.dq)fl+='<span class="sl">실격</span>';
+  let fl='<span style="background:rgba(255,210,63,.18);color:#ffd23f">⭐ '+starN+'</span>';if(me.draft)fl+='<span class="dr">드래프팅 · 체력 절약</span>';if(me.slide)fl+='<span class="sl">코너 밀림</span>';if(me.dq)fl+='<span class="sl">실격</span>';
   $('hFlags').innerHTML=fl;
   $('stand').classList.toggle('side',camZ>1.3);
   if(missions.length){const hm=$('hMis').children;missions.forEach((m,i)=>{const ok=(!m.end||me.fin)&&!me.dq&&m.ok();if(hm[i])hm[i].classList.toggle('ok',ok);if(ok&&!m.shown&&!m.end){m.shown=true;FX.pop('미션 성공! +'+misPts(m)+'P','green');beep(1500,.15,'triangle',.12);}});}
@@ -781,13 +791,17 @@ function esc(t){return String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','
 function showResults(order,place,earned,isPB,old){
   const L=LEAGUES[lgIdx],E=EVENTS[evIdx];
   showOnly('result');$('hud').hidden=true;
-  $('rPos').textContent=me.dq?'실격':place+'위';
+  $('rPos').textContent=me.dq?'실격':(MEDAL[place]?MEDAL[place]+' ':'')+place+'위';
   $('rEvt').textContent=L.name+' · '+E.m+'m';
   $('rTime').textContent=me.dq?'페널티':fmtS(me.time);
   let b='';if(me.dq)b+='<span class="badge dq">실격 — 포인트 없음</span>';
   if(earned)b+=`<span class="badge earn">+${earned}P${L.mult*E.f>1?' (×'+(Math.round(L.mult*E.f*10)/10)+')':''}</span>`;
   if(isPB)b+='<span class="badge pb">개인 최고 기록'+(old?' (-'+(old-me.time).toFixed(3)+'초)':'')+'</span>';
   if(lastBonus.pass||lastBonus.mis)b+=`<span class="badge" style="background:rgba(255,255,255,.08)">추월 +${lastBonus.pass} · 미션 +${lastBonus.mis}</span>`;
+  if(lastBonus.starN)b+=`<span class="badge" style="background:rgba(255,210,63,.16);color:#ffd23f">⭐ 별 ${lastBonus.starN}개 +${lastBonus.star}P</span>`;
+  if(lastBonus.streak)b+=`<span class="badge" style="background:rgba(255,120,60,.18);color:#ffa26b">🔥 ${lastBonus.streakN}연승 +${lastBonus.streak}P</span>`;
+  if(lastBonus.newMedal)b+=`<span class="badge" style="background:rgba(255,255,255,.1)">${MEDAL[lastBonus.newMedal]} 새 메달!</span>`;
+  if(lastBonus.trophy)b+=`<span class="badge pb">🏆 ${L.name} 전 종목 금메달! +${lastBonus.trophy}P</span>`;
   $('rBadges').innerHTML=b;
   $('rMis').innerHTML=lastBonus.res.map(m=>`<li class="${m.ok?'ok':''}"><span>${m.ok?'✓':'✗'} ${m.t}</span><b>${m.ok?'+'+m.p+'P':'-'}</b></li>`).join('');
   if(!me.dq&&place>=1&&place<=3){setTimeout(()=>{FX.confetti(place===1?240:110);cheer();},150);}
@@ -831,11 +845,11 @@ function renderMenu(){
   const p=prof();
   $('profs').innerHTML=SAVE.profs.map((q,i)=>`<button data-i="${i}" aria-pressed="${i===SAVE.cur}">${esc(q.name||'선수'+(i+1))}</button>`).join('');
   $('nameIn').value=p.name;
-  $('mPts').textContent=p.pts;$('mWins').textContent='우승 '+p.wins+'회';
-  $('leagues').innerHTML=LEAGUES.map((L,i)=>`<button data-i="${i}" aria-pressed="${i===menuLg}"><b>${L.name}</b><span class="stars">${starStr(L.stars)}</span></button>`).join('');
+  const md=Object.values(p.medals||{}),mc=k=>md.filter(x=>x===k).length;$('mPts').textContent=p.pts;$('mWins').textContent='🥇'+mc(1)+' 🥈'+mc(2)+' 🥉'+mc(3)+((p.streak|0)>=2?' 🔥'+p.streak+'연승':'');
+  $('leagues').innerHTML=LEAGUES.map((L,i)=>`<button data-i="${i}" aria-pressed="${i===menuLg}"><b>${(p.troph||{})[L.id]?'🏆':''}${L.name}</b><span class="stars">${starStr(L.stars)}</span></button>`).join('');
   const L=LEAGUES[menuLg];$('lgdesc').textContent=L.desc+' · 포인트 ×'+L.mult;
   $('dists').innerHTML=EVENTS.map((E,i)=>{const pb=p.pb[L.id+'-'+E.m];const ty=TYPICAL[L.id][i];
-    return `<button class="dist" data-i="${i}"><span class="m">${E.m}<small>m</small></span><span class="meta">${E.laps}바퀴 · 5명<br>${pb?'내 기록 <b>'+fmtS(pb)+'</b>':'기록 없음'}${ty?'<br>보통 '+fmtS(ty):''}</span></button>`;}).join('');
+    return `<button class="dist" data-i="${i}"><span class="m">${E.m}<small>m</small>${MEDAL[(p.medals||{})[L.id+'-'+E.m]|0]?'<i style="font-style:normal;font-size:.55em;margin-left:2px">'+MEDAL[(p.medals||{})[L.id+'-'+E.m]]+'</i>':''}</span><span class="meta">${E.laps}바퀴 · 5명<br>${pb?'내 기록 <b>'+fmtS(pb)+'</b>':'기록 없음'}${ty?'<br>보통 '+fmtS(ty):''}</span></button>`;}).join('');
   $('mSound').textContent=SAVE.sound?'🔊':'🔇';
 }
 $('profs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;SAVE.cur=+b.dataset.i;save();renderMenu();});
@@ -920,14 +934,15 @@ $('lessons').addEventListener('click',e=>{const h=e.target.closest('.lh');if(h){
 /* ---------- 루프 ---------- */
 let last=performance.now(),acc=0;
 function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;
-  if(state!=='paused'){acc+=dt*speedMul;let n=0;while(acc>=STEP&&n<2000){step(STEP);acc-=STEP;n++;}
+  const ph=state==='race'&&me&&!me.fin&&!autoPilot&&D-me.P<6&&sk.some(o=>o!==me&&!o.fin&&Math.abs(o.P-me.P)<1.6);if(ph&&!photoDone){photoDone=true;banner('📸 사진 판정! 날 내밀기!','go',1300);}
+  if(state!=='paused'){acc+=dt*speedMul*(ph?.45:1);let n=0;while(acc>=STEP&&n<2000){step(STEP);acc-=STEP;n++;}
     for(const k of knocks)k.t-=dt;knocks=knocks.filter(k=>k.t>0);}
   render();if(!$('hud').hidden)updHud(dt);
   requestAnimationFrame(frame);}
 layoutReady=true;layout();toMenu();requestAnimationFrame(frame);
 
 /* ---------- 테스트 훅 ---------- */
-window.__ice={get state(){return state},get me(){return me},get sk(){return sk},get raceT(){return raceT},get D(){return D},
+window.__ice={get state(){return state},get me(){return me},get sk(){return sk},get raceT(){return raceT},get D(){return D},get starN(){return starN},get bonus(){return lastBonus},
   start(l,e){startRace(l,e);},auto(on){autoPilot=!!on;},speed(n){speedMul=n;},
   sim(sec){for(let i=0;i<sec/STEP;i++){step(STEP);if(state==='done')break;}},
   gunNow(){if(state==='set'){gunAt=setT+STEP;}},
