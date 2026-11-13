@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#0d1117">
+<meta name="theme-color" content="#ffd84d">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="게임방">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -12,93 +13,138 @@
 <link rel="apple-touch-icon" href="./icon-180.png">
 <title>몽팸게임방</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;1,700&family=IBM+Plex+Sans+KR:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@500;700&display=swap">
 <style>
-/* Layout: one column of big tappable game cards, each with a drawn thumbnail; max 720px, 2 columns on wide screens */
-:root{--ink:#0d1117;--card:#161c26;--line:rgba(255,255,255,.12);--text:#f2f5f8;--muted:#98a3b0;--red:#e8322a;--ice:#3fc4ff;--amber:#ffb020;--green:#36d98a;
-  --f-disp:"Chakra Petch","Arial Narrow",system-ui,sans-serif;--f-body:"IBM Plex Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;color-scheme:dark}
+/* Layout: one screen, no scroll. Sticker-album toy box: title strip, one big featured tile, a row of three game tiles, a row of two learning tiles. Wide screens put the featured tile on the left. */
+:root{
+  --ground:#ffd84d; --ground-dot:#f6c531; --ink:#1d1b3a; --paper:#fffaf0;
+  --sky:#58b7f5; --ice:#bfe6ff; --grass:#3fae5a; --tomato:#ff5a4d; --orange:#ff9f2e; --mint:#35c9a3; --violet:#7b5cf0;
+  --f-disp:"Jua","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  color-scheme:light;
+}
 *,*::before,*::after{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--ink);color:var(--text);font-family:var(--f-body);overflow:hidden}
-body{padding:calc(20px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(28px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
-body{height:100vh;height:100dvh}
-main{max-width:720px;margin:0 auto;height:100%;display:flex;flex-direction:column}
-.kicker{font-family:var(--f-disp);font-size:12px;letter-spacing:.18em;color:var(--muted)}
-h1{font-family:var(--f-disp);font-style:italic;font-size:34px;line-height:1;margin:4px 0 4px}
-.lede{color:var(--muted);font-size:13px;margin:0 0 12px}
-.grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:minmax(0,1fr);gap:10px}
-a.game{min-height:0;display:flex;flex-direction:column;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;transition:transform .12s,border-color .12s}
-a.game:hover,a.game:focus-visible{transform:translateY(-2px);border-color:var(--ice);outline:none}
-a.game:active{transform:scale(.98)}
-.thumb{flex:1;min-height:40px;display:block;width:100%}
-.body{padding:10px 12px 12px;display:flex;flex-direction:column;gap:4px}
-.top{display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap}
-.nm{font-weight:700;font-size:17px}
-.tag{font-size:11.5px;padding:3px 8px;border-radius:999px;background:rgba(255,255,255,.08);color:var(--muted);white-space:nowrap}
-.ds{font-size:12.5px;color:#cdd5de;line-height:1.45;margin:0;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
-@media (max-width:520px){.ds{display:none}.tag{font-size:10.5px;padding:2px 7px}}
-@media (max-height:560px){.ds,.lede{display:none}}
-.play{margin-top:2px;font-weight:700;font-size:13.5px;color:var(--ice)}
-.foot{margin:10px 0 0;font-size:11.5px;color:var(--muted)}
+html,body{height:100%;margin:0;overflow:hidden}
+body{background:var(--ground);background-image:radial-gradient(var(--ground-dot) 1.6px,transparent 1.8px);background-size:18px 18px;color:var(--ink);font-family:var(--f-body);
+  padding-block:12px 14px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));-webkit-tap-highlight-color:transparent}
+main{height:100%;max-width:560px;margin:0 auto;display:grid;gap:12px;grid-template-rows:auto minmax(0,1.5fr) minmax(0,1.1fr) minmax(0,.78fr) auto;
+  grid-template-areas:"head" "hero" "games" "learn" "foot"}
+header{grid-area:head;display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+.kicker{font-family:var(--f-body);font-weight:700;font-size:11px;letter-spacing:.2em;color:var(--ink);opacity:.7;margin:0}
+h1{font-family:var(--f-disp);font-weight:400;font-size:clamp(34px,10vw,46px);line-height:1;margin:2px 0 0;color:var(--paper);
+  -webkit-text-stroke:2.5px var(--ink);paint-order:stroke fill;text-shadow:0 4px 0 var(--ink);letter-spacing:.01em}
+h1 b{font-weight:400;color:var(--tomato)}
+.count{font-family:var(--f-disp);font-size:14px;background:var(--ink);color:var(--ground);padding:6px 12px;border-radius:999px;white-space:nowrap;transform:rotate(3deg)}
+.row{display:grid;gap:12px;min-height:0}
+.games{grid-area:games;grid-template-columns:repeat(3,minmax(0,1fr))}
+.learn{grid-area:learn;grid-template-columns:repeat(2,minmax(0,1fr))}
+.tile{position:relative;display:block;min-height:0;min-width:0;border:3px solid var(--ink);border-radius:20px;overflow:hidden;background:var(--c,var(--sky));color:var(--ink);text-decoration:none;
+  box-shadow:0 6px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+.tile:hover{transform:translateY(-2px);box-shadow:0 8px 0 var(--ink)}
+.tile:active{transform:translateY(4px);box-shadow:0 2px 0 var(--ink)}
+.tile:focus-visible{outline:4px solid var(--violet);outline-offset:3px}
+.tile canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+.label{position:absolute;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 10px 8px;background:var(--paper);border-top:3px solid var(--ink)}
+.nm{font-family:var(--f-disp);font-size:clamp(14px,4.1vw,19px);line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.go{flex:none;font-family:var(--f-disp);font-size:13px;background:var(--ink);color:var(--paper);border-radius:999px;padding:3px 9px}
+.games .go,.learn .go{display:none}
+.hero{grid-area:hero}
+.hero .label{padding:10px 14px 11px}
+.hero .nm{font-size:clamp(20px,6vw,26px)}
+.hero .go{display:block;font-size:16px;padding:6px 14px;background:var(--tomato);color:var(--paper);border:2.5px solid var(--ink)}
+.sub{display:block;font-family:var(--f-body);font-weight:500;font-size:12px;opacity:.75;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.badge{position:absolute;top:10px;left:10px;font-family:var(--f-disp);font-size:14px;background:var(--tomato);color:var(--paper);border:2.5px solid var(--ink);border-radius:10px;padding:3px 9px;transform:rotate(-6deg);z-index:1}
+.badge.b3{left:auto;right:10px;background:var(--violet);transform:rotate(5deg);font-size:18px}
+.tag{position:absolute;top:7px;left:7px;font-family:var(--f-body);font-weight:700;font-size:10.5px;background:var(--paper);border:2px solid var(--ink);border-radius:8px;padding:1px 6px;z-index:1}
+footer{grid-area:foot;font-size:11.5px;font-weight:500;text-align:center;opacity:.75;margin:0}
+@media (min-width:860px) and (min-aspect-ratio:11/10){
+  main{max-width:1040px;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1.25fr) minmax(0,1fr) auto;
+    grid-template-areas:"head head" "hero games" "hero learn" "foot foot";gap:16px}
+  .nm{font-size:19px}
+}
+@media (max-height:520px){footer,.kicker{display:none}main{gap:8px}}
+@media (prefers-reduced-motion:reduce){.tile{transition:none}}
 </style>
 </head>
 <body>
 <main>
-  <div class="kicker">OUR GAMES</div>
-  <h1>몽팸게임방</h1>
-  <p class="lede">하고 싶은 게임을 눌러요. 게임 안의 「← 게임 목록」을 누르면 여기로 돌아와요.</p>
-  <div class="grid">
-    <a class="game" href="games/plane.html">
-      <canvas class="thumb" data-t="plane"></canvas>
-      <div class="body"><div class="top"><span class="nm">꼬마 조종사</span><span class="tag">비행기 · NEW</span></div>
-      <p class="ds">서울에서 제주·시드니, 그리고 도쿄·하와이·파리·뉴욕까지. 이륙하고, 링을 통과하고, 살포시 착륙해요.</p><span class="play">시작하기 →</span></div>
-    </a>
-    <a class="game" href="games/skate.html">
-      <canvas class="thumb" data-t="skate"></canvas>
-      <div class="body"><div class="top"><span class="nm">아이스 대시</span><span class="tag">쇼트트랙</span></div>
-      <p class="ds">222m부터 2000m까지. 체력을 나눠 쓰고, 코너는 블록 가까이. 포인트로 트리코·헬멧·스케이트를 사요.</p><span class="play">시작하기 →</span></div>
-    </a>
-    <a class="game" href="games/racing.html">
-      <canvas class="thumb" data-t="race"></canvas>
-      <div class="body"><div class="top"><span class="nm">에이펙스 스프린트</span><span class="tag">포뮬러 레이싱</span></div>
-      <p class="ds">서킷 14개, 쉬운 오벌부터 전설 난이도 드래곤 테일까지. 우승해서 포인트로 엔진·니트로를 업그레이드해요.</p><span class="play">시작하기 →</span></div>
-    </a>
-    <a class="game" href="../clock/">
-      <canvas class="thumb" data-t="clock"></canvas>
-      <div class="body"><div class="top"><span class="nm">시계 놀이</span><span class="tag">학습</span></div>
-      <p class="ds">바늘시계 읽기를 놀면서 배워요.</p><span class="play">시작하기 →</span></div>
-    </a>
-    <a class="game" href="../hangul/">
-      <canvas class="thumb" data-t="hangul"></canvas>
-      <div class="body"><div class="top"><span class="nm">한글 놀이</span><span class="tag">학습</span></div>
-      <p class="ds">자음·모음을 맞추며 한글을 익혀요.</p><span class="play">시작하기 →</span></div>
-    </a>
+  <header>
+    <div><p class="kicker">MONGFAM · FAMILY ARCADE</p><h1>몽팸<b>게임</b>방</h1></div>
+    <span class="count">게임 6개</span>
+  </header>
+
+  <a class="tile hero" href="games/plane3d.html" style="--c:var(--sky)">
+    <span class="badge">NEW</span><span class="badge b3">3D</span>
+    <canvas data-t="plane3d"></canvas>
+    <span class="label"><span style="min-width:0"><span class="nm" style="display:block">꼬마 조종사 3D</span><span class="sub">입체 하늘에서 링을 통과해요 · 목적지 10곳</span></span><span class="go">출발!</span></span>
+  </a>
+
+  <div class="row games">
+    <a class="tile" href="games/skate.html" style="--c:var(--ice)"><canvas data-t="skate"></canvas><span class="label"><span class="nm">아이스 대시</span></span></a>
+    <a class="tile" href="games/racing.html" style="--c:var(--grass)"><canvas data-t="race"></canvas><span class="label"><span class="nm">레이싱</span></span></a>
+    <a class="tile" href="games/plane.html" style="--c:var(--sky)"><canvas data-t="plane"></canvas><span class="label"><span class="nm">꼬마 조종사</span></span></a>
   </div>
-  <p class="foot">포인트와 기록은 이 기기에만 저장돼요. 게임마다 한 번씩 열어 두면 인터넷 없이도 돼요.</p>
+
+  <div class="row learn">
+    <a class="tile" href="../clock/" style="--c:var(--orange)"><span class="tag">배우기</span><canvas data-t="clock"></canvas><span class="label"><span class="nm">시계 놀이</span></span></a>
+    <a class="tile" href="../hangul/" style="--c:var(--mint)"><span class="tag">배우기</span><canvas data-t="hangul"></canvas><span class="label"><span class="nm">한글 놀이</span></span></a>
+  </div>
+
+  <footer>하고 싶은 게임을 눌러요. 포인트와 기록은 이 기기에만 저장돼요.</footer>
 </main>
 <script>
-function drawAll(){document.querySelectorAll('canvas.thumb').forEach(c=>{
-  const w=c.clientWidth||320,h=c.clientHeight||130,d=Math.min(2,devicePixelRatio||1);c.width=w*d;c.height=h*d;const g=c.getContext('2d');g.scale(d,d);
-  const t=c.dataset.t;
-  if(t==='plane'){const sk=g.createLinearGradient(0,0,0,h);sk.addColorStop(0,'#58b7f5');sk.addColorStop(1,'#c9ecff');g.fillStyle=sk;g.fillRect(0,0,w,h);
-    g.fillStyle='#fff';g.beginPath();g.ellipse(w*.22,h*.3,26,9,0,0,7);g.ellipse(w*.8,h*.7,30,10,0,0,7);g.fill();
-    g.strokeStyle='#ffc93c';g.lineWidth=5;g.beginPath();g.arc(w*.72,h*.38,Math.min(22,h*.2),0,7);g.stroke();
-    g.save();g.translate(w*.42,h*.55);g.rotate(-.15);g.fillStyle='#c9383d';g.beginPath();g.moveTo(-22,-4);g.lineTo(-28,-18);g.lineTo(-17,-18);g.lineTo(-8,-4);g.fill();
-    g.fillStyle='#ff5a5f';rr(g,-24,-7,48,14,7);g.fill();g.fillStyle='#c9383d';g.beginPath();g.moveTo(6,1);g.lineTo(-7,1);g.lineTo(-16,10);g.lineTo(-7,10);g.fill();g.fillStyle='#bfe6ff';g.beginPath();g.ellipse(16,-2.5,4.5,3,0,0,7);g.fill();g.restore();}
-  if(t==='skate'){g.fillStyle='#1b4fb0';g.fillRect(0,0,w,h);g.fillStyle='#eef6fc';rr(g,8,8,w-16,h-16,Math.min(50,(h-16)/2));g.fill();
-    g.strokeStyle='rgba(30,60,110,.25)';g.setLineDash([4,5]);rr(g,w*.22,h*.3,w*.56,h*.4,h*.2);g.stroke();g.setLineDash([]);
-    for(let i=0;i<7;i++){const a=-Math.PI/2+i*Math.PI/6;for(const s of[1,-1]){g.fillStyle='#1e2b3d';g.beginPath();g.arc(w/2+s*(w*.28-h*.2)+s*h*.2*Math.cos(a),h/2+h*.2*Math.sin(a)*s,2.5,0,7);g.fill();}}
-    ['#d7263d','#1f3c88','#16b39a','#7b4cd6'].forEach((col,i)=>{g.fillStyle=col;g.beginPath();g.ellipse(w*.3+i*w*.12,h*.82+(i%2)*4,8,5.5,0,0,7);g.fill();g.fillStyle='#fff';g.beginPath();g.arc(w*.3+i*w*.12+7,h*.82+(i%2)*4,3.5,0,7);g.fill();});}
-  if(t==='race'){g.fillStyle='#2d5a27';g.fillRect(0,0,w,h);g.strokeStyle='#e8322a';g.lineWidth=30;g.beginPath();g.moveTo(-10,h*.75);g.bezierCurveTo(w*.3,h*.1,w*.6,h*1.1,w+10,h*.3);g.stroke();
-    g.strokeStyle='#3b3f46';g.lineWidth=24;g.stroke();g.strokeStyle='rgba(255,255,255,.7)';g.lineWidth=1.5;g.setLineDash([10,10]);g.stroke();g.setLineDash([]);
-    [['#e8322a',.38,.52],['#3fc4ff',.52,.6]].forEach(([col,x,y])=>{g.save();g.translate(w*x,h*y);g.rotate(.4);g.fillStyle=col;rr(g,-14,-5,28,10,4);g.fill();g.fillStyle='#111';g.fillRect(-12,-8,6,16);g.fillRect(6,-8,6,16);g.restore();});}
-  if(t==='clock'){g.fillStyle='#ffb020';g.fillRect(0,0,w,h);g.fillStyle='#fff';g.beginPath();const cr=Math.min(48,h*.4,w*.35);g.arc(w/2,h/2,cr,0,7);g.fill();g.strokeStyle='#222';g.lineWidth=4;g.stroke();
-    for(let i=0;i<12;i++){const a=i*Math.PI/6;g.fillStyle='#222';g.beginPath();g.arc(w/2+cr*.8*Math.sin(a),h/2-cr*.8*Math.cos(a),2.5,0,7);g.fill();}
-    g.lineCap='round';g.lineWidth=5;g.beginPath();g.moveTo(w/2,h/2);g.lineTo(w/2+cr*.38,h/2-cr*.3);g.stroke();g.lineWidth=3;g.beginPath();g.moveTo(w/2,h/2);g.lineTo(w/2,h/2-cr*.75);g.stroke();}
-  if(t==='hangul'){g.fillStyle='#36d98a';g.fillRect(0,0,w,h);g.font='700 '+Math.round(Math.min(54,h*.5,w*.24))+'px "IBM Plex Sans KR",sans-serif';g.textAlign='center';g.textBaseline='middle';
-    ['가','나','다'].forEach((ch,i)=>{g.fillStyle=['#0d1117','#fff','#0d1117'][i];g.fillText(ch,w/2+(i-1)*Math.min(70,w*.28),h/2+(i===1?-6:6));});}
-});}
-drawAll();let rz=0;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(drawAll,120);});
+(()=>{
+const INK='#1d1b3a',TAU=Math.PI*2;
+const cvs=[...document.querySelectorAll('.tile canvas')].map(c=>({c,g:c.getContext('2d'),t:c.dataset.t,w:0,h:0}));
+function size(){for(const o of cvs){const r=o.c.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);o.w=Math.max(10,r.width);o.h=Math.max(10,r.height);o.c.width=o.w*d;o.c.height=o.h*d;o.g.setTransform(d,0,0,d,0,0);}}
 function rr(g,x,y,w,h,r){g.beginPath();g.moveTo(x+r,y);g.arcTo(x+w,y,x+w,y+h,r);g.arcTo(x+w,y+h,x,y+h,r);g.arcTo(x,y+h,x,y,r);g.arcTo(x,y,x+w,y,r);g.closePath();}
+function cloud(g,x,y,s){g.fillStyle='#fff';g.beginPath();g.ellipse(x,y,22*s,8*s,0,0,TAU);g.ellipse(x+12*s,y-6*s,13*s,8*s,0,0,TAU);g.ellipse(x-10*s,y-4*s,10*s,6*s,0,0,TAU);g.fill();}
+/* 뒤에서 본 비행기 */
+function rear(g,s,bank){g.save();g.rotate(bank);g.lineJoin='round';g.lineWidth=2.5;g.strokeStyle=INK;
+  g.fillStyle='#d93b3b';rr(g,-34*s,-3*s,68*s,7*s,3*s);g.fill();g.stroke();
+  g.fillStyle='#d93b3b';rr(g,-3*s,-26*s,6*s,18*s,2*s);g.fill();g.stroke();rr(g,-13*s,-20*s,26*s,4*s,2*s);g.fill();g.stroke();
+  g.fillStyle='#ff5a4d';g.beginPath();g.arc(0,0,11*s,0,TAU);g.fill();g.stroke();
+  g.fillStyle='#bfe6ff';g.beginPath();g.arc(0,-2*s,6*s,Math.PI*1.1,Math.PI*1.9);g.fill();g.restore();}
+/* 옆에서 본 비행기 */
+function side(g,s){g.lineJoin='round';g.lineWidth=2.5;g.strokeStyle=INK;g.fillStyle='#d93b3b';g.beginPath();g.moveTo(-22*s,-4*s);g.lineTo(-29*s,-19*s);g.lineTo(-17*s,-19*s);g.lineTo(-8*s,-4*s);g.closePath();g.fill();g.stroke();
+  g.fillStyle='#ff5a4d';rr(g,-25*s,-8*s,50*s,16*s,8*s);g.fill();g.stroke();g.fillStyle='#d93b3b';g.beginPath();g.moveTo(7*s,1*s);g.lineTo(-7*s,1*s);g.lineTo(-17*s,12*s);g.lineTo(-6*s,12*s);g.closePath();g.fill();g.stroke();
+  g.fillStyle='#bfe6ff';g.beginPath();g.ellipse(15*s,-3*s,5*s,3.4*s,0,0,TAU);g.fill();g.stroke();}
+const D={
+ plane3d(g,w,h,t){const H=h*.5;const sk=g.createLinearGradient(0,0,0,H);sk.addColorStop(0,'#3d9cf0');sk.addColorStop(1,'#cfeeff');g.fillStyle=sk;g.fillRect(0,0,w,H);
+  g.fillStyle='#ffe27a';g.beginPath();g.arc(w*.82,H*.42,Math.min(26,h*.1),0,TAU);g.fill();
+  cloud(g,w*.2+Math.sin(t*.3)*8,H*.5,Math.min(1.2,w/300));cloud(g,w*.62,H*.72,Math.min(.8,w/420));
+  const se=g.createLinearGradient(0,H,0,h);se.addColorStop(0,'#49b4f2');se.addColorStop(1,'#1f6fc0');g.fillStyle=se;g.fillRect(0,H,w,h-H);
+  g.strokeStyle='rgba(255,255,255,.3)';for(let k=0;k<7;k++){const f=((t*.5+k/7)%1),y=H+(h-H)*f*f;g.lineWidth=1+f*3;g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke();}
+  const cx=w*.5,cy=h*.42,R0=Math.min(w,h)*.42;
+  for(let k=3;k>=0;k--){const z=((k/4-t*.28)%1+1)%1,zz=.12+z*.88,r=R0*(1-zz)*1.6+6,a=Math.min(1,(1-zz)*3);if(r>R0*.92)continue;
+    g.globalAlpha=a;g.lineWidth=Math.max(2,r*.16);g.strokeStyle=k%4===1?'#3fd0ff':k%4===3?'hsl('+((t*200)%360)+',95%,62%)':'#ffc93c';g.beginPath();g.arc(cx+Math.sin(k*2.1)*w*.07*zz,cy+Math.cos(k*1.3)*h*.05*zz,r,0,TAU);g.stroke();
+    g.lineWidth=Math.max(1,r*.04);g.strokeStyle='#fff';g.beginPath();g.arc(cx+Math.sin(k*2.1)*w*.07*zz,cy+Math.cos(k*1.3)*h*.05*zz,r*.8,0,TAU);g.stroke();}
+  g.globalAlpha=1;const px=cx+Math.sin(t*.9)*w*.16,py=h*.52+Math.cos(t*1.3)*h*.05;g.save();g.translate(px,py);rear(g,Math.min(1.5,Math.min(w,h)/150),Math.cos(t*.9)*.35);g.restore();},
+ plane(g,w,h,t){const sk=g.createLinearGradient(0,0,0,h);sk.addColorStop(0,'#58b7f5');sk.addColorStop(1,'#d5f0ff');g.fillStyle=sk;g.fillRect(0,0,w,h);
+  for(let i=0;i<3;i++){const x=((i*w*.5-t*22)%(w+80)+w+80)%(w+80)-40;cloud(g,x,h*(.2+i*.17),.55);}
+  g.strokeStyle='#ffc93c';g.lineWidth=4;g.beginPath();g.ellipse(w*.76,h*.34,5,Math.min(15,h*.14),0,0,TAU);g.stroke();
+  g.save();g.translate(w*.42,h*.38+Math.sin(t*2)*4);g.rotate(-.12+Math.sin(t*2)*.06);side(g,Math.min(1,w/110));g.restore();},
+ skate(g,w,h,t){g.fillStyle='#2757b8';g.fillRect(0,0,w,h);const H=h-30,cx=w/2,cy=H/2+2,rx=w*.4,ry=Math.max(8,H*.34);g.fillStyle='#eef7ff';g.beginPath();g.ellipse(cx,cy,rx+8,ry+8,0,0,TAU);g.fill();
+  g.strokeStyle='rgba(39,87,184,.3)';g.setLineDash([4,5]);g.lineWidth=1.5;g.beginPath();g.ellipse(cx,cy,rx*.5,ry*.5,0,0,TAU);g.stroke();g.setLineDash([]);
+  ['#d7263d','#1f3c88','#16b39a','#7b4cd6'].forEach((c,i)=>{const a=-t*(1.5-i*.07)-i*.55,x=cx+Math.cos(a)*rx*.82,y=cy+Math.sin(a)*ry*.78;g.fillStyle='rgba(20,40,80,.18)';g.beginPath();g.ellipse(x+1,y+3,7,3,0,0,TAU);g.fill();
+    g.fillStyle=c;g.strokeStyle=INK;g.lineWidth=1.5;g.beginPath();g.ellipse(x,y,6.5,4.5,a+Math.PI/2,0,TAU);g.fill();g.stroke();g.fillStyle='#fff';g.beginPath();g.arc(x-Math.sin(a)*5,y+Math.cos(a)*5,3,0,TAU);g.fill();g.stroke();});},
+ race(g,w,h,t){g.fillStyle='#3fae5a';g.fillRect(0,0,w,h);const H=h-30,cx=w/2,cy=H/2+2,rx=w*.36,ry=Math.max(8,H*.3);
+  const P=a=>[cx+Math.cos(a)*rx*(1+.18*Math.sin(a*3)),cy+Math.sin(a)*ry*(1+.22*Math.cos(a*2))];
+  const path=()=>{g.beginPath();for(let i=0;i<=48;i++){const p=P(i/48*TAU);g[i?'lineTo':'moveTo'](p[0],p[1]);}g.closePath();};
+  g.lineJoin='round';path();g.strokeStyle='#f2f2f2';g.lineWidth=Math.min(20,H*.3);g.stroke();path();g.strokeStyle='#3b3f46';g.lineWidth=Math.min(15,H*.23);g.stroke();
+  [['#ff5a4d',0],['#3fc4ff',1.1],['#ffd23f',2.6]].forEach(([c,o],i)=>{const a=t*(1.25-i*.08)+o,p=P(a),q=P(a+.05);g.save();g.translate(p[0],p[1]);g.rotate(Math.atan2(q[1]-p[1],q[0]-p[0]));g.fillStyle=INK;g.fillRect(-6,-5.5,3.5,11);g.fillRect(3,-5.5,3.5,11);g.fillStyle=c;rr(g,-8,-3.5,16,7,3);g.fill();g.restore();});},
+ clock(g,w,h,t){g.fillStyle='#ff9f2e';g.fillRect(0,0,w,h);const H=h-30,cx=w/2,cy=H/2+2,r=Math.max(8,Math.min(H*.42,w*.3));g.fillStyle='#fffaf0';g.strokeStyle=INK;g.lineWidth=3;g.beginPath();g.arc(cx,cy,r,0,TAU);g.fill();g.stroke();
+  g.fillStyle=INK;for(let i=0;i<12;i++){const a=i*Math.PI/6;g.beginPath();g.arc(cx+Math.sin(a)*r*.8,cy-Math.cos(a)*r*.8,i%3?1.4:2.4,0,TAU);g.fill();}
+  const m=t*.6,hr=m/12;g.lineCap='round';g.lineWidth=4;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.sin(hr)*r*.45,cy-Math.cos(hr)*r*.45);g.stroke();g.strokeStyle='#ff5a4d';g.lineWidth=2.5;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.sin(m)*r*.72,cy-Math.cos(m)*r*.72);g.stroke();},
+ hangul(g,w,h,t){g.fillStyle='#35c9a3';g.fillRect(0,0,w,h);const H=h-30,s=Math.max(12,Math.min(H*.62,w*.24));g.font='400 '+s+'px Jua,"Apple SD Gothic Neo",sans-serif';g.textAlign='center';g.textBaseline='middle';
+  ['가','나','다'].forEach((ch,i)=>{const x=w/2+(i-1)*s*1.05,y=H/2+2+Math.sin(t*2.2+i*1.1)*Math.min(5,H*.08);g.lineWidth=5;g.strokeStyle=INK;g.lineJoin='round';g.strokeText(ch,x,y);g.fillStyle=['#fffaf0','#ffd84d','#fffaf0'][i];g.fillText(ch,x,y);});}
+};
+function draw(t){for(const o of cvs){o.g.clearRect(0,0,o.w,o.h);try{D[o.t](o.g,o.w,o.h,t);}catch(e){}}}
+size();draw(1.2);
+let rz=0;addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(()=>{size();draw(1.2);},100);});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>draw(1.2));
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches){let last=0;const loop=now=>{if(!document.hidden&&now-last>33){last=now;draw(now/1000);}requestAnimationFrame(loop);};requestAnimationFrame(loop);}
+})();
 </script>
 <script>
 if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
