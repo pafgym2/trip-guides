@@ -43,6 +43,23 @@ img{max-width:100%}
 .wxhr i{display:block;height:20px;background:var(--surface-2);border-radius:3px;position:relative;overflow:hidden;margin:1px 0}
 .wxhr i b{position:absolute;left:0;right:0;bottom:0;background:var(--accent);opacity:.75}
 </style>
+<style>
+/* 여행 중 '지금' 표시 */
+.sec.day-past{opacity:.55}
+.sec.day-today{border-left:4px solid var(--accent);padding-left:14px}
+.todaybadge,.nowtag{display:inline-block;font-size:10.5px;font-weight:700;line-height:1.5;
+  color:var(--surface);background:var(--accent);padding:1px 7px;border-radius:999px;vertical-align:2px;margin-left:6px;white-space:nowrap}
+.daytbl tr.row-now td,.daytbl tr.row-next td{background:var(--accent-soft)}
+.daytbl tr.row-now td:first-child,.daytbl tr.row-next td:first-child{box-shadow:inset 3px 0 0 var(--accent);color:var(--accent-ink)}
+.daytbl tr.row-next .nowtag{background:var(--ink-3)}
+.daytbl tr.row-done td{opacity:.42}
+tr.glance-today td{background:var(--accent-soft);font-weight:600}
+tr.glance-past td{opacity:.45}
+#nowfab{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom));z-index:60;
+  border:0;border-radius:999px;padding:11px 16px;background:var(--accent);color:var(--surface);
+  font-family:inherit;font-size:14px;font-weight:600;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.22);cursor:pointer}
+#nowfab[hidden]{display:none}
+</style>
 </head>
 <body>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@500;700;800&family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap">
@@ -1867,6 +1884,68 @@ if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.
   // 게임방·시계·한글도 미리 저장해 둡니다(이 가이드만 열어도 게임 파일이 기기에 저장됨)
   ['../games/','../clock/','../hangul/'].forEach(function(d){ navigator.serviceWorker.register(d+'sw.js',{scope:d}).catch(function(){}); });
 }
+</script>
+<script>
+/* 여행 중: 시드니 시각 기준으로 오늘 일정·지금 일정 강조 (미리보기: ?now=2026-11-17T11:00) */
+(function(){
+  var YEAR=2026;
+  function now(){
+    var q=null; try{ q=new URLSearchParams(location.search).get('now'); }catch(e){}
+    var m=q&&q.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?/);
+    if(m) return {y:+m[1],mo:+m[2],d:+m[3],min:(+(m[4]||0))*60+(+(m[5]||0))};
+    try{
+      var o={}; new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Sydney',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'})
+        .formatToParts(new Date()).forEach(function(p){ o[p.type]=p.value; });
+      return {y:+o.year,mo:+o.month,d:+o.day,min:(+o.hour%24)*60+(+o.minute)};
+    }catch(e){ var t=new Date(Date.now()+11*36e5); return {y:t.getUTCFullYear(),mo:t.getUTCMonth()+1,d:t.getUTCDate(),min:t.getUTCHours()*60+t.getUTCMinutes()}; }
+  }
+  function key(mo,d){ return mo*100+d; }
+  var fab=document.createElement('button'); fab.id='nowfab'; fab.hidden=true; fab.type='button';
+  document.body.appendChild(fab);
+  var target=null;
+  fab.addEventListener('click',function(){
+    var b=document.querySelector('nav button[data-t="days"]'); if(b) b.click();
+    setTimeout(function(){ if(target){ var y=target.getBoundingClientRect().top+window.scrollY-120; window.scrollTo({top:y,behavior:'smooth'}); } },60);
+  });
+  function paint(){
+    var n=now(), today=(n.y===YEAR)?key(n.mo,n.d):(n.y<YEAR?0:9999);
+    document.querySelectorAll('.day-past,.day-today,.row-now,.row-next,.row-done,.glance-today,.glance-past').forEach(function(e){
+      e.classList.remove('day-past','day-today','row-now','row-next','row-done','glance-today','glance-past'); });
+    document.querySelectorAll('.todaybadge,.nowtag').forEach(function(e){ e.remove(); });
+    target=null; var label='';
+    if(today<key(11,15)||today>key(11,23)){ fab.hidden=true; return; }
+    document.querySelectorAll('.dayhead').forEach(function(h){
+      var dt=h.querySelector('.dt'), m=dt&&dt.textContent.match(/(\d{1,2})\/(\d{1,2})/); if(!m) return;
+      var k=key(+m[1],+m[2]), sec=h.closest('section'); if(!sec) return;
+      if(k<today){ sec.classList.add('day-past'); return; }
+      if(k!==today) return;
+      sec.classList.add('day-today');
+      var bd=document.createElement('span'); bd.className='todaybadge'; bd.textContent='오늘';
+      (h.querySelector('.n')||h).appendChild(bd);
+      target=sec; label='📍 오늘 일정';
+      var tbl=sec.querySelector('.daytbl'); if(!tbl) return;
+      var rows=[].slice.call(tbl.querySelectorAll('tr')).map(function(r){
+        var c=r.cells[0], mm=c&&c.textContent.trim().match(/^(\d{1,2}):(\d{2})/);
+        return mm?{r:r,t:(+mm[1])*60+(+mm[2])}:null; }).filter(Boolean);
+      if(!rows.length) return;
+      var cur=-1; rows.forEach(function(x,i){ if(x.t<=n.min) cur=i; });
+      rows.forEach(function(x,i){ if(i<cur) x.r.classList.add('row-done'); });
+      var hit=cur>=0?rows[cur]:rows[0];
+      hit.r.classList.add(cur>=0?'row-now':'row-next');
+      var tg=document.createElement('span'); tg.className='nowtag'; tg.textContent=cur>=0?'지금':'다음';
+      var t=hit.r.querySelector('.t')||hit.r.cells[1]; if(t) t.appendChild(tg);
+      target=hit.r; label='📍 지금 일정';
+    });
+    document.querySelectorAll('td.mono').forEach(function(td){
+      var m=td.textContent.trim().match(/^(\d{1,2})\/(\d{1,2}) [일월화수목금토]$/); if(!m) return;
+      var k=key(+m[1],+m[2]), tr=td.parentNode;
+      if(k===today) tr.classList.add('glance-today'); else if(k<today) tr.classList.add('glance-past');
+    });
+    fab.textContent=label; fab.hidden=!target;
+  }
+  paint(); setInterval(paint,60000);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) paint(); });
+})();
 </script>
 </body>
 </html>
