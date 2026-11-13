@@ -1,6 +1,6 @@
-// 우리집 게임방 오프라인 지원: 한 번 열면 파일과 글꼴을 기기에 저장해 두고, 인터넷이 없을 때 저장본으로 엽니다.
+// 몽팸게임방 오프라인 지원: 한 번 열면 파일과 글꼴을 기기에 저장해 두고, 인터넷이 없을 때 저장본으로 엽니다.
 // 게임을 고치면 CACHE 이름의 숫자를 올려서 새 버전이 저장되게 합니다.
-const CACHE = 'games-v2';
+const CACHE = 'games-v3';
 const CORE = ['./', './index.html', './games/plane.html', './games/skate.html', './games/racing.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
