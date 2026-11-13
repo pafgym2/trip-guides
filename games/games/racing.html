@@ -1,8 +1,7 @@
 <!doctype html>
 <html lang="ko">
 <meta charset="utf-8">
-<meta name="robots" content="noindex,nofollow">
-
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
 <title>Apex Sprint</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -396,7 +395,7 @@ function buildTrack(def){
   return T;
 }
 const TR=TRACK_DEFS.map(buildTrack);
-function setTrack(t){T=t;W=t.def.w;HW=W/2;BARRIER=HW+105;PIT_OFF=HW+45;LAPS=t.def.laps;}
+function setTrack(t){T=t;W=t.def.w;HW=W/2;BARRIER=HW+105;PIT_OFF=HW+45;LAPS=5;}
 
 /* ---------- storage ---------- */
 const KEY='apexSprint_v1';
@@ -438,7 +437,7 @@ function makeCars(mode){
     const c={team:tm,ti,isPlayer:ti===0&&mode==='race',x:T.X[idx]+T.NX[idx]*lat,y:T.Y[idx]+T.NY[idx]*lat,h:T.A[idx],v:0,vx:0,vy:0,
       idx,lat,prog:-3,cross:0,maxCross:0,laps:[],lapStart:0,finished:false,finishTime:0,tire:1,steer:0,off:false,slide:0,
       skill:tm.skill*T.def.ai,home:lat*.6,lane:lat,laneGoal:lat*.6,laneT:0,pitReq:false,pit:null,pitLaps:[],best:null,auto:false,
-      nitro:0,boost:0};
+      nitro:0,boost:0,pitLap:2+Math.floor(Math.random()*3)};
     cars.push(c);});
   player=cars.find(c=>c.isPlayer)||null;
   if(player){player.nitro=lv('nitro');}
@@ -510,9 +509,12 @@ function onCross(c){
     const lt=raceTime-c.lapStart;c.laps.push(lt);c.lapStart=raceTime;
     if(!c.isPlayer)c.skill*=.988;
     const newBest=c.best==null||lt<c.best;if(newBest)c.best=lt;
-    if(c.cross===LAPS+1){c.finished=true;c.finishTime=raceTime;if(c.isPlayer)playerFinish();return;}
+    if(c.cross===LAPS+1){c.finished=true;c.finishTime=raceTime;if(c.isPlayer&&!c.pitLaps.length){c.finishTime+=10;c.pen=true;}if(c.isPlayer)playerFinish();return;}
+    if(!c.isPlayer&&c.cross-1===c.pitLap){startPit(c);return;}
     if(c.isPlayer){
+      if(autoPilot&&c.cross===3&&!c.pitLaps.length)c.pitReq=true;
       if(c.pitReq)startPit(c);
+      else if(!c.pitLaps.length&&c.cross>=3)banner(c.cross===LAPS?'마지막 랩인데 피트를 안 했어요! +10초 페널티':'피트 필수! PIT 누르면 다음 출발선에서 정비',2.4);
       else if(c.cross===LAPS)banner('마지막 랩!  '+fmt(lt),1.8,newBest&&c.laps.length>1?'purple':'');
       else banner('랩 '+(c.cross-1)+'  '+fmt(lt),1.8,newBest&&c.laps.length>1?'purple':'');
     }
@@ -524,12 +526,14 @@ function kin(c,tx,ty,vT,dt,turn){
   c.vx=Math.cos(c.h)*c.v;c.vy=Math.sin(c.h)*c.v;c.x+=c.vx*dt;c.y+=c.vy*dt;
 }
 function aiDrive(c,dt){
-  const N=T.N;let vT=Math.min(VMAX*c.skill,T.REC[(c.idx+2)%N]*c.skill);
+  const N=T.N;const bst=c.boost>0;if(bst&&!c.isPlayer){c.boost-=dt;if(c.boost<0)c.boost=0;}
+  let vT=Math.min(VMAX*c.skill*(bst?1.2:1),T.REC[(c.idx+2)%N]*c.skill*(bst?1.08:1));
   let blocked=false;
   for(const o of cars){if(o===c||o.pit)continue;const dp=o.prog-c.prog;
     if(dp>0&&dp<8&&Math.abs(o.lat-c.lat)<24&&o.v<c.v+10){blocked=true;vT=Math.min(vT,o.v*.97+dp*6);}}
   if(blocked&&c.laneT<=0){c.laneGoal=(c.lat>0?-1:1)*W*(.18+.12*Math.random());c.laneT=2.5;}
   c.laneT-=dt;if(c.laneT<=0&&!blocked)c.laneGoal=c.home;
+  if(T.pads&&state==='race'&&!blocked)for(const p of T.pads){const dk=(p.k-c.idx+N)%N;if(dk>2&&dk<32){if(c.padK!==p.k){c.padK=p.k;c.padGo=Math.random()<.6;}if(c.padGo)c.laneGoal=p.lat;break;}}
   c.lane+=clamp(c.laneGoal-c.lane,-45*dt,45*dt);
   const ti=(c.idx+Math.round(4+c.v/45))%N;
   kin(c,T.X[ti]+T.NX[ti]*c.lane,T.Y[ti]+T.NY[ti]*c.lane,vT,dt,3.6);
@@ -558,19 +562,20 @@ function playerPhys(c,dt){
   if(state==='race'&&!c.finished){c.tire=Math.max(0,c.tire-Math.abs(vf)*dt*2.4e-5*Math.max(.25,1-.15*lv('tyre'))*(1+Math.min(2,c.slide/120)+(off?.5:0)));}
 }
 function startPit(c){
-  c.pitReq=false;$('btnPit').classList.remove('on');$('btnPit').textContent='PIT';
-  c.pit={ph:'in',t:0};c.boost=0;c.v=Math.hypot(c.vx,c.vy);c.pitLaps.push(c.laps.length+1);
-  banner('피트 인',1.2);
+  c.pitReq=false;c.pit={ph:'in',t:0};c.boost=0;c.v=Math.hypot(c.vx,c.vy);c.pitLaps.push(c.laps.length+1);
+  if(c.isPlayer){$('btnPit').classList.remove('on');$('btnPit').textContent='PIT';banner('피트 인',1.2);}
 }
+function estFt(c){if(c.finished)return c.finishTime;const remain=LAPS*T.N-c.prog;const avg=Math.max(80,(c.prog*DS)/Math.max(1,raceTime));return raceTime+remain*DS/avg+(c.pitLaps.length?0:3);}
+function finalOrder(){return cars.slice().sort((a,b)=>estFt(a)-estFt(b));}
 function pitDrive(c,dt){
   const N=T.N,p=c.pit,k=PIT_IDX;
   if(p.ph==='in'){
     const bx=T.X[k]+T.NX[k]*PIT_OFF,by=T.Y[k]+T.NY[k]*PIT_OFF;const d=Math.hypot(bx-c.x,by-c.y);
     kin(c,bx,by,Math.min(170,d*1.6+10),dt,3);
-    if(d<8||(c.idx>k+2&&c.idx<k+40)){p.ph='stop';p.t=Math.max(.6,2.4-.6*lv('pit'));c.v=0;c.vx=c.vy=0;c.h=T.A[k];}
+    if(d<8||(c.idx>k+2&&c.idx<k+40)){p.ph='stop';p.t=c.isPlayer?Math.max(.6,2.4-.6*lv('pit')):2.2+Math.random()*.6;c.v=0;c.vx=c.vy=0;c.h=T.A[k];}
   }else if(p.ph==='stop'){
-    p.t-=dt;banner('타이어 교체 '+Math.max(0,p.t).toFixed(1)+'s',.2);
-    if(p.t<=0){c.tire=1;p.ph='out';banner('새 타이어!',1.2);}
+    p.t-=dt;if(c.isPlayer)banner('타이어 교체 '+Math.max(0,p.t).toFixed(1)+'s',.2);
+    if(p.t<=0){c.tire=1;p.ph='out';if(c.isPlayer){banner('새 타이어!',1.2);const hm=$('hPit');if(hm)hm.classList.add('ok');}}
   }else{
     const ti=(c.idx+16)%N;kin(c,T.X[ti],T.Y[ti],Math.min(VMAX,c.v+200),dt,2.2);
     if(Math.abs(c.lat)<HW*.5){c.pit=null;}
@@ -601,7 +606,7 @@ function step(dt){
   if(state==='countdown'){
     cd+=dt;const n=Math.min(5,Math.floor(cd/.6));
     if(n!==lightsOn){lightsOn=n;[...$('lights').children].forEach((s,i)=>s.classList.toggle('on',i<n));}
-    if(cd>=goAt){state='race';raceTime=0;$('lights').hidden=true;banner('GO!',1,'go');}
+    if(cd>=goAt){state='race';raceTime=0;$('lights').hidden=true;banner('GO!',1,'go');setTimeout(()=>{if(state==='race')banner('5바퀴 · 피트 스톱 1번 필수!',2.4);},1100);}
     return;
   }
   if(state==='race')raceTime+=dt;
@@ -615,6 +620,7 @@ function step(dt){
   if(hitCool>0)hitCool-=dt;
   if(state==='race'&&player&&!player.finished&&T.pads){
     for(const p of T.pads){if(p.cool>0){p.cool-=dt;continue;}if(Math.hypot(player.x-p.x,player.y-p.y)<40){p.cool=2;player.boost=Math.max(player.boost,1+.3*lv('pad'));padHits++;FX.pop('부스트!');sfx(660,.25,'sawtooth',.12);sfx(990,.3,'triangle',.12);}}
+    for(const c of cars){if(c===player||c.pit||c.finished)continue;c.padCd=(c.padCd||0)-dt;if(c.padCd>0)continue;for(const p of T.pads){if(Math.hypot(c.x-p.x,c.y-p.y)<40){c.boost=Math.max(c.boost,1);c.padCd=1.5;break;}}}
     const cr=30+18*lv('magnet');for(const co of coins){if(co.lap===player.cross)continue;const dx=player.x-co.x,dy=player.y-co.y,d=Math.hypot(dx,dy);
       if(d<cr){co.lap=player.cross;coinN++;const v=5;coinPts+=v;sfx(1320,.08,'square',.08);sfx(1760,.12,'square',.08);if(coinN%5===0)FX.pop('코인 '+coinN+'개! +'+coinPts+'P','gold');}
       else if(lv('magnet')&&d<cr*2.2){co.x+=dx*.08;co.y+=dy*.08;}}
@@ -635,7 +641,7 @@ function startRace(){
   $('btnPit').classList.remove('on');$('btnPit').textContent='PIT';$('hLaps').textContent=LAPS;
   showOnly(null);$('hud').hidden=false;updateNitroBtn();
   makePads();makeCoins();trailPts=[];passes=0;lastPlace=0;passPts=0;padHits=0;hits=0;finPos=0;missions=pickMissions(missionPool(),3);missions.forEach(m=>m.shown=false);
-  $('hMis').innerHTML=missions.map(m=>'<div>'+m.t+'</div>').join('');
+  $('hMis').innerHTML='<div id="hPit" style="font-weight:700">피트 1번 (필수)</div>'+missions.map(m=>'<div>'+m.t+'</div>').join('');
   snapCam();
 }
 function toAttract(){
@@ -645,10 +651,10 @@ function toAttract(){
 }
 function playerFinish(){
   player.auto=true;player.skill=.8;resultT=1.6;
-  const pos=standings().indexOf(player)+1;banner(pos===1?'우승!  P1':'체커기!  P'+pos,1.6,'go');
+  const pos=(player.pen?finalOrder():standings()).indexOf(player)+1;banner(player.pen?'피트 안 함 +10초!  P'+pos:pos===1?'우승!  P1':'체커기!  P'+pos,1.8,player.pen?'':'go');
   const id=T.def.id,r=SAVE[id]||{};let isNew=false;
   if(player.best!=null&&(r.lap==null||player.best<r.lap)){r.lap=player.best;isNew=true;}
-  if(r.race==null||player.finishTime<r.race){r.race=player.finishTime;isNew=true;}
+  if(!player.pen&&(r.race5==null||player.finishTime<r.race5)){r.race5=player.finishTime;isNew=true;}
   finPos=pos;const misRes=missions.map(m=>({t:m.t,ok:!!m.ok(),p:misPts(m)}));const misSum=misRes.filter(m=>m.ok).reduce((a,m)=>a+m.p,0);
   bonusInfo={pass:passPts,mis:misSum,res:misRes};
   const earned=Math.round(PTS_BASE[pos-1]*PTS_MULT[T.def.diff]/5)*5+(isNew?30:0)+passPts+misSum+coinPts;bonusInfo.coin=coinPts;bonusInfo.coinN=coinN;
@@ -656,16 +662,14 @@ function playerFinish(){
   player.newRec=isNew;player.earned=earned;player.finalPos=pos;
 }
 function showResults(){
-  const st=standings(),pos=st.indexOf(player)+1;
-  $('rPos').textContent='P'+pos;$('rTrack').textContent=T.def.name;$('rTotal').textContent=fmt(player.finishTime);
+  const st=finalOrder(),pos=st.indexOf(player)+1;
+  $('rPos').textContent='P'+pos;$('rTrack').textContent=T.def.name;$('rTotal').textContent=fmt(player.finishTime)+(player.pen?' (피트 안 함 +10초)':'');
   $('rBest').textContent=fmt(player.best);$('rNew').hidden=!player.newRec;
   $('rEarn').textContent='+'+nf(player.earned)+'P'+(T.def.diff>1?' (×'+PTS_MULT[T.def.diff]+')':'');$('rPts').textContent=nf(SAVE.points);
   const ol=$('rTable');ol.innerHTML='';
   st.forEach((c,i)=>{let t;
-    if(i===0)t=c.finished?fmt(c.finishTime):'--';
-    else{const ref=st[0].finished?st[0].finishTime:raceTime;let ft=c.finishTime;
-      if(!c.finished){const remain=LAPS*T.N-c.prog;const avg=Math.max(80,(c.prog*DS)/Math.max(1,raceTime));ft=raceTime+remain*DS/avg;}
-      t='+'+(ft-ref).toFixed(3)+'s';}
+    if(i===0)t=(c.finished?'':'~')+fmt(estFt(c));
+    else t='+'+(estFt(c)-estFt(st[0])).toFixed(3)+'s'+(c.pen?' (피트X)':'');
     const li=document.createElement('li');if(c===player)li.className='me';
     li.innerHTML='<span class="p">P'+(i+1)+'</span><span class="sw" style="background:'+c.team.c1+'"></span><span>'+c.team.name+'</span><span class="t">'+t+'</span>';
     ol.appendChild(li);});
@@ -872,7 +876,7 @@ function updateHud(){
   bar.style.background=tp>60?'var(--green)':tp>35?'var(--amber)':'var(--red)';
   $('hSpd').textContent=Math.round(Math.abs(player.v)*KMH);
   if(lv('nitro')>0)$('btnNitro').classList.toggle('on',player.boost>0);
-  if(missions.length){const hm=$('hMis').children;missions.forEach((m,i)=>{const ok=(!m.end||player.finished)&&m.ok();if(hm[i])hm[i].classList.toggle('ok',ok);if(ok&&!m.shown&&!m.end){m.shown=true;FX.pop('미션 성공! +'+misPts(m)+'P','green');sfx(1500,.15,'triangle',.12);}});}
+  if(missions.length){const hm=[...$('hMis').children].slice(1);missions.forEach((m,i)=>{const ok=(!m.end||player.finished)&&m.ok();if(hm[i])hm[i].classList.toggle('ok',ok);if(ok&&!m.shown&&!m.end){m.shown=true;FX.pop('미션 성공! +'+misPts(m)+'P','green');sfx(1500,.15,'triangle',.12);}});}
   drawMini();
 }
 
@@ -889,7 +893,7 @@ function renderTrackList(){
     top.innerHTML='<span class="nm"></span><span class="stars">'+'★'.repeat(d.diff)+'<i>'+'★'.repeat(5-d.diff)+'</i></span>';
     top.firstChild.textContent=d.name;
     const lvl=document.createElement('span');lvl.className='lvl d'+d.diff;lvl.textContent=DIFF_TXT[d.diff]+' · 포인트 ×'+PTS_MULT[d.diff];
-    const meta=document.createElement('span');meta.className='meta';meta.innerHTML=(t.L*M_PER_U/1000).toFixed(2)+' km · '+d.laps+'랩 · 베스트 <b>'+(r.lap!=null?fmt(r.lap):'--')+'</b>';
+    const meta=document.createElement('span');meta.className='meta';meta.innerHTML=(t.L*M_PER_U/1000).toFixed(2)+' km · '+'5랩 · 피트 1번 · 베스트 <b>'+(r.lap!=null?fmt(r.lap):'--')+'</b>';
     b.append(c,top,lvl,meta);b.addEventListener('click',()=>{if(trackSel===i)return;trackSel=i;SAVE.lastTrack=i;saveRec(SAVE);toAttract();});box.appendChild(b);
     if(i===trackSel){const inf=$('trkInfo');if(inf)inf.innerHTML=d.name+' · '+lvl.textContent+' · '+meta.innerHTML;}});
 }
@@ -911,4 +915,9 @@ window.__apex={get state(){return state},get player(){return player},get cars(){
   sim(sec){for(let i=0;i<sec/STEP;i++)step(STEP);},draw(){render(0);updateHud();},
   addPoints(n){SAVE.points+=n;saveRec(SAVE);renderWallet();},get save(){return SAVE}};
 })();
+</script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('../sw.js', {scope:'../'}).catch(function(){});
+}
 </script>

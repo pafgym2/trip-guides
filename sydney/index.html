@@ -940,12 +940,13 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
       <h2>🎮 우리집 게임방</h2>
       <p class="lead">누르면 바로 시작해요. 게임 안의 <strong>「← 게임 목록」</strong>이나 뒤로 가기를 누르면 여기로 돌아옵니다.</p>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+        <a href="../games/games/plane.html" style="display:block;text-decoration:none;color:inherit;border:1px solid var(--line,#e3e6ea);border-radius:16px;padding:16px 14px;background:var(--card,#fff)"><div style="font-size:34px;line-height:1">✈️</div><div style="font-weight:800;font-size:16px;margin-top:8px">꼬마 조종사</div><div style="font-size:13px;color:var(--ink-3);margin-top:4px">비행기 · 이륙·링 통과·착륙</div></a>
         <a href="../games/games/skate.html" style="display:block;text-decoration:none;color:inherit;border:1px solid var(--line,#e3e6ea);border-radius:16px;padding:16px 14px;background:var(--card,#fff)"><div style="font-size:34px;line-height:1">⛸️</div><div style="font-weight:800;font-size:16px;margin-top:8px">아이스 대시</div><div style="font-size:13px;color:var(--ink-3);margin-top:4px">쇼트트랙 · 리그 5단계 · 장비 상점</div></a>
         <a href="../games/games/racing.html" style="display:block;text-decoration:none;color:inherit;border:1px solid var(--line,#e3e6ea);border-radius:16px;padding:16px 14px;background:var(--card,#fff)"><div style="font-size:34px;line-height:1">🏎️</div><div style="font-weight:800;font-size:16px;margin-top:8px">에이펙스 스프린트</div><div style="font-size:13px;color:var(--ink-3);margin-top:4px">레이싱 · 서킷 8개 · 업그레이드</div></a>
         <a href="../clock/" style="display:block;text-decoration:none;color:inherit;border:1px solid var(--line,#e3e6ea);border-radius:16px;padding:16px 14px;background:var(--card,#fff)"><div style="font-size:34px;line-height:1">🕒</div><div style="font-weight:800;font-size:16px;margin-top:8px">시계 놀이</div><div style="font-size:13px;color:var(--ink-3);margin-top:4px">시계 읽기 연습</div></a>
         <a href="../hangul/" style="display:block;text-decoration:none;color:inherit;border:1px solid var(--line,#e3e6ea);border-radius:16px;padding:16px 14px;background:var(--card,#fff)"><div style="font-size:34px;line-height:1">🔤</div><div style="font-weight:800;font-size:16px;margin-top:8px">한글 놀이</div><div style="font-size:13px;color:var(--ink-3);margin-top:4px">자음·모음 · 낱말</div></a>
       </div>
-      <div class="note">📶 <b>인터넷이 있어야 처음 열립니다.</b> 비행기에서는 안 되니(기내 와이파이 없음) 공항·숙소·차 안에서 쓰세요. 점수·포인트는 <b>그 폰에만</b> 저장됩니다. 소리는 게임 안 🔊 버튼으로 끌 수 있어요.</div>
+      <div class="note">✈️ <b>비행기에서도 됩니다.</b> 출발 전에 인터넷이 될 때 이 가이드와 게임을 한 번씩 열어 두면, 그 뒤로는 인터넷 없이도 열려요. 점수·포인트는 <b>그 폰에만</b> 저장됩니다. 소리는 게임 안 🔊 버튼으로 끌 수 있어요.</div>
     </section>
   </div>
 
@@ -1787,6 +1788,17 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
     st.textContent='예보를 불러오지 못했습니다. 인터넷 연결 후 다시 열어 주세요. (아래 평년 기온 참고)';
   });
 })();
+</script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('./sw.js').then(function(){ return navigator.serviceWorker.ready; }).then(function(reg){
+    var send = function(){ reg.active && reg.active.postMessage({ type: 'cache', urls: performance.getEntriesByType('resource').map(function(e){ return e.name; }).filter(function(u){ return /fonts\.(googleapis|gstatic)\.com/.test(u); }) }); };
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(send);
+    addEventListener('pagehide', send);
+  }).catch(function(){});
+  // 게임방·시계·한글도 미리 저장해 둡니다(이 가이드만 열어도 게임 파일이 기기에 저장됨)
+  ['../games/','../clock/','../hangul/'].forEach(function(d){ navigator.serviceWorker.register(d+'sw.js',{scope:d}).catch(function(){}); });
+}
 </script>
 </body>
 </html>

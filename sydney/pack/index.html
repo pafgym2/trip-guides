@@ -109,5 +109,14 @@ pull();setInterval(()=>{if(!document.hidden)pull()},4000);document.addEventListe
 document.getElementById("reset").onclick=()=>{if(confirm("모든 체크를 해제할까요?")){S={};save();document.querySelectorAll("input[type=checkbox]").forEach(x=>{if(x.checked){x.checked=false;push(x.dataset.id,false)}});upd()}};
 upd();
 </script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('../sw.js').then(function(){ return navigator.serviceWorker.ready; }).then(function(reg){
+    var send = function(){ reg.active && reg.active.postMessage({ type: 'cache', urls: performance.getEntriesByType('resource').map(function(e){ return e.name; }).filter(function(u){ return /fonts\.(googleapis|gstatic)\.com/.test(u); }) }); };
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(send);
+    addEventListener('pagehide', send);
+  }).catch(function(){});
+}
+</script>
 </body>
 </html>

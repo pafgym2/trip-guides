@@ -936,3 +936,8 @@ window.__ice={get state(){return state},get me(){return me},get sk(){return sk},
   addPoints(n){prof().pts+=n;save();renderMenu();},get save(){return SAVE},reset(){try{localStorage.removeItem(KEY);}catch(e){}SAVE=load();lgIdx=0;menuLg=0;renderMenu();}};
 })();
 </script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('../sw.js', {scope:'../'}).catch(function(){});
+}
+</script>
