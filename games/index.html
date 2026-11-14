@@ -36,7 +36,7 @@ h1{font-family:var(--f-disp);font-weight:400;font-size:clamp(34px,10vw,46px);lin
 h1 b{font-weight:400;color:var(--tomato)}
 .count{font-family:var(--f-disp);font-size:14px;background:var(--ink);color:var(--ground);padding:6px 12px;border-radius:999px;white-space:nowrap;transform:rotate(3deg)}
 .row{display:grid;gap:12px;min-height:0}
-.games{grid-area:games;grid-template-columns:repeat(3,minmax(0,1fr))}
+.games{grid-area:games;grid-template-columns:repeat(2,minmax(0,1fr))}
 .learn{grid-area:learn;grid-template-columns:repeat(3,minmax(0,1fr))}
 .tile{position:relative;display:block;min-height:0;min-width:0;border:3px solid var(--ink);border-radius:20px;overflow:hidden;background:var(--c,var(--sky));color:var(--ink);text-decoration:none;
   box-shadow:0 6px 0 var(--ink);transition:transform .08s,box-shadow .08s}
@@ -70,7 +70,7 @@ footer{grid-area:foot;font-size:11.5px;font-weight:500;text-align:center;opacity
 <main>
   <header>
     <div><p class="kicker">MONGFAM · FAMILY ARCADE</p><h1>몽팸<b>게임</b>방</h1></div>
-    <span class="count">게임 7개</span>
+    <span class="count">게임 6개</span>
   </header>
 
   <a class="tile hero" href="games/plane3d.html" style="--c:var(--sky)">
@@ -82,7 +82,6 @@ footer{grid-area:foot;font-size:11.5px;font-weight:500;text-align:center;opacity
   <div class="row games">
     <a class="tile" href="games/skate.html" style="--c:var(--ice)"><canvas data-t="skate"></canvas><span class="label"><span class="nm">아이스 대시</span></span></a>
     <a class="tile" href="games/racing.html" style="--c:var(--grass)"><canvas data-t="race"></canvas><span class="label"><span class="nm">레이싱</span></span></a>
-    <a class="tile" href="games/plane.html" style="--c:var(--sky)"><canvas data-t="plane"></canvas><span class="label"><span class="nm">비행기 2D</span></span></a>
   </div>
 
   <div class="row learn">
