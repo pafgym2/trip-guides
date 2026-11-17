@@ -42,6 +42,14 @@ img{max-width:100%}
 .wxhr em.hi{color:var(--accent-ink)}
 .wxhr i{display:block;height:20px;background:var(--surface-2);border-radius:3px;position:relative;overflow:hidden;margin:1px 0}
 .wxhr i b{position:absolute;left:0;right:0;bottom:0;background:var(--accent);opacity:.75}
+#livebox{border:2px solid var(--accent);border-radius:14px}
+#livebox h2{margin:2px 0 8px}
+.livenext{font-size:15px;margin:0 0 10px;line-height:1.5}
+#livetbl tr.past{opacity:.45}
+#livetbl tr.cur td{background:color-mix(in srgb,var(--accent) 14%,transparent)}
+#livetbl tr.cur td:first-child{font-weight:700}
+.livetag{display:inline-block;font-size:11px;font-weight:700;color:#fff;background:var(--accent);border-radius:6px;padding:1px 6px;margin-right:6px;vertical-align:1px}
+.livebtn{margin-top:10px;border:1px solid var(--accent);background:transparent;color:var(--accent-ink);border-radius:10px;padding:8px 12px;font:inherit;font-size:14px}
 </style>
 <style>
 /* 여행 중 '지금' 표시 */
@@ -276,6 +284,13 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
 
   <main>
   <div class="panel" id="p-now" role="tabpanel">
+    <section class="sec" id="livebox" hidden>
+      <p class="eyebrow">📍 지금 · <span id="liveclock"></span> 시드니</p>
+      <h2 id="livetitle"></h2>
+      <div id="livenext" class="livenext"></div>
+      <div class="tblwrap daytbl" id="livetbl"></div>
+      <button type="button" class="livebtn" id="livego">일정 탭에서 전체 보기 →</button>
+    </section>
     <section class="sec">
       <p class="eyebrow"><span class="dday">D-11</span> · 11/14 업데이트</p>
       <h2>남은 할 일</h2>
@@ -1790,6 +1805,41 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
   }
   tabs.forEach(function(b){ b.addEventListener('click', function(){ show(b.dataset.t); }); });
   try{ var sv = localStorage.getItem('syd.tab'); if(sv && panels[sv]) show(sv); }catch(e){}
+
+  // 📍 지금 일정: 여행 중이면 오늘 Day 표를 맨 위에, 현재 시각 줄 강조
+  function sydNow(){
+    var f=new Intl.DateTimeFormat('en-CA',{timeZone:'Australia/Sydney',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false});
+    var o={}; f.formatToParts(new Date()).forEach(function(x){o[x.type]=x.value;});
+    return {m:+o.month,d:+o.day,y:+o.year,min:(+o.hour%24)*60+(+o.minute),hm:(o.hour%24<10?'0':'')+(+o.hour%24)+':'+o.minute};
+  }
+  var lb=document.getElementById('livebox');
+  function live(){
+    var n=sydNow(); if(n.y!==2026||n.m!==11||n.d<15||n.d>23){ lb.hidden=true; return false; }
+    var hd=null; document.querySelectorAll('#p-days .dayhead').forEach(function(h){ var dt=h.querySelector('.dt'); if(dt&&dt.textContent.indexOf('11/'+n.d+' ')===0) hd=h; });
+    if(!hd){ lb.hidden=true; return false; }
+    var sec=hd.closest('section'), tb=sec.querySelector('.daytbl table'); if(!tb) return false;
+    var c=tb.cloneNode(true), rows=[].slice.call(c.querySelectorAll('tr')), cur=-1;
+    rows.forEach(function(r,i){ var td=r.querySelector('td'); var m=td&&td.textContent.trim().match(/^(\d{1,2}):(\d{2})/); r._t=m?(+m[1])*60+(+m[2]):null; if(r._t!=null&&r._t<=n.min) cur=i; });
+    rows.forEach(function(r,i){ if(cur>=0&&i<cur) r.classList.add('past'); });
+    var nx=null;
+    if(cur>=0){ rows[cur].classList.add('cur'); var t=rows[cur].querySelector('.t')||rows[cur].children[1]; if(t){ var g=document.createElement('span'); g.className='livetag'; g.textContent='지금'; t.insertBefore(g,t.firstChild); } }
+    for(var i=cur+1;i<rows.length;i++){ if(rows[i]._t!=null){ nx=rows[i]; break; } }
+    document.getElementById('liveclock').textContent=n.hm;
+    document.getElementById('livetitle').textContent=hd.querySelector('.n').textContent+' · '+hd.querySelector('.dt').textContent.split('·')[0].trim();
+    var nt=document.getElementById('livenext');
+    if(nx){ var tt=(nx.querySelector('.t')||nx.children[1]).textContent.replace('지도 ↗','').trim(); var left=nx._t-n.min;
+      nt.innerHTML='⏭️ <b>다음</b> '+nx.querySelector('td').textContent.trim()+' — '+tt.replace(/[<>&]/g,'')+' <span style="color:var(--ink-2)">('+(left>=60?Math.floor(left/60)+'시간 ':'')+(left%60)+'분 뒤)</span>'; }
+    else nt.textContent='오늘 일정은 여기까지예요. 푹 쉬세요 🌙';
+    var box=document.getElementById('livetbl'); box.innerHTML=''; box.appendChild(c);
+    lb.hidden=false; return true;
+  }
+  if(live()) show('now');
+  setInterval(live,60000);
+  document.addEventListener('visibilitychange',function(){ if(!document.hidden) live(); });
+  document.getElementById('livego').addEventListener('click',function(){
+    show('days'); var n=sydNow();
+    document.querySelectorAll('#p-days .dayhead').forEach(function(h){ var dt=h.querySelector('.dt'); if(dt&&dt.textContent.indexOf('11/'+n.d+' ')===0) h.scrollIntoView({block:'start'}); });
+  });
 
   var boxes = Array.prototype.slice.call(document.querySelectorAll('.ck input'));
   var cnt = document.getElementById('ckcount'), fill = document.getElementById('ckfill');
