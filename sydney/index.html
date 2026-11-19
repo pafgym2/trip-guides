@@ -1856,7 +1856,10 @@ footer{padding:24px 18px 40px;color:var(--ink-3);font-size:11.5px;line-height:1.
     function clean(el){ if(!el) return ''; var k=el.cloneNode(true); k.querySelectorAll('a.g,.livetag,.nowtag,.chip').forEach(function(a){a.remove();}); return k.textContent.replace(/\s+/g,' ').trim(); }
     document.getElementById('nb-clock').textContent=n.hm;
     document.getElementById('nb-day').textContent=hd.querySelector('.n').textContent.split('·')[0].trim()+' · '+n.m+'/'+n.d;
-    var cr=cur>=0?rows[cur]:null, mp=document.getElementById('nb-map');
+    var cr=cur>=0?rows[cur]:null, mp=document.getElementById('nb-map'), lab=document.querySelector('#nowbar .nb-lab'), soon=false;
+    // 다음 일정이 20분 안이면(또는 지금 칸이 이미 끝난 일이면) 다음 일정을 크게 보여줌
+    if(nx && ((nx._t-n.min)<=20 || (cr&&/✅/.test(cr.textContent)))){ soon=true; var after=null; for(var k=rows.indexOf(nx)+1;k<rows.length;k++){ if(rows[k]._t!=null){ after=rows[k]; break; } } cr=nx; nx=after; }
+    if(lab) lab.textContent=soon?'곧 할 일 · '+(cr._t-n.min>0?(cr._t-n.min>=60?Math.floor((cr._t-n.min)/60)+'시간 ':'')+((cr._t-n.min)%60)+'분 뒤':'지금'):'지금 할 일';
     if(cr){
       document.getElementById('nb-now').textContent=cr.querySelector('td').textContent.trim()+' '+clean(cr.querySelector('.t')||cr.children[1]);
       document.getElementById('nb-det').textContent=clean(cr.querySelector('.d'));
