@@ -40,6 +40,7 @@ h1 b{font-weight:400;color:#ff6b57}
 .back{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-disp);font-size:16px;color:var(--ink);background:var(--paper);border:3px solid var(--line);border-radius:999px;padding:6px 14px;box-shadow:0 4px 0 var(--line);text-decoration:none;margin-bottom:14px}
 .back:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
 .list{display:grid;gap:12px}
+#items>.item+.item{margin-top:0}
 .item{display:flex;align-items:center;gap:14px;padding:14px;text-decoration:none;color:var(--ink);background:var(--paper);border:3px solid var(--line);border-radius:20px;box-shadow:0 5px 0 var(--line)}
 .item:active{transform:translateY(3px);box-shadow:0 2px 0 var(--line)}
 .item .em{flex:none;width:58px;height:58px;display:grid;place-items:center;font-size:32px;background:var(--c);border:3px solid var(--line);border-radius:16px}
@@ -50,6 +51,17 @@ h1 b{font-weight:400;color:#ff6b57}
 .item.soon{background:transparent;border-style:dashed;box-shadow:none;color:var(--ink2)}
 .item.soon .em{background:var(--c-etc)}
 .foot{font-size:12px;color:var(--ink2);text-align:center;margin:18px 0 0;line-height:1.6}
+.tsum{font-size:13px;font-weight:500;color:var(--ink2);margin:-6px 0 12px}
+.tl{list-style:none;margin:0;padding:0 0 0 14px;border-left:3px solid var(--line)}
+.tl li{position:relative;margin:0 0 9px}
+.tl li.yr{margin:16px 0 8px -14px}.tl li.yr:first-child{margin-top:0}
+.tl li.yr span{display:inline-block;font-family:var(--f-disp);font-size:17px;background:var(--ink);color:var(--ground);border-radius:999px;padding:2px 13px;margin-left:-12px}
+.trip{display:flex;align-items:center;gap:11px;padding:10px 12px;text-decoration:none;color:var(--ink);background:var(--paper);border:2.5px solid var(--line);border-radius:16px}
+.trip::before{content:"";position:absolute;left:-22px;top:50%;width:11px;height:11px;margin-top:-7px;border-radius:50%;background:var(--paper);border:3px solid var(--line)}
+.trip.has{background:var(--c-travel);box-shadow:0 4px 0 var(--line)}.trip.has::before{background:#ff6b57}
+.trip:active{transform:translateY(2px)}
+.trip .em{font-size:24px;line-height:1;flex:none}.trip .tx{flex:1;min-width:0}.trip .nm{font-family:var(--f-disp);font-size:18px;line-height:1.2}.trip .ds{font-size:12.5px;color:var(--ink);opacity:.75;margin-top:1px}.trip .go{flex:none;font-family:var(--f-disp);font-size:14px}
+h2.sub{font-family:var(--f-disp);font-weight:400;font-size:18px;margin:22px 0 10px}
 [hidden]{display:none!important}
 @media (prefers-reduced-motion:reduce){.cat,.item,.back{transition:none}}
 </style>
@@ -73,10 +85,7 @@ h1 b{font-weight:400;color:#ff6b57}
 <script>
 /* 새 페이지를 만들면 해당 카테고리의 items에 한 줄만 추가하면 됩니다. soon:true 는 '준비 중' 표시(링크 없음). */
 var CATS=[
- {id:'travel',em:'✈️',name:'여행',c:'--c-travel',lede:'다녀온 곳과 갈 곳의 가이드예요.',items:[
-   {em:'🇦🇺',name:'시드니 8박 9일',ds:'2026. 11. 14 ~ 11. 23 · 일정·지도·예산·짐 체크',href:'./sydney/'},
-   {em:'🌺',name:'오키나와 3박 4일',ds:'2026. 9. 17 ~ 9. 20 · 차탄 거점 일정·장소 30곳',href:'./okinawa/'},
-   {em:'🍜',name:'후쿠오카 4박 5일',ds:'2026. 8. 21 ~ 8. 25 · 유후인 료칸 · 물놀이·수족관',href:'./fukuoka/'}]},
+ {id:'travel',em:'✈️',name:'여행',c:'--c-travel',lede:'2015년부터 다녀온 곳이에요. 누르면 내용이 열려요.',items:[],trips:true},
  {id:'game',em:'🎮',name:'게임',c:'--c-game',lede:'하루 티켓으로 하는 우리 집 게임방이에요.',items:[
    {em:'🕹️',name:'몽팸게임방',ds:'꼬마 조종사 3D · 아이스 대시 · 레이싱 · 티켓과 성적표',href:'./games/'},
    {em:'🛩️',name:'꼬마 조종사 3D',ds:'입체 하늘에서 링을 통과해요',href:'./games/games/plane3d.html'},
@@ -90,17 +99,43 @@ var CATS=[
  {id:'life',em:'🏡',name:'라이프',c:'--c-life',lede:'집안일, 건강, 살림에 쓰는 것들이에요.',items:[]},
  {id:'daily',em:'📷',name:'일상',c:'--c-daily',lede:'사진, 영상, 기록이에요.',items:[]}
 ];
+/* 여행 연혁: 가이드가 있으면 href, 없으면 눌렀을 때 '기록 준비 중' 화면. note 는 그 화면에 보여 줄 한 줄 메모. */
+var TRIPS=[
+ {y:2015,name:'프랑스 파리',em:'🇫🇷'},{y:2016,name:'스페인',em:'🇪🇸'},{y:2017,name:'하와이',em:'🌺'},
+ {y:2019,name:'발리',em:'🇮🇩'},{y:2019,name:'두 번째 발리',em:'🇮🇩'},
+ {y:2022,name:'괌',em:'🇬🇺'},{y:2022,name:'싱가폴',em:'🇸🇬'},{y:2023,name:'나트랑',em:'🇻🇳'},
+ {y:2024,name:'아부다비',em:'🇦🇪'},{y:2024,name:'미야코지마',em:'🇯🇵'},
+ {y:2025,name:'홍콩 · 마카오',em:'🇭🇰'},{y:2025,name:'푸꾸옥',em:'🇻🇳'},{y:2025,name:'도쿄',em:'🇯🇵'},
+ {y:2026,name:'세 번째 발리',em:'🇮🇩'},{y:2026,name:'베이징',em:'🇨🇳'},
+ {y:2026,name:'후쿠오카',em:'🇯🇵',href:'./fukuoka/',ds:'8. 21 ~ 8. 25 · 유후인 료칸 · 물놀이'},
+ {y:2026,name:'도쿄',em:'🇯🇵'},
+ {y:2026,name:'시드니',em:'🇦🇺',href:'./sydney/',ds:'11. 14 ~ 11. 23 · 8박 9일'}
+];
+var EXTRA=[{em:'🌺',name:'오키나와 3박 4일',ds:'2026. 9. 17 ~ 9. 20 · 부모님과 함께 · 차탄 거점',href:'./okinawa/'}];
 var $=function(id){return document.getElementById(id);};
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function live(c){return c.items.filter(function(i){return !i.soon;}).length;}
+function live(c){return c.trips?TRIPS.length:c.items.filter(function(i){return !i.soon;}).length;}
 function renderHome(){var h=new Date().getHours();$('hello').textContent=(h<11?'좋은 아침이에요.':h<18?'안녕하세요.':'좋은 저녁이에요.')+' 어디로 갈까요?';
   $('cats').innerHTML=CATS.map(function(c,i){var n=live(c),odd=CATS.length%2===1&&i===CATS.length-1;
-    return '<a class="cat'+(n?'':' empty')+(odd?' wide':'')+'" href="#'+c.id+'" style="--c:var('+c.c+')"><span class="em">'+c.em+'</span><span><span class="nm" style="display:block">'+esc(c.name)+'</span><span class="ct" style="display:block">'+(n?n+'개':'준비 중')+'</span></span></a>';}).join('');}
-function renderCat(c){$('cTitle').textContent=c.em+' '+c.name;$('cLede').textContent=c.lede;
+    return '<a class="cat'+(n?'':' empty')+(odd?' wide':'')+'" href="#'+c.id+'" style="--c:var('+c.c+')"><span class="em">'+c.em+'</span><span><span class="nm" style="display:block">'+esc(c.name)+'</span><span class="ct" style="display:block">'+(n?n+(c.trips?'번의 여행':'개'):'준비 중')+'</span></span></a>';}).join('');}
+function renderTrips(c){var h='',yr=0,first=TRIPS[0].y,last=TRIPS[TRIPS.length-1].y;
+  h+='<p class="tsum">'+first+' — '+last+' · '+TRIPS.length+'번의 여행 · 가이드 '+TRIPS.filter(function(t){return t.href;}).length+'개</p><ol class="tl">';
+  TRIPS.forEach(function(t,i){if(t.y!==yr){yr=t.y;h+='<li class="yr"><span>'+yr+'</span></li>';}
+    h+='<li><a class="trip'+(t.href?' has':'')+'" href="'+(t.href||'#t'+i)+'"><span class="em">'+t.em+'</span><span class="tx"><span class="nm" style="display:block">'+esc(t.name)+'</span>'+(t.ds?'<span class="ds" style="display:block">'+esc(t.ds)+'</span>':'')+'</span><span class="go">'+(t.href?'가이드 →':'→')+'</span></a></li>';});
+  h+='</ol><h2 class="sub">함께 만든 다른 가이드</h2>'+EXTRA.map(function(i){return '<a class="item" href="'+i.href+'" style="--c:var('+c.c+')"><span class="em">'+i.em+'</span><span class="tx"><span class="nm" style="display:block">'+esc(i.name)+'</span><span class="ds" style="display:block">'+esc(i.ds)+'</span></span><span class="go">→</span></a>';}).join('');
+  $('items').innerHTML=h;}
+function renderTrip(i){var t=TRIPS[i],n=0;TRIPS.forEach(function(x,j){if(j<=i)n++;});
+  $('cTitle').textContent=t.em+' '+t.name;$('cLede').textContent=t.y+'년 · '+n+'번째 여행';
+  $('items').innerHTML='<div class="item soon"><span class="em">📝</span><span class="tx"><span class="nm" style="display:block">'+(t.note?esc(t.note):'아직 기록이 없어요')+'</span><span class="ds" style="display:block">사진이나 메모를 모으면 여기에 일정, 다녀온 곳, 기억에 남는 일을 채워 넣어요.</span></span></div>'+
+    (i>0?'<a class="item" href="'+(TRIPS[i-1].href||'#t'+(i-1))+'"><span class="em">'+TRIPS[i-1].em+'</span><span class="tx"><span class="ds" style="display:block">이전 여행 · '+TRIPS[i-1].y+'</span><span class="nm" style="display:block">'+esc(TRIPS[i-1].name)+'</span></span><span class="go">←</span></a>':'')+
+    (i<TRIPS.length-1?'<a class="item" href="'+(TRIPS[i+1].href||'#t'+(i+1))+'"><span class="em">'+TRIPS[i+1].em+'</span><span class="tx"><span class="ds" style="display:block">다음 여행 · '+TRIPS[i+1].y+'</span><span class="nm" style="display:block">'+esc(TRIPS[i+1].name)+'</span></span><span class="go">→</span></a>':'');}
+function renderCat(c){$('cTitle').textContent=c.em+' '+c.name;$('cLede').textContent=c.lede;if(c.trips){renderTrips(c);return;}
   $('items').innerHTML=c.items.length?c.items.map(function(i){var inner='<span class="em">'+i.em+'</span><span class="tx"><span class="nm" style="display:block">'+esc(i.name)+'</span><span class="ds" style="display:block">'+esc(i.ds)+'</span></span>';
     return i.soon?'<div class="item soon" style="--c:var('+c.c+')">'+inner+'<span class="go" style="font-size:13px">준비 중</span></div>':'<a class="item" href="'+i.href+'" style="--c:var('+c.c+')">'+inner+'<span class="go">→</span></a>';}).join('')
     :'<div class="item soon"><span class="em">🌱</span><span class="tx"><span class="nm" style="display:block">아직 비어 있어요</span><span class="ds" style="display:block">새로 만들면 여기에 생겨요.</span></span></div>';}
-function route(){var id=location.hash.replace('#',''),c=null;for(var i=0;i<CATS.length;i++)if(CATS[i].id===id)c=CATS[i];
+function route(){var id=location.hash.replace('#',''),c=null,back=document.querySelector('.back');for(var i=0;i<CATS.length;i++)if(CATS[i].id===id)c=CATS[i];
+  var m=/^t(\d+)$/.exec(id);if(m&&TRIPS[+m[1]]){$('home').hidden=true;$('cat').hidden=false;back.setAttribute('href','#travel');back.textContent='← 여행 연혁';renderTrip(+m[1]);document.title=TRIPS[+m[1]].name+' · 몽치치 패밀리';scrollTo(0,0);return;}
+  back.setAttribute('href','#');back.textContent='← 처음으로';
   $('home').hidden=!!c;$('cat').hidden=!c;if(c){renderCat(c);document.title=c.name+' · 몽치치 패밀리';}else{renderHome();document.title='몽치치 패밀리';}scrollTo(0,0);}
 addEventListener('hashchange',route);route();
 </script>
