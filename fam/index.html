@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#fbf4e6">
+<title>설정 · 백업 · 몽치치 패밀리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="./fam.css">
+</head>
+<body>
+<main>
+  <div class="mf-head"><a class="mf-home" href="../" aria-label="몽치치 패밀리로 돌아가기">🏠</a><h1>설정 · 백업</h1></div>
+  <h2 class="sec">가족 이름</h2>
+  <div id="mem"></div>
+  <button class="btn sm" id="addM">+ 가족 추가</button>
+  <h2 class="sec">백업 · 다른 기기로 옮기기</h2>
+  <div class="card">
+    <p style="margin:0 0 10px">라이프와 일상에 적은 내용은 이 기기에만 저장돼요. 백업 파일을 만들어 두면 폰을 바꾸거나 다른 기기에서도 불러올 수 있어요.</p>
+    <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" id="exp">백업 파일 만들기</button><label class="btn" style="cursor:pointer">백업 불러오기<input type="file" id="imp" accept="application/json,.json" hidden></label></div>
+    <p class="muted" id="info" style="margin:10px 0 0"></p>
+  </div>
+  <p class="mf-foot">불러오기는 이 기기에 있던 라이프·일상 내용을 백업 파일의 내용으로 바꿔요.</p>
+</main>
+<script src="./fam.js"></script>
+<script>
+(function(){'use strict';var $=function(id){return document.getElementById(id);};
+function keys(){var k=[];try{for(var i=0;i<localStorage.length;i++){var n=localStorage.key(i);if(n.indexOf('mf_')===0)k.push(n);}}catch(e){}return k;}
+function draw(){var m=MF.members();$('mem').innerHTML=m.map(function(x,i){return '<div class="card tap row" data-i="'+i+'"><span class="chip" style="--c:'+x.color+'">&nbsp;&nbsp;</span><span class="grow big" style="font-size:19px">'+MF.esc(x.name)+'</span><span class="muted">'+(x.kid?'아이':'어른')+'</span></div>';}).join('');
+  $('info').textContent='지금 이 기기에 저장된 묶음: '+keys().length+'개';}
+function edit(i){var m=MF.members(),x=i==null?null:m[i];MF.form({title:x?'가족 고치기':'가족 추가',value:x?{name:x.name,kid:x.kid?'y':'n'}:{kid:'y'},fields:[{k:'name',label:'이름',req:true,max:6},{k:'kid',label:'구분',type:'opts',opts:[['n','어른'],['y','아이']]}],
+  onSave:function(v){var o={id:x?x.id:'m'+MF.uid(),name:v.name,kid:v.kid==='y'};if(x)m[i]=o;else m.push(o);MF.save('members',m.map(function(a){return{id:a.id,name:a.name,kid:!!a.kid};}));draw();},
+  onDelete:x&&m.length>1?function(){m.splice(i,1);MF.save('members',m.map(function(a){return{id:a.id,name:a.name,kid:!!a.kid};}));draw();}:null});}
+$('mem').onclick=function(e){var c=e.target.closest('[data-i]');if(c)edit(+c.dataset.i);};$('addM').onclick=function(){edit(null);};
+$('exp').onclick=function(){var o={app:'mongfam',v:1,at:new Date().toISOString(),data:{}};keys().forEach(function(k){o.data[k]=localStorage.getItem(k);});
+  var b=new Blob([JSON.stringify(o)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='몽치치패밀리_백업_'+MF.ymd().replace(/-/g,'')+'.json';document.body.appendChild(a);a.click();a.remove();MF.toast('백업 파일을 만들었어요');};
+$('imp').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);if(o.app!=='mongfam'||!o.data)throw 0;
+    if(!confirm('이 기기의 라이프·일상 내용을 백업('+String(o.at).slice(0,10)+')으로 바꿀까요?'))return;keys().forEach(function(k){localStorage.removeItem(k);});Object.keys(o.data).forEach(function(k){if(k.indexOf('mf_')===0)localStorage.setItem(k,o.data[k]);});draw();MF.toast('불러왔어요');}
+  catch(err){MF.toast('백업 파일이 아니에요');}};r.readAsText(f);e.target.value='';};
+draw();})();
+</script>
+</body>
+</html>

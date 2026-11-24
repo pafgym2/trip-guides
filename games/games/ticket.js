@@ -201,6 +201,8 @@ window.MongGate={
   play:function(cb){S=load();rollAll();if(!S.on){cb();return;}if(S.askedDay!==today()){who(function(){gate(cb);});return;}gate(cb);},
   panel:function(done){S=load();onDone=done||null;panel();},
   info:function(){S=load();rollAll();var p=P();return{name:p.name,left:left(p),played:p.played,on:S.on,free:S.free,max:S.max,dbl:p.dbl|0,correct:Object.keys(p.q).reduce(function(n,k){return n+p.q[k][1];},0)};},
+  /* 집안일 보드 등에서 티켓 1장 주기. 이름이 같은 선수에게, 하루 최대 판수 안에서만. */
+  grant:function(name){S=load();rollAll();var p=null;['a','b'].forEach(function(k){if(S.players[k].name===name)p=S.players[k];});if(!p)return 'noplayer';if(!canEarn(p))return 'max';p.earned++;save();return 'ok';},
   takeDouble:function(){S=load();var p=P();if((p.dbl|0)>0){p.dbl--;save();return true;}return false;},
   _test:{gen:GEN,subj:SUBJ,state:function(){return S;},set:function(s){S=s;save();},roll:rollAll,reset:function(){try{localStorage.removeItem(KEY);}catch(e){}mem=null;S=load();}}
 };

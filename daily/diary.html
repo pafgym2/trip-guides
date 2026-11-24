@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#fbf4e6">
+<title>한 줄 일기장 · 몽치치 패밀리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../fam/fam.css">
+<style>
+
+</style>
+</head>
+<body>
+<main>
+<div class="card" id="today"></div>
+<div id="who"></div>
+<div id="list"></div>
+</main>
+<script src="../fam/fam.js"></script>
+<script>
+(function(){'use strict';var $=function(id){return document.getElementById(id);};
+MF.head('한 줄 일기장','daily','오늘 제일 기억에 남는 일을 한 줄만 써요. 가족 모두 한 줄씩!');
+var D=MF.load('diary',[]),filter='all',MOODS=[['😀','😀'],['🥰','🥰'],['😎','😎'],['😴','😴'],['😢','😢'],['😡','😡']];
+function save(){MF.save('diary',D);}
+function mine(who,d){return D.filter(function(x){return x.who===who&&x.d===d;})[0];}
+function drawToday(){var t=MF.ymd();$('today').innerHTML='<h2>'+MF.day(t)+' · 오늘의 한 줄</h2><div class="row" style="flex-wrap:wrap;gap:7px;margin-top:8px">'+MF.members().map(function(m){var e=mine(m.id,t);return '<button class="btn sm" data-w="'+m.id+'" style="background:'+(e?m.color:'#fff')+'">'+MF.esc(m.name)+(e?' ✓':' 쓰기')+'</button>';}).join('')+'</div>';}
+function draw(){drawToday();var l=D.filter(function(x){return filter==='all'||x.who===filter;}).sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0;}),h='',day='';
+  l.forEach(function(x){if(x.d!==day){day=x.d;h+='<h2 class="sec">'+MF.day(x.d,true)+'</h2>';}var m=MF.member(x.who);
+    h+='<div class="card tap row" data-id="'+x.id+'" style="align-items:flex-start"><span style="font-size:24px;line-height:1.2">'+(x.mood||'🙂')+'</span><div class="grow"><span class="chip" style="--c:'+m.color+'">'+MF.esc(m.name)+'</span><div style="margin-top:3px">'+MF.esc(x.text)+'</div></div></div>';});
+  $('list').innerHTML=h||'<div class="empty">아직 쓴 일기가 없어요. 위에서 이름을 눌러 오늘의 한 줄을 써 보세요.</div>';}
+function edit(e,who){var m=MF.member(e?e.who:who);MF.form({title:m.name+'의 한 줄',value:e||{d:MF.ymd(),mood:'😀'},
+  fields:[{k:'text',label:'오늘 제일 기억에 남는 일',type:'textarea',max:80,req:true,ph:'예: 스케이트에서 처음으로 코너를 안 넘어지고 돌았다'},{k:'mood',label:'오늘 기분',type:'opts',opts:MOODS},{k:'d',label:'날짜',type:'date',req:true}],
+  onSave:function(v){if(e)Object.assign(e,v);else{v.id=MF.uid();v.who=who;D.push(v);}save();draw();MF.toast('저장했어요');},onDelete:e?function(){D=D.filter(function(x){return x!==e;});save();draw();}:null});}
+$('today').onclick=function(ev){var b=ev.target.closest('[data-w]');if(!b)return;edit(mine(b.dataset.w,MF.ymd()),b.dataset.w);};
+$('list').onclick=function(ev){var c=ev.target.closest('[data-id]');if(c)edit(D.filter(function(x){return x.id===c.dataset.id;})[0]);};
+MF.who($('who'),{all:true},function(id){filter=id;draw();});
+})();
+</script>
+</body>
+</html>

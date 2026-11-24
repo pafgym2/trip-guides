@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#fbf4e6">
+<title>가족 일정표 · 몽치치 패밀리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../fam/fam.css">
+<style>
+.day.today{background:#fff6cf}
+.ev{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1.5px solid rgba(42,36,64,.15);cursor:pointer}
+.ev .tm{flex:none;width:46px;font-size:13px;font-weight:600;color:var(--ink2)}
+</style>
+</head>
+<body>
+<main>
+<div class="row" style="margin:0 0 12px"><button class="btn sm" id="prev" aria-label="지난주">←</button><div class="grow" style="text-align:center"><span class="big" id="wk"></span></div><button class="btn sm" id="now">이번 주</button><button class="btn sm" id="next" aria-label="다음 주">→</button></div>
+<div id="days"></div>
+<button class="mf-add" id="add">+ 일정 추가</button>
+</main>
+<script src="../fam/fam.js"></script>
+<script>
+(function(){'use strict';var $=function(id){return document.getElementById(id);};
+MF.head('가족 일정표','life','이번 주 누가 어디 가는지 한눈에 봐요. 일정을 누르면 고칠 수 있어요.');
+var D=MF.load('schedule',[]);
+function monday(d){d=new Date(d.getFullYear(),d.getMonth(),d.getDate());d.setDate(d.getDate()-(d.getDay()+6)%7);return d;}
+var wk=monday(new Date());
+function evs(y){var dow=MF.parse(y).getDay();return D.filter(function(e){return e.date===y||(e.rep==='w'&&e.date<=y&&MF.parse(e.date).getDay()===dow);}).sort(function(a,b){return (a.time||'99')<(b.time||'99')?-1:1;});}
+function draw(){var h='',t=MF.ymd(),end=new Date(wk);end.setDate(end.getDate()+6);
+  $('wk').textContent=(wk.getMonth()+1)+'. '+wk.getDate()+' ~ '+(end.getMonth()+1)+'. '+end.getDate();
+  for(var i=0;i<7;i++){var d=new Date(wk);d.setDate(d.getDate()+i);var y=MF.ymd(d),l=evs(y);
+    h+='<div class="card day'+(y===t?' today':'')+'"><div class="row"><h2 class="grow">'+MF.day(y)+(y===t?' <span class="chip" style="--c:#ffd84d">오늘</span>':'')+'</h2><button class="btn sm" data-add="'+y+'">+</button></div>'+
+      (l.length?l.map(function(e){var m=MF.member(e.who);return '<div class="ev" data-id="'+e.id+'"><span class="tm">'+(e.time||'하루')+'</span><span class="chip" style="--c:'+(e.who==='all'?'#fff':m.color)+'">'+MF.esc(e.who==='all'?'가족':m.name)+'</span><span class="grow">'+MF.esc(e.title)+(e.rep==='w'?' <span class="muted">매주</span>':'')+'</span></div>';}).join(''):'<div class="muted">일정 없음</div>')+'</div>';}
+  $('days').innerHTML=h;}
+function edit(e,date){MF.form({title:e?'일정 고치기':'일정 추가',value:e||{date:date||MF.ymd(),who:'all',rep:'n'},
+  fields:[{k:'title',label:'무슨 일정',req:true,max:30,ph:'예: 스케이트 수업'},{k:'date',label:'날짜 (매주 반복이면 시작하는 날)',type:'date',req:true},{k:'time',label:'시간 (비워 두면 하루 종일)',type:'time'},
+    {k:'who',label:'누구',type:'opts',opts:[['all','가족 모두']].concat(MF.members().map(function(m){return[m.id,m.name];}))},{k:'rep',label:'반복',type:'opts',opts:[['n','이번만'],['w','매주']]}],
+  onSave:function(v){if(e)Object.assign(e,v);else{v.id=MF.uid();D.push(v);}MF.save('schedule',D);draw();MF.toast('저장했어요');},
+  onDelete:e?function(){D=D.filter(function(x){return x!==e;});MF.save('schedule',D);draw();}:null});}
+$('days').onclick=function(ev){var a=ev.target.closest('[data-add]');if(a){edit(null,a.dataset.add);return;}var r=ev.target.closest('.ev');if(r){var e=D.filter(function(x){return x.id===r.dataset.id;})[0];if(e)edit(e);}};
+$('add').onclick=function(){edit(null);};
+$('prev').onclick=function(){wk.setDate(wk.getDate()-7);draw();};$('next').onclick=function(){wk.setDate(wk.getDate()+7);draw();};$('now').onclick=function(){wk=monday(new Date());draw();};
+draw();
+})();
+</script>
+</body>
+</html>

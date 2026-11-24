@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#fbf4e6">
+<title>여행 짐 체크 · 몽치치 패밀리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../fam/fam.css">
+<style>
+
+</style>
+</head>
+<body>
+<main>
+<div class="mf-tabs" id="tabs"><button data-t="dom">🚗 국내용</button><button data-t="abroad">✈️ 해외용</button></div>
+<div class="card row"><div class="grow"><div class="muted">챙긴 것</div><div class="big" id="prog"></div></div><button class="btn sm" id="reset">새 여행 시작</button></div>
+<div id="list"></div>
+<button class="mf-add" id="add">+ 준비물 추가</button>
+</main>
+<script src="../fam/fam.js"></script>
+<script>
+(function(){'use strict';var $=function(id){return document.getElementById(id);};
+MF.head('여행 짐 체크','life','국내용과 해외용을 따로 챙겨요. 이름을 누르면 고칠 수 있어요.');
+function mk(o){var a=[],n=0;Object.keys(o).forEach(function(c){o[c].forEach(function(x){a.push({id:'d'+(n++),cat:c,name:x});});});return{items:a,chk:{}};}
+var DEF={dom:mk({'지갑·서류':['신분증','카드·현금','숙소 예약 확인'],'옷':['갈아입을 옷','잠옷','속옷·양말','겉옷'],'세면·약':['세면도구','선크림','상비약(해열제·밴드)','멀미약'],'전자':['충전기','보조배터리'],'아이':['간식','물통','놀거리(책·태블릿)'],'차':['카시트·부스터','주유·하이패스 확인']}),
+ abroad:mk({'서류':['여권','항공권·예약 확인','숙소 바우처','여행자보험','입국 서류(비자·사전등록)','국제운전면허증(운전할 때)'],'돈':['트래블카드','현금 소액','신용카드 1장'],'전자':['유심·이심','어댑터(돼지코)','충전기','보조배터리(기내 가방에)','카메라'],'옷':['갈아입을 옷','잠옷','속옷·양말','겉옷','수영복'],'세면·약':['세면도구','선크림','상비약','멀미약','모기약'],'아이':['간식','물통','기내 놀거리','여벌 옷'],'전날 확인':['캐리어 무게','기내 액체 100ml','항공편 상태']})};
+var D=MF.load('pack',null)||DEF,tab=MF.load('pack_tab','abroad');
+function L(){return D[tab];}
+function save(){MF.save('pack',D);}
+function draw(){$('tabs').querySelectorAll('button').forEach(function(b){b.setAttribute('aria-pressed',b.dataset.t===tab);});
+  var l=L(),cats=[],h='';l.items.forEach(function(i){if(cats.indexOf(i.cat)<0)cats.push(i.cat);});
+  var done=l.items.filter(function(i){return l.chk[i.id];}).length;$('prog').textContent=done+' / '+l.items.length;
+  cats.forEach(function(c){h+='<h2 class="sec">'+MF.esc(c)+'</h2>'+l.items.filter(function(i){return i.cat===c;}).map(function(i){var on=!!l.chk[i.id];return '<div class="card row" style="padding:9px 12px;margin-bottom:7px"><button class="ck" data-ck="'+i.id+'" aria-pressed="'+on+'" aria-label="'+MF.esc(i.name)+' 체크">'+(on?'✓':'')+'</button><span class="grow'+(on?' done':'')+'" data-ed="'+i.id+'">'+MF.esc(i.name)+'</span></div>';}).join('');});
+  $('list').innerHTML=h||'<div class="empty">준비물을 추가해 주세요.</div>';}
+function edit(i){var l=L(),cats=[];l.items.forEach(function(x){if(cats.indexOf(x.cat)<0)cats.push(x.cat);});
+  MF.form({title:i?'준비물 고치기':'준비물 추가',value:i||{cat:cats[0]||'기타'},fields:[{k:'name',label:'준비물',req:true,max:24},{k:'cat',label:'묶음 (새 이름을 쓰면 새 묶음)',max:12,req:true}],
+    onSave:function(v){if(i)Object.assign(i,v);else{v.id=MF.uid();l.items.push(v);}save();draw();},onDelete:i?function(){l.items=l.items.filter(function(x){return x!==i;});delete l.chk[i.id];save();draw();}:null});}
+$('tabs').onclick=function(e){var b=e.target.closest('button');if(!b)return;tab=b.dataset.t;MF.save('pack_tab',tab);draw();};
+$('list').onclick=function(e){var l=L(),b=e.target.closest('[data-ck]');if(b){if(l.chk[b.dataset.ck])delete l.chk[b.dataset.ck];else l.chk[b.dataset.ck]=1;save();draw();return;}
+  var ed=e.target.closest('[data-ed]');if(ed)edit(l.items.filter(function(x){return x.id===ed.dataset.ed;})[0]);};
+$('add').onclick=function(){edit(null);};
+$('reset').onclick=function(){if(confirm((tab==='dom'?'국내용':'해외용')+' 체크를 모두 지울까요? 준비물 목록은 그대로 남아요.')){L().chk={};save();draw();}};
+draw();
+})();
+</script>
+</body>
+</html>

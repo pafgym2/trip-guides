@@ -73,7 +73,7 @@ h2.sub{font-family:var(--f-disp);font-weight:400;font-size:18px;margin:22px 0 10
     <h1>몽치치 <b>패밀리</b></h1>
     <p class="lede" id="hello">우리 가족이 만든 것들을 한곳에 모았어요.</p>
     <div class="grid" id="cats"></div>
-    <p class="foot">인터넷이 될 때 한 번 열어 두면, 여행 가이드와 게임은 인터넷 없이도 열려요.</p>
+    <p class="foot">인터넷이 될 때 한 번 열어 두면 인터넷 없이도 열려요.<br>라이프·일상에 적은 내용은 이 기기에만 저장돼요. <a href="./fam/" style="color:inherit">설정 · 백업</a></p>
   </section>
   <section id="cat" hidden>
     <a class="back" href="#">← 처음으로</a>
@@ -96,8 +96,16 @@ var CATS=[
    {em:'🔤',name:'한글 놀이',ds:'글자 만들기 · 듣고 찾기 · 따라 쓰기',href:'./hangul/'},
    {em:'🗣️',name:'영어 연습',ds:'화상영어 스크립트 · 매일 한 장',href:'../dayoon-english/'},
    {em:'📋',name:'코치 퀴즈 · 성적표',ds:'게임방 첫 화면 아래 버튼에서 열어요',href:'./games/'}]},
- {id:'life',em:'🏡',name:'라이프',c:'--c-life',lede:'집안일, 건강, 살림에 쓰는 것들이에요.',items:[]},
- {id:'daily',em:'📷',name:'일상',c:'--c-daily',lede:'사진, 영상, 기록이에요.',items:[]}
+ {id:'life',em:'🏡',name:'라이프',c:'--c-life',lede:'집에서 자주 쓰는 도구예요.',items:[
+   {em:'🗓️',name:'가족 일정표',ds:'이번 주 누가 어디 가는지 · 매주 반복 일정',href:'./life/schedule.html'},
+   {em:'🧹',name:'집안일 · 용돈 보드',ds:'집안일을 하면 별 · 용돈이나 게임 티켓으로',href:'./life/chores.html'},
+   {em:'🧳',name:'여행 짐 체크',ds:'국내용 · 해외용 준비물',href:'./life/pack.html'},
+   {em:'🍽️',name:'주말 외식 장소',ds:'가본 곳과 안 가본 곳 · 어디 갈까 뽑기',href:'./life/eatout.html'}]},
+ {id:'daily',em:'📷',name:'일상',c:'--c-daily',lede:'하루하루 쌓이는 기록이에요.',items:[
+   {em:'✏️',name:'한 줄 일기장',ds:'가족 모두 오늘의 한 줄',href:'./daily/diary.html'},
+   {em:'⛸️',name:'스케이트 기록장',ds:'대회·연습 기록과 종목별 최고 기록',href:'./daily/skate.html'},
+   {em:'📏',name:'키 · 몸무게 기록장',ds:'날짜별 기록과 그래프',href:'./daily/growth.html'},
+   {em:'📚',name:'읽은 책 목록',ds:'책 제목 · 별점 · 한 줄 느낌',href:'./daily/books.html'}]}
 ];
 /* 여행 연혁: 가이드가 있으면 href, 없으면 눌렀을 때 '기록 준비 중' 화면. note 는 그 화면에 보여 줄 한 줄 메모. */
 var TRIPS=[

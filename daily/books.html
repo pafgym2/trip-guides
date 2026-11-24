@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#fbf4e6">
+<title>읽은 책 목록 · 몽치치 패밀리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="../fam/fam.css">
+<style>
+
+</style>
+</head>
+<body>
+<main>
+<div id="who"></div>
+<div class="card" id="sum"></div>
+<div id="list"></div>
+<button class="mf-add" id="add">+ 읽은 책 추가</button>
+</main>
+<script src="../fam/fam.js"></script>
+<script>
+(function(){'use strict';var $=function(id){return document.getElementById(id);};
+MF.head('읽은 책 목록','daily','다 읽은 책을 적고 별점을 줘요.');
+var D=MF.load('books',[]),filter='all';
+function save(){MF.save('books',D);}
+function draw(){var l=D.filter(function(x){return filter==='all'||x.who===filter;}).sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0;}),y=String(new Date().getFullYear()),ym=MF.ymd().slice(0,7);
+  $('sum').innerHTML='<div class="row"><div class="grow"><div class="muted">'+(filter==='all'?'가족 모두':MF.esc(MF.member(filter).name))+'</div><div class="big">📚 모두 '+l.length+'권</div></div><div style="text-align:right" class="muted">올해 '+l.filter(function(x){return x.d.slice(0,4)===y;}).length+'권<br>이번 달 '+l.filter(function(x){return x.d.slice(0,7)===ym;}).length+'권</div></div>';
+  $('list').innerHTML=l.length?l.map(function(x){var m=MF.member(x.who);return '<div class="card tap" data-id="'+x.id+'"><div class="row"><h2 class="grow">'+MF.esc(x.title)+'</h2><span>'+MF.stars(x.stars)+'</span></div><div><span class="chip" style="--c:'+m.color+'">'+MF.esc(m.name)+'</span> <span class="muted">'+(x.author?MF.esc(x.author)+' · ':'')+MF.day(x.d,true)+'</span></div>'+(x.memo?'<div class="muted" style="margin-top:5px">'+MF.esc(x.memo)+'</div>':'')+'</div>';}).join(''):'<div class="empty">아직 적은 책이 없어요.</div>';}
+function edit(e){MF.form({title:e?'책 고치기':'읽은 책 추가',value:e||{d:MF.ymd(),stars:5,who:filter==='all'?MF.members()[MF.members().length-1].id:filter},
+  fields:[{k:'title',label:'책 제목',req:true,max:40},{k:'who',label:'누가 읽었나요',type:'who'},{k:'stars',label:'별점',type:'stars'},{k:'d',label:'다 읽은 날',type:'date',req:true},{k:'author',label:'지은이',max:24},{k:'memo',label:'한 줄 느낌',type:'textarea',max:120}],
+  onSave:function(v){v.stars=+v.stars||0;if(e)Object.assign(e,v);else{v.id=MF.uid();D.push(v);}save();draw();MF.toast('저장했어요');},onDelete:e?function(){D=D.filter(function(x){return x!==e;});save();draw();}:null});}
+$('list').onclick=function(ev){var c=ev.target.closest('[data-id]');if(c)edit(D.filter(function(x){return x.id===c.dataset.id;})[0]);};
+$('add').onclick=function(){edit(null);};
+MF.who($('who'),{all:true},function(id){filter=id;draw();});
+})();
+</script>
+</body>
+</html>
