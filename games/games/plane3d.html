@@ -127,6 +127,7 @@ h3{margin:2px 0 -4px;font-family:var(--f-disp);font-weight:400;font-size:17px;te
 <div id="toast"></div>
 
 <script src="./three.min.js"></script>
+<script src="./ticket.js"></script>
 <script>
 (()=>{
 'use strict';
@@ -248,7 +249,7 @@ function drawMap(){const g=ctx;const sky=g.createLinearGradient(0,0,0,VH);sky.ad
   const a=mapT*.6;g.save();g.translate(H[0]*VW+Math.cos(a)*46,H[1]*VH+Math.sin(a)*22-4);g.scale(Math.sin(a)>0?-1:1,1);g.scale(.8,.8);drawSide(g,curPlane(),curCol(),mapT,false);g.restore();}
 
 /* ---------- 비행 시작 ---------- */
-function startFlight(i){stageIdx=i;stage=STAGES[i];run={rings:0,ringTotal:stage.rings,star:0,takeoff:0,landing:0,zone:false,tries:0,coins:0};
+function startFlight(i){if(window.MongGate&&!autoPilot&&!MongGate.pass){MongGate.play(()=>{MongGate.pass=1;try{startFlight(i);}finally{MongGate.pass=0;}});return;}stageIdx=i;stage=STAGES[i];run={rings:0,ringTotal:stage.rings,star:0,takeoff:0,landing:0,zone:false,tries:0,coins:0};
   $('map').hidden=true;$('result').hidden=true;$('shop').hidden=true;$('hud').hidden=false;$('progDest').textContent=stage.em+' '+stage.name;audio();beginTakeoff();}
 function beginTakeoff(){$('btnRoll').hidden=true;state='takeoff';T=0;pl={x:0,alt:0,v:0,vy:0,air:false,pitch:0,landed:false,liftX:0,early:0};stars=[];hold=false;
   tip('초록색이 되면 화면을 꾹!','',3500);}

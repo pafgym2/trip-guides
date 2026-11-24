@@ -269,6 +269,7 @@ h2{font-family:var(--f-disp);font-style:italic;font-weight:700;font-size:34px;li
 </section>
 <div id="toast"></div>
 
+<script src="./ticket.js"></script>
 <script>
 (()=>{
 'use strict';
@@ -650,7 +651,7 @@ function standings(){
   return cars.slice().sort((a,b)=>{if(a.finished&&b.finished)return a.finishTime-b.finishTime;if(a.finished)return-1;if(b.finished)return 1;return b.prog-a.prog;});
 }
 function showOnly(id){['menu','shop','pause','result'].forEach(s=>$(s).hidden=s!==id);}
-function startRace(){
+function startRace(){if(window.MongGate&&!autoPilot&&!MongGate.pass){MongGate.play(()=>{MongGate.pass=1;try{startRace();}finally{MongGate.pass=0;}});return;}
   initAudio();
   setTrack(TR[trackSel]);makeCars('race');state='countdown';cd=0;lightsOn=0;goAt=3.0+.3+Math.random()*.6;raceTime=0;resultT=-1;paused=false;
   [...$('lights').children].forEach(s=>s.classList.remove('on'));$('lights').hidden=false;

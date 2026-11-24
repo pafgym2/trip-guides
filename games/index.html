@@ -56,13 +56,15 @@ h1 b{font-weight:400;color:var(--tomato)}
 .badge{position:absolute;top:10px;left:10px;font-family:var(--f-disp);font-size:14px;background:var(--tomato);color:var(--paper);border:2.5px solid var(--ink);border-radius:10px;padding:3px 9px;transform:rotate(-6deg);z-index:1}
 .badge.b3{left:auto;right:10px;background:var(--violet);transform:rotate(5deg);font-size:18px}
 .tag{position:absolute;top:7px;left:7px;font-family:var(--f-body);font-weight:700;font-size:10.5px;background:var(--paper);border:2px solid var(--ink);border-radius:8px;padding:1px 6px;z-index:1}
-footer{grid-area:foot;font-size:11.5px;font-weight:500;text-align:center;opacity:.75;margin:0}
+footer{grid-area:foot;text-align:center;margin:0}
+#btnGate{font-family:var(--f-disp);font-size:16px;color:var(--ink);background:var(--paper);border:3px solid var(--ink);border-radius:999px;padding:7px 18px;box-shadow:0 4px 0 var(--ink);cursor:pointer;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#btnGate:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
 @media (min-width:860px) and (min-aspect-ratio:11/10){
   main{max-width:1040px;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);grid-template-rows:auto minmax(0,1.25fr) minmax(0,1fr) auto;
     grid-template-areas:"head head" "hero games" "hero learn" "foot foot";gap:16px}
   .nm{font-size:19px}
 }
-@media (max-height:520px){footer,.kicker{display:none}main{gap:8px}}
+@media (max-height:520px){.kicker{display:none}#btnGate{font-size:13px;padding:3px 12px}main{gap:8px}}
 @media (prefers-reduced-motion:reduce){.tile{transition:none}}
 </style>
 </head>
@@ -90,8 +92,14 @@ footer{grid-area:foot;font-size:11.5px;font-weight:500;text-align:center;opacity
     <a class="tile" href="../../dayoon-english/" style="--c:var(--violet)"><span class="tag">배우기</span><canvas data-t="eng"></canvas><span class="label"><span class="nm">영어 연습</span></span></a>
   </div>
 
-  <footer>하고 싶은 게임을 눌러요. 포인트와 기록은 이 기기에만 저장돼요.</footer>
+  <footer><button type="button" id="btnGate">🎟 티켓 · 📋 성적표</button></footer>
 </main>
+<script src="games/ticket.js"></script>
+<script>
+(function(){var b=document.getElementById('btnGate');if(!b)return;
+  function label(){try{var i=MongGate.info();b.textContent=i.on?('🎟 '+i.name+' '+i.left+'장 · 📋 성적표'):'📋 성적표 · 퀴즈';}catch(e){}}
+  b.onclick=function(){if(window.MongGate)MongGate.panel(label);};label();addEventListener('pageshow',label);document.addEventListener('visibilitychange',label);})();
+</script>
 <script>
 (()=>{
 const INK='#1d1b3a',TAU=Math.PI*2;
