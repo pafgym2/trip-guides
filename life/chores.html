@@ -53,6 +53,7 @@ $('bal').onclick=function(e){var b=e.target.closest('button');if(!b)return;var n
   if(b.id==='tk'){if(!window.MongGate){MF.toast('게임방 티켓을 불러오지 못했어요');return;}var r=MongGate.grant(m.name);
     if(r==='ok'){D.bal[who]=n-TK;D.hist.push({d:MF.ymd(),who:who,t:'tk',stars:TK});save();draw();MF.toast('🎟 티켓 1장을 받았어요');}
     else MF.toast(r==='max'?'오늘은 티켓을 더 받을 수 없어요':'게임방에 '+m.name+' 선수가 없어요');}};
+MF.live(['chores'],function(){D=MF.load('chores',null)||DEF;draw();});
 })();
 </script>
 </body>

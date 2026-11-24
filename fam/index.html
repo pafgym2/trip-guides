@@ -16,9 +16,11 @@
   <h2 class="sec">가족 이름</h2>
   <div id="mem"></div>
   <button class="btn sm" id="addM">+ 가족 추가</button>
+  <h2 class="sec">가족 공유 (폰끼리 같이 보기)</h2>
+  <div class="card" id="share"><p class="muted" style="margin:0">확인하는 중…</p></div>
   <h2 class="sec">백업 · 다른 기기로 옮기기</h2>
   <div class="card">
-    <p style="margin:0 0 10px">라이프와 일상에 적은 내용은 이 기기에만 저장돼요. 백업 파일을 만들어 두면 폰을 바꾸거나 다른 기기에서도 불러올 수 있어요.</p>
+    <p style="margin:0 0 10px">백업 파일을 만들어 두면 폰을 바꾸거나 저장이 지워졌을 때 다시 불러올 수 있어요.</p>
     <div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn" id="exp">백업 파일 만들기</button><label class="btn" style="cursor:pointer">백업 불러오기<input type="file" id="imp" accept="application/json,.json" hidden></label></div>
     <p class="muted" id="info" style="margin:10px 0 0"></p>
   </div>
@@ -37,8 +39,17 @@ $('mem').onclick=function(e){var c=e.target.closest('[data-i]');if(c)edit(+c.dat
 $('exp').onclick=function(){var o={app:'mongfam',v:1,at:new Date().toISOString(),data:{}};keys().forEach(function(k){o.data[k]=localStorage.getItem(k);});
   var b=new Blob([JSON.stringify(o)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='몽치치패밀리_백업_'+MF.ymd().replace(/-/g,'')+'.json';document.body.appendChild(a);a.click();a.remove();MF.toast('백업 파일을 만들었어요');};
 $('imp').onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var o=JSON.parse(r.result);if(o.app!=='mongfam'||!o.data)throw 0;
-    if(!confirm('이 기기의 라이프·일상 내용을 백업('+String(o.at).slice(0,10)+')으로 바꿀까요?'))return;keys().forEach(function(k){localStorage.removeItem(k);});Object.keys(o.data).forEach(function(k){if(k.indexOf('mf_')===0)localStorage.setItem(k,o.data[k]);});draw();MF.toast('불러왔어요');}
+    if(!confirm('이 기기의 라이프·일상 내용을 백업('+String(o.at).slice(0,10)+')으로 바꿀까요?'))return;keys().forEach(function(k){localStorage.removeItem(k);});Object.keys(o.data).forEach(function(k){if(k.indexOf('mf_')===0)localStorage.setItem(k,o.data[k]);});MF.markAllDirty();if(MF.shared())MF.syncAll();draw();MF.toast('불러왔어요');}
   catch(err){MF.toast('백업 파일이 아니에요');}};r.readAsText(f);e.target.value='';};
+function share(){var el=$('share');
+  if(MF.shared()){el.innerHTML='<div class="big" style="font-size:19px">✅ 가족 공유가 켜져 있어요</div><p class="muted" style="margin:6px 0 10px">다른 폰에서도 이 화면에서 <b>같은 가족 비밀번호</b>를 넣으면 일정표·일기 등이 같이 보여요. 인터넷이 될 때 서로 맞춰져요.</p><div class="row" style="gap:8px;flex-wrap:wrap"><button class="btn sm" id="syncNow">지금 맞추기</button><button class="btn sm" id="shareOff">이 기기에서 공유 끄기</button></div><p class="muted" id="shareMsg" style="margin:8px 0 0"></p>';
+    $('syncNow').onclick=function(){$('shareMsg').textContent='맞추는 중…';MF.syncAll().then(function(){$('shareMsg').textContent='맞췄어요.';draw();});};
+    $('shareOff').onclick=function(){if(confirm('이 기기에서만 공유를 끌까요? 적어 둔 내용은 이 기기에 그대로 남아요.')){MF.shareOff();share();}};return;}
+  el.innerHTML='<p style="margin:0 0 8px">가족 비밀번호를 정하면, 같은 비밀번호를 넣은 폰끼리 일정표·일기·기록이 같이 보여요. 내용은 이 비밀번호로 잠가서 저장하기 때문에 비밀번호를 모르면 읽을 수 없어요.</p><label class="muted" for="pw">가족 비밀번호 (8자 이상, 가족만 아는 말로)</label><input id="pw" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="60" style="width:100%;font-size:16px;padding:10px 11px;margin:4px 0 10px;background:#fff;border:2.5px solid var(--line);border-radius:12px"><button class="btn go" id="shareOn" style="width:100%">공유 켜기</button><p class="muted" id="shareMsg" style="margin:8px 0 0">비밀번호를 잊으면 저장소의 내용은 다시 열 수 없어요. 이 기기에 있는 내용은 그대로 남아요.</p>';
+  $('shareOn').onclick=function(){var v=$('pw').value.trim();if(v.length<8){$('shareMsg').textContent='8자 이상으로 정해 주세요.';return;}if(!(window.crypto&&crypto.subtle)){$('shareMsg').textContent='이 브라우저에서는 공유를 쓸 수 없어요.';return;}
+    $('shareOn').disabled=true;$('shareMsg').textContent='켜는 중… 잠시만요.';
+    MF.shareOn(v).then(function(r){share();draw();MF.toast(r.existing?'가족 내용을 불러왔어요':'공유를 켰어요');},function(){share();$('shareMsg').textContent='켜지 못했어요. 인터넷을 확인하고 다시 해 주세요.';});};}
+MF.shareProbe().then(function(ok){if(ok||MF.shared())share();else $('share').innerHTML='<p class="muted" style="margin:0">가족 공유는 준비 중이에요. 저장 공간이 열리면 여기서 켤 수 있어요.</p>';});
 draw();})();
 </script>
 </body>

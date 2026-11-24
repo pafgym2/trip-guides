@@ -37,6 +37,7 @@ function edit(e,who){var m=MF.member(e?e.who:who);MF.form({title:m.name+'의 한
 $('today').onclick=function(ev){var b=ev.target.closest('[data-w]');if(!b)return;edit(mine(b.dataset.w,MF.ymd()),b.dataset.w);};
 $('list').onclick=function(ev){var c=ev.target.closest('[data-id]');if(c)edit(D.filter(function(x){return x.id===c.dataset.id;})[0]);};
 MF.who($('who'),{all:true},function(id){filter=id;draw();});
+MF.live(['diary'],function(){D=MF.load('diary',[]);draw();});
 })();
 </script>
 </body>

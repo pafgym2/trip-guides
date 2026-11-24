@@ -44,6 +44,7 @@ $('days').onclick=function(ev){var a=ev.target.closest('[data-add]');if(a){edit(
 $('add').onclick=function(){edit(null);};
 $('prev').onclick=function(){wk.setDate(wk.getDate()-7);draw();};$('next').onclick=function(){wk.setDate(wk.getDate()+7);draw();};$('now').onclick=function(){wk=monday(new Date());draw();};
 draw();
+MF.live(['schedule'],function(){D=MF.load('schedule',[]);draw();});
 })();
 </script>
 </body>

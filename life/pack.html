@@ -44,6 +44,7 @@ $('list').onclick=function(e){var l=L(),b=e.target.closest('[data-ck]');if(b){if
 $('add').onclick=function(){edit(null);};
 $('reset').onclick=function(){if(confirm((tab==='dom'?'국내용':'해외용')+' 체크를 모두 지울까요? 준비물 목록은 그대로 남아요.')){L().chk={};save();draw();}};
 draw();
+MF.live(['pack'],function(){D=MF.load('pack',null)||DEF;draw();});
 })();
 </script>
 </body>

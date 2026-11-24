@@ -48,6 +48,7 @@ $('add').onclick=function(){edit(null);};
 $('dice').onclick=function(){var l=D.filter(function(p){return !p.went;}),t='todo';if(!l.length){l=D.filter(function(p){return p.went&&(p.stars|0)>=4;});t='went';}
   if(!l.length){MF.toast('먼저 장소를 추가해 주세요');return;}var p=l[Math.floor(Math.random()*l.length)];tab=t;pick=p.id;draw();MF.toast('🎲 '+p.name+' 어때요?');var el=document.querySelector('.card.pick');if(el)el.scrollIntoView({block:'center',behavior:'smooth'});};
 draw();
+MF.live(['eatout'],function(){D=MF.load('eatout',[]);draw();});
 })();
 </script>
 </body>

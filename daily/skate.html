@@ -44,6 +44,7 @@ function edit(e){MF.form({title:e?'기록 고치기':'기록 추가',value:e?Obj
 $('list').onclick=function(ev){var c=ev.target.closest('[data-id]');if(c)edit(D.filter(function(x){return x.id===c.dataset.id;})[0]);};
 $('add').onclick=function(){edit(null);};
 MF.who($('who'),{kids:true},function(id){who=id;draw();});
+MF.live(['skate'],function(){D=MF.load('skate',[]);draw();});
 })();
 </script>
 </body>

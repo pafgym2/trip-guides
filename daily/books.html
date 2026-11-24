@@ -35,6 +35,7 @@ function edit(e){MF.form({title:e?'책 고치기':'읽은 책 추가',value:e||{
 $('list').onclick=function(ev){var c=ev.target.closest('[data-id]');if(c)edit(D.filter(function(x){return x.id===c.dataset.id;})[0]);};
 $('add').onclick=function(){edit(null);};
 MF.who($('who'),{all:true},function(id){filter=id;draw();});
+MF.live(['books'],function(){D=MF.load('books',[]);draw();});
 })();
 </script>
 </body>
