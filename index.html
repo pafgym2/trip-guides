@@ -111,7 +111,6 @@ var TRIPS=[
  {y:2026,name:'도쿄',em:'🇯🇵'},
  {y:2026,name:'시드니',em:'🇦🇺',href:'./sydney/',ds:'11. 14 ~ 11. 23 · 8박 9일'}
 ];
-var EXTRA=[{em:'🌺',name:'오키나와 3박 4일',ds:'2026. 9. 17 ~ 9. 20 · 부모님과 함께 · 차탄 거점',href:'./okinawa/'}];
 var $=function(id){return document.getElementById(id);};
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function live(c){return c.trips?TRIPS.length:c.items.filter(function(i){return !i.soon;}).length;}
@@ -122,7 +121,7 @@ function renderTrips(c){var h='',yr=0,first=TRIPS[0].y,last=TRIPS[TRIPS.length-1
   h+='<p class="tsum">'+first+' — '+last+' · '+TRIPS.length+'번의 여행 · 가이드 '+TRIPS.filter(function(t){return t.href;}).length+'개</p><ol class="tl">';
   TRIPS.forEach(function(t,i){if(t.y!==yr){yr=t.y;h+='<li class="yr"><span>'+yr+'</span></li>';}
     h+='<li><a class="trip'+(t.href?' has':'')+'" href="'+(t.href||'#t'+i)+'"><span class="em">'+t.em+'</span><span class="tx"><span class="nm" style="display:block">'+esc(t.name)+'</span>'+(t.ds?'<span class="ds" style="display:block">'+esc(t.ds)+'</span>':'')+'</span><span class="go">'+(t.href?'가이드 →':'→')+'</span></a></li>';});
-  h+='</ol><h2 class="sub">함께 만든 다른 가이드</h2>'+EXTRA.map(function(i){return '<a class="item" href="'+i.href+'" style="--c:var('+c.c+')"><span class="em">'+i.em+'</span><span class="tx"><span class="nm" style="display:block">'+esc(i.name)+'</span><span class="ds" style="display:block">'+esc(i.ds)+'</span></span><span class="go">→</span></a>';}).join('');
+  h+='</ol>';
   $('items').innerHTML=h;}
 function renderTrip(i){var t=TRIPS[i],n=0;TRIPS.forEach(function(x,j){if(j<=i)n++;});
   $('cTitle').textContent=t.em+' '+t.name;$('cLede').textContent=t.y+'년 · '+n+'번째 여행';
