@@ -2,79 +2,118 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<meta name="description" content="가족여행 가이드 모음">
-<title>가족여행 가이드</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@700;800&family=IBM+Plex+Sans+KR:wght@400;500&display=swap">
+<meta name="description" content="몽치치 패밀리 — 여행, 게임, 교육을 한곳에">
+<meta name="theme-color" content="#fbf4e6">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="몽치치 패밀리">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<title>몽치치 패밀리</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
 <style>
-:root{--ground:#F7F7F4;--surface:#fff;--ink:#1C1A17;--ink-2:#5A554D;--ink-3:#8C867B;
-  --line:#E2E0D8;--accent:#553D80;--accent-soft:#EDE7F5}
-@media (prefers-color-scheme:dark){:root{--ground:#16151A;--surface:#1E1C24;--ink:#EFEDF2;
-  --ink-2:#ABA4B8;--ink-3:#7D758C;--line:#302C3A;--accent:#C9B5EC;--accent-soft:#2A2338}}
-*{box-sizing:border-box}
-body{margin:0;background:var(--ground);color:var(--ink);
-  font-family:'IBM Plex Sans KR','Apple SD Gothic Neo',sans-serif;font-size:16px;line-height:1.7;
-  -webkit-text-size-adjust:100%}
-h1,h2{font-family:'Gothic A1',sans-serif;margin:0}
-.wrap{max-width:520px;margin:0 auto;padding:36px 20px 60px}
-.eyebrow{font-size:11px;font-weight:600;letter-spacing:.16em;color:var(--ink-3);text-transform:uppercase}
-h1{font-size:28px;font-weight:800;letter-spacing:-.02em;margin:8px 0 6px}
-.lead{color:var(--ink-2);font-size:14px;margin:0 0 28px}
-a.card{display:block;background:var(--surface);border:1px solid var(--line);border-radius:14px;
-  padding:20px;margin-bottom:14px;text-decoration:none;color:inherit}
-a.card h2{font-size:20px;font-weight:800;letter-spacing:-.02em}
-a.card .when{font-size:13px;color:var(--ink-3);margin-top:3px;font-variant-numeric:tabular-nums}
-a.card .desc{font-size:13.5px;color:var(--ink-2);margin-top:10px;line-height:1.6}
-a.card .go{display:inline-block;margin-top:14px;font-size:13px;font-weight:600;color:var(--accent);
-  background:var(--accent-soft);padding:7px 13px;border-radius:8px}
-.note{font-size:12.5px;color:var(--ink-3);line-height:1.65;margin-top:24px;
-  border-top:1px solid var(--line);padding-top:18px}
+/* 한 화면: 위에 이름, 가운데 카테고리 타일(2칸), 타일을 누르면 그 카테고리의 목록으로 바뀜(#주소). */
+:root{--ground:#fbf4e6;--paper:#fffdf8;--ink:#2a2440;--ink2:#6b6480;--line:#2a2440;
+  --c-travel:#7cc6f2;--c-game:#ffd84d;--c-edu:#8fdcb4;--c-life:#ffb3a1;--c-daily:#c9b5f0;--c-etc:#e9e3d6;
+  --f-disp:"Jua","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;color-scheme:light}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--ground);color:var(--ink);font-family:var(--f-body);-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+body{padding:calc(18px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+main{max-width:560px;margin:0 auto}
+.kicker{font-size:11px;font-weight:700;letter-spacing:.2em;color:var(--ink2);margin:0}
+h1{font-family:var(--f-disp);font-weight:400;font-size:clamp(32px,9.5vw,42px);line-height:1.05;margin:4px 0 2px}
+h1 b{font-weight:400;color:#ff6b57}
+.lede{font-size:14px;color:var(--ink2);margin:0 0 16px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cat{position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:128px;padding:14px 14px 12px;text-decoration:none;color:var(--ink);background:var(--c);border:3px solid var(--line);border-radius:22px;box-shadow:0 6px 0 var(--line);transition:transform .08s,box-shadow .08s}
+.cat:active{transform:translateY(4px);box-shadow:0 2px 0 var(--line)}
+.cat:focus-visible,.item:focus-visible,.back:focus-visible{outline:4px solid #7b5cf0;outline-offset:3px}
+.cat .em{font-size:40px;line-height:1}
+.cat .nm{font-family:var(--f-disp);font-size:23px;line-height:1.1;margin-top:8px}
+.cat .ct{font-size:12.5px;font-weight:500;opacity:.8;margin-top:2px}
+.cat.wide{grid-column:1/-1;min-height:104px;flex-direction:row;align-items:center;justify-content:flex-start;gap:14px}
+.cat.wide .nm{margin-top:0}
+.cat.empty{background:var(--c-etc);border-style:dashed;box-shadow:none}
+.back{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-disp);font-size:16px;color:var(--ink);background:var(--paper);border:3px solid var(--line);border-radius:999px;padding:6px 14px;box-shadow:0 4px 0 var(--line);text-decoration:none;margin-bottom:14px}
+.back:active{transform:translateY(3px);box-shadow:0 1px 0 var(--line)}
+.list{display:grid;gap:12px}
+.item{display:flex;align-items:center;gap:14px;padding:14px;text-decoration:none;color:var(--ink);background:var(--paper);border:3px solid var(--line);border-radius:20px;box-shadow:0 5px 0 var(--line)}
+.item:active{transform:translateY(3px);box-shadow:0 2px 0 var(--line)}
+.item .em{flex:none;width:58px;height:58px;display:grid;place-items:center;font-size:32px;background:var(--c);border:3px solid var(--line);border-radius:16px}
+.item .tx{min-width:0;flex:1}
+.item .nm{font-family:var(--f-disp);font-size:20px;line-height:1.15}
+.item .ds{font-size:13px;color:var(--ink2);margin-top:3px;line-height:1.45}
+.item .go{flex:none;font-family:var(--f-disp);font-size:18px}
+.item.soon{background:transparent;border-style:dashed;box-shadow:none;color:var(--ink2)}
+.item.soon .em{background:var(--c-etc)}
+.foot{font-size:12px;color:var(--ink2);text-align:center;margin:18px 0 0;line-height:1.6}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){.cat,.item,.back{transition:none}}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="eyebrow">Family Trip Guides</div>
-  <h1>가족여행 가이드</h1>
-  <p class="lead">폰에서 보기 좋게 만든 여행 가이드입니다. 로그인 없이 열립니다.</p>
-
-  <a class="card" href="./sydney/">
-    <h2>🇦🇺 2026 시드니 몽치치</h2>
-    <div class="when">2026. 11. 14 (토) — 11. 23 (월)</div>
-    <div class="desc">자카란다 시즌에 맞춰 짠 일정. 탭 9개로 나뉘어 있고, 장소를 누르면 구글맵이 열립니다.
-      비상 번호는 누르면 바로 통화됩니다.</div>
-    <span class="go">열기 →</span>
-  </a>
-
-  <a class="card" href="./okinawa/">
-    <h2>🌺 오키나와 3박 4일</h2>
-    <div class="when">2026. 9. 17 (목) — 9. 20 (일)</div>
-    <div class="desc">차탄 거점으로 무리하지 않게 짠 일정. 탭 7개, 장소 30곳 지도 링크,
-      준비물 체크리스트가 있습니다.</div>
-    <span class="go">열기 →</span>
-  </a>
-
-  <a class="card" href="./clock/">
-    <h2>⏰ 시계 놀이</h2>
-    <div class="when">아이용 · 바늘시계 보는 법</div>
-    <div class="desc">바늘을 직접 돌려 보고, 몇 시인지 맞히는 퀴즈와 바늘 맞추기 미션을 해요.
-      홈 화면에 추가하면 앱처럼 전체 화면으로 열립니다.</div>
-    <span class="go">열기 →</span>
-  </a>
-
-  <a class="card" href="./hangul/">
-    <h2>🔤 한글 놀이</h2>
-    <div class="when">아이용 · 자음·모음·받침</div>
-    <div class="desc">자음과 모음을 골라 글자를 만들고, 소리를 듣고 낱말을 찾고, 조각을 맞춰 낱말을 완성하고, 손가락으로 따라 써요.
-      홈 화면에 추가하면 앱처럼 열리고 인터넷 없이도 됩니다.</div>
-    <span class="go">열기 →</span>
-  </a>
-
-  <div class="note">
-    두 가이드 모두 <strong>가족 내부용</strong>입니다. 예약번호·이름 같은 신원 정보는 넣지 않았습니다.<br>
-    요금·시간표는 2026년 9월 조사 시점 기준이며, 예약 전에는 직접 재확인하세요.<br>
-    사진은 Wikimedia Commons의 CC 라이선스 이미지이고 각 캡션에 작성자·라이선스를 표기했습니다.
-  </div>
-</div>
+<main>
+  <section id="home">
+    <p class="kicker">MONGCHICHI FAMILY</p>
+    <h1>몽치치 <b>패밀리</b></h1>
+    <p class="lede" id="hello">우리 가족이 만든 것들을 한곳에 모았어요.</p>
+    <div class="grid" id="cats"></div>
+    <p class="foot">인터넷이 될 때 한 번 열어 두면, 여행 가이드와 게임은 인터넷 없이도 열려요.</p>
+  </section>
+  <section id="cat" hidden>
+    <a class="back" href="#">← 처음으로</a>
+    <h1 id="cTitle"></h1>
+    <p class="lede" id="cLede"></p>
+    <div class="list" id="items"></div>
+  </section>
+</main>
+<script>
+/* 새 페이지를 만들면 해당 카테고리의 items에 한 줄만 추가하면 됩니다. soon:true 는 '준비 중' 표시(링크 없음). */
+var CATS=[
+ {id:'travel',em:'✈️',name:'여행',c:'--c-travel',lede:'다녀온 곳과 갈 곳의 가이드예요.',items:[
+   {em:'🇦🇺',name:'시드니 8박 9일',ds:'2026. 11. 14 ~ 11. 23 · 일정·지도·예산·짐 체크',href:'./sydney/'},
+   {em:'🌺',name:'오키나와 3박 4일',ds:'2026. 9. 17 ~ 9. 20 · 차탄 거점 일정·장소 30곳',href:'./okinawa/'},
+   {em:'🍜',name:'후쿠오카',ds:'2026. 8월 · 가이드는 아직 여기에 올리지 않았어요',soon:true}]},
+ {id:'game',em:'🎮',name:'게임',c:'--c-game',lede:'하루 티켓으로 하는 우리 집 게임방이에요.',items:[
+   {em:'🕹️',name:'몽팸게임방',ds:'꼬마 조종사 3D · 아이스 대시 · 레이싱 · 티켓과 성적표',href:'./games/'},
+   {em:'🛩️',name:'꼬마 조종사 3D',ds:'입체 하늘에서 링을 통과해요',href:'./games/games/plane3d.html'},
+   {em:'⛸️',name:'아이스 대시',ds:'쇼트트랙 · 별 모으기 · 메달',href:'./games/games/skate.html'},
+   {em:'🏎️',name:'레이싱',ds:'서킷 14개 · 업그레이드',href:'./games/games/racing.html'}]},
+ {id:'edu',em:'📚',name:'교육',c:'--c-edu',lede:'놀면서 배우는 것들이에요. 티켓 없이 할 수 있어요.',items:[
+   {em:'🕒',name:'시계 놀이',ds:'바늘시계 읽기 · 퀴즈와 바늘 맞추기',href:'./clock/'},
+   {em:'🔤',name:'한글 놀이',ds:'글자 만들기 · 듣고 찾기 · 따라 쓰기',href:'./hangul/'},
+   {em:'🗣️',name:'영어 연습',ds:'화상영어 스크립트 · 매일 한 장',href:'../dayoon-english/'},
+   {em:'📋',name:'코치 퀴즈 · 성적표',ds:'게임방 첫 화면 아래 버튼에서 열어요',href:'./games/'}]},
+ {id:'life',em:'🏡',name:'라이프',c:'--c-life',lede:'집안일, 건강, 살림에 쓰는 것들이에요.',items:[]},
+ {id:'daily',em:'📷',name:'일상',c:'--c-daily',lede:'사진, 영상, 기록이에요.',items:[]}
+];
+var $=function(id){return document.getElementById(id);};
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function live(c){return c.items.filter(function(i){return !i.soon;}).length;}
+function renderHome(){var h=new Date().getHours();$('hello').textContent=(h<11?'좋은 아침이에요.':h<18?'안녕하세요.':'좋은 저녁이에요.')+' 어디로 갈까요?';
+  $('cats').innerHTML=CATS.map(function(c,i){var n=live(c),odd=CATS.length%2===1&&i===CATS.length-1;
+    return '<a class="cat'+(n?'':' empty')+(odd?' wide':'')+'" href="#'+c.id+'" style="--c:var('+c.c+')"><span class="em">'+c.em+'</span><span><span class="nm" style="display:block">'+esc(c.name)+'</span><span class="ct" style="display:block">'+(n?n+'개':'준비 중')+'</span></span></a>';}).join('');}
+function renderCat(c){$('cTitle').textContent=c.em+' '+c.name;$('cLede').textContent=c.lede;
+  $('items').innerHTML=c.items.length?c.items.map(function(i){var inner='<span class="em">'+i.em+'</span><span class="tx"><span class="nm" style="display:block">'+esc(i.name)+'</span><span class="ds" style="display:block">'+esc(i.ds)+'</span></span>';
+    return i.soon?'<div class="item soon" style="--c:var('+c.c+')">'+inner+'<span class="go" style="font-size:13px">준비 중</span></div>':'<a class="item" href="'+i.href+'" style="--c:var('+c.c+')">'+inner+'<span class="go">→</span></a>';}).join('')
+    :'<div class="item soon"><span class="em">🌱</span><span class="tx"><span class="nm" style="display:block">아직 비어 있어요</span><span class="ds" style="display:block">새로 만들면 여기에 생겨요.</span></span></div>';}
+function route(){var id=location.hash.replace('#',''),c=null;for(var i=0;i<CATS.length;i++)if(CATS[i].id===id)c=CATS[i];
+  $('home').hidden=!!c;$('cat').hidden=!c;if(c){renderCat(c);document.title=c.name+' · 몽치치 패밀리';}else{renderHome();document.title='몽치치 패밀리';}scrollTo(0,0);}
+addEventListener('hashchange',route);route();
+</script>
+<script>
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+  navigator.serviceWorker.register('./sw.js').then(function(){ return navigator.serviceWorker.ready; }).then(function(reg){
+    var send = function(){ reg.active && reg.active.postMessage({ type: 'cache', urls: performance.getEntriesByType('resource').map(function(e){ return e.name; }).filter(function(u){ return /fonts\.(googleapis|gstatic)\.com/.test(u); }) }); };
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(send);
+    addEventListener('pagehide', send);
+  }).catch(function(){});
+  // 여행 가이드·게임방·시계·한글도 미리 저장해 둡니다(이 화면만 열어도 기기에 저장됨)
+  ['./sydney/','./games/','./clock/','./hangul/'].forEach(function(d){ navigator.serviceWorker.register(d+'sw.js',{scope:d}).catch(function(){}); });
+}
+</script>
 </body>
 </html>
