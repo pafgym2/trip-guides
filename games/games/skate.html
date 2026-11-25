@@ -697,6 +697,7 @@ function drawRink(){
   ctx.fillStyle='#07111d';rr(ctx,-40.5,-24,81,48,17);ctx.fill();
   for(let i=0;i<4;i++){ctx.fillStyle=['#0c1b2d','#0f2236','#122a42','#16314d'][i];const m=38.6-i*1.5;rr(ctx,-m,-(m-15.5),2*m,2*(m-15.5),16-i*1.5);ctx.fill();}
   for(const c in crowd){ctx.fillStyle=c;ctx.globalAlpha=.78;ctx.fill(crowd[c]);}ctx.globalAlpha=1;
+  for(let i=0;i<9;i++){const ph=(raceT*1.7+i*.37)%1;if(ph>.16)continue;const a=(i*2.399+Math.floor(raceT*1.7+i*.37)*1.13)%(Math.PI*2),fx=Math.cos(a)*35.5,fy=Math.sin(a)*19.5;ctx.fillStyle='rgba(255,255,255,'+(1-ph/.16)+')';ctx.beginPath();ctx.arc(fx,fy,.7*(1-ph/.16)+.2,0,7);ctx.fill();}
   ctx.fillStyle='#0f2236';rr(ctx,-32,-16.5,64,33,10);ctx.fill();
   // 펜스 쿠션
   ctx.fillStyle='#2462c9';rr(ctx,-30,-15,60,30,8.5);ctx.fill();
@@ -730,7 +731,8 @@ function drawRink(){
   // 출발선 / 결승선
   if(sk.length){const a=pos(U0,0),b=pos(U0,MAXD);ctx.strokeStyle='#e8323c';ctx.lineWidth=.12;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
   {const a=pos(UF,-.3),b=pos(UF,MAXD+.2);ctx.strokeStyle='#14181f';ctx.lineWidth=.16;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
-   for(let i=0;i<8;i++){const p=pos(UF+.25,-.2+i*.9);ctx.fillStyle=i%2?'#14181f':'#ffffff';ctx.fillRect(p.x-.18,p.y-.45,.36,.9);}}
+   for(let i=0;i<8;i++){const p=pos(UF+.25,-.2+i*.9);ctx.fillStyle=i%2?'#14181f':'#ffffff';ctx.fillRect(p.x-.18,p.y-.45,.36,.9);}
+   const f0=pos(UF,-.9),f1=pos(UF,MAXD+.9);for(const f of[f0,f1]){ctx.fillStyle='rgba(0,0,0,.2)';ctx.beginPath();ctx.arc(f.x+.12,f.y-.12,.42,0,7);ctx.fill();ctx.fillStyle='#e8323c';ctx.beginPath();ctx.arc(f.x,f.y,.38,0,7);ctx.fill();ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(f.x,f.y,.17,0,7);ctx.fill();}}
   // 블록(코너 7개씩)
   for(const cx of [1,-1])for(let k=0;k<7;k++){const th=k*Math.PI/6;const x=cx*(LS/2+R*Math.sin(th)),y=-cx*R*Math.cos(th);
     let ox=0,oy=0;for(const kn of knocks){const dd=Math.hypot(kn.x-x,kn.y-y);if(dd<1.2){ox+=(x-kn.x)*.3*kn.t;oy+=(y-kn.y)*.3*kn.t;}}
@@ -745,6 +747,7 @@ function drawSkater(s){
   if(s.fallT>0){h+=Math.PI/2+s.fallT*2;}
   ctx.rotate(h);ctx.scale(k,k);
   // 그림자
+  ctx.fillStyle=s.suit;ctx.globalAlpha=.13;ctx.beginPath();ctx.ellipse(-.02,-.3,.36,.2,0,0,7);ctx.fill();ctx.fillStyle=s.helm;ctx.beginPath();ctx.arc(.32,-.3,.13,0,7);ctx.fill();ctx.globalAlpha=1;
   ctx.fillStyle='rgba(20,40,70,.10)';ctx.beginPath();ctx.ellipse(-.1,-.16,.66,.42,0,0,7);ctx.fill();
   ctx.fillStyle='rgba(20,40,70,.18)';ctx.beginPath();ctx.ellipse(-.05,-.08,.52,.33,0,0,7);ctx.fill();
   if(s.me){const pu=.5+.5*Math.sin(raceT*5);ctx.strokeStyle='rgba(255,176,32,'+(.18+.14*pu)+')';ctx.lineWidth=.2;ctx.beginPath();ctx.arc(0,0,.7+.05*pu,0,7);ctx.stroke();ctx.strokeStyle='rgba(255,176,32,.95)';ctx.lineWidth=.07;ctx.beginPath();ctx.arc(0,0,.62,0,7);ctx.stroke();}
@@ -800,7 +803,8 @@ function render(){
   const ord=sk.slice().sort((a,b)=>(a.fallT>0)-(b.fallT>0)||a.P-b.P);
   for(const s of ord)drawSkater(s);
   // 화면 가장자리를 살짝 어둡게(경기장 조명 느낌)
-  ctx.setTransform(DPR,0,0,DPR,0,0);{const vg=ctx.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*.42,VW/2,VH/2,Math.hypot(VW,VH)*.62);vg.addColorStop(0,'rgba(5,12,24,0)');vg.addColorStop(1,'rgba(5,12,24,.5)');ctx.fillStyle=vg;ctx.fillRect(0,0,VW,VH);}
+  ctx.setTransform(DPR,0,0,DPR,0,0);for(const sx of[0,VW]){const bm=ctx.createLinearGradient(sx,0,VW/2,VH*.55);bm.addColorStop(0,'rgba(255,255,235,.16)');bm.addColorStop(1,'rgba(255,255,235,0)');ctx.fillStyle=bm;ctx.beginPath();ctx.moveTo(sx,0);ctx.lineTo(VW/2-VW*.22,VH*.6);ctx.lineTo(VW/2+VW*.22,VH*.6);ctx.closePath();ctx.fill();}
+  {const vg=ctx.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*.42,VW/2,VH/2,Math.hypot(VW,VH)*.62);vg.addColorStop(0,'rgba(5,12,24,0)');vg.addColorStop(1,'rgba(5,12,24,.5)');ctx.fillStyle=vg;ctx.fillRect(0,0,VW,VH);}
   if(me&&(state==='race'||state==='set'||state==='hold')){const p=pos(U0+me.P,me.d),q=toScreen(p.x,p.y);
     ctx.setTransform(DPR,0,0,DPR,0,0);ctx.font='700 11px '+getComputedStyle(document.body).fontFamily;ctx.textAlign='center';
     ctx.fillStyle='rgba(10,22,36,.85)';const w=ctx.measureText('나').width+10;const oy=S*camZ*1.6;rr(ctx,q.x-w/2,q.y-oy-17,w,15,4);ctx.fill();ctx.fillStyle='#ffb020';ctx.fillText('나',q.x,q.y-oy-6);}
