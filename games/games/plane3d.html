@@ -128,6 +128,7 @@ h3{margin:2px 0 -4px;font-family:var(--f-disp);font-weight:400;font-size:17px;te
 
 <script src="./three.min.js"></script>
 <script src="./ticket.js"></script>
+<script src="./fx.js"></script>
 <script>
 (()=>{
 'use strict';
@@ -172,6 +173,9 @@ const curPlane=()=>PLANES.find(p=>p.id===SAVE.plane)||PLANES[0], curCol=()=>(COL
 const unlocked=i=>i===0||(STAGES[i].first?(SAVE.stars.jeju|0)>0:(SAVE.stars[STAGES[i-1].id]|0)>0);
 
 /* ---------- 소리 ---------- */
+function zzOn(){return !!((SAVE.sound)&&window.MongFx);}
+function zz(n,k){return zzOn()&&MongFx.sfx(n,k);}
+function cf(k){if(window.MongFx)MongFx.confetti(k);}
 function audio(){if(!SAVE.sound)return null;try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){AC=null;}return AC;}
 function beep(f,d,type,vol){const a=audio();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type=type||'triangle';o.frequency.value=f;g.gain.setValueAtTime(vol||.15,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+d);}catch(e){}}
 function ding(){beep(1047,.12);setTimeout(()=>beep(1568,.2),70);}
@@ -274,7 +278,7 @@ function apHold(){if(state==='takeoff')return pl.v>=57;if(state==='landing'){con
 function updTakeoff(dt){const Vr=55,h=holding(),hard=SAVE.hard;engine(true,pl.v/80);
   if(T>.6)pl.v=Math.min(78,pl.v+17*dt);
   if(!pl.air){
-    if(h&&pl.v>=Vr){pl.air=true;pl.liftX=pl.x;run.takeoff=pl.v<Vr+13?2:1;beep(520,.2);tip(run.takeoff===2?'완벽한 이륙! 꾹 누르고 올라가요':'이륙! 꾹 누르고 올라가요','good',2000);
+    if(h&&pl.v>=Vr){pl.air=true;pl.liftX=pl.x;run.takeoff=pl.v<Vr+13?2:1;(zz('power')||beep(520,.2));tip(run.takeoff===2?'완벽한 이륙! 꾹 누르고 올라가요':'이륙! 꾹 누르고 올라가요','good',2000);
       for(let i=0;i<3;i++)stars.push({x:pl.x+130+i*105,alt:38+i*40,got:false});}
     else if(h&&pl.v<Vr&&pl.v>8&&T-pl.early>2.2){pl.early=T;tip('아직! 초록색까지 기다려요','',1500);}
     if(pl.x>430&&!pl.air){if(hard){tip('활주로 끝! 다시 해 봐요','big',1800);beep(200,.4,'square');beginTakeoff();return;}
@@ -304,8 +308,8 @@ function updCruise(dt){const hard=SAVE.hard;engine(true,cr.turbo>0?1.5:.9);if(cr
           if(cr.roll>0){run.star+=2;cr.tricks++;pop('묘기 통과! +2');}
           else if(cr.combo%3===0){run.star+=1;pop(cr.combo+'연속! +1');}}
         else{o.hit=-1;cr.combo=0;beep(240,.12,'sine',.08);}}
-      else if(o.type==='star'||o.type==='bal'){if(d<R*.9){o.hit=1;run.star++;if(o.type==='bal'){beep(180,.08,'square',.2);pop('팡!');}else beep(1760,.1);}}
-      else if(o.type==='storm'){if(d<R*.85){o.hit=1;cr.shake=.5;run.star=Math.max(0,run.star-2);beep(110,.5,'sawtooth',.2);tip('번개구름! ⭐ -2','big',1300);}}}}
+      else if(o.type==='star'||o.type==='bal'){if(d<R*.9){o.hit=1;run.star++;if(o.type==='bal'){(zz('pop')||beep(180,.08,'square',.2));pop('팡!');}else (zz('coin')||beep(1760,.1));}}
+      else if(o.type==='storm'){if(d<R*.85){o.hit=1;cr.shake=.5;run.star=Math.max(0,run.star-2);(zz('hit')||beep(110,.5,'sawtooth',.2));tip('번개구름! ⭐ -2','big',1300);}}}}
   cr.objs=cr.objs.filter(o=>o.z>.35);cr.lastZ=last;
   setProg(.08+.8*clamp(1-Math.max(last,0)/cr.z0,0,1));
   if(last<1){cr.endT+=dt;if(cr.endT>1.6){beginLanding();return;}}}
@@ -537,7 +541,7 @@ $('sClose').onclick=()=>{$('shop').hidden=true;renderStages();};
 
 /* ---------- 입력 ---------- */
 $('btnPage').onclick=()=>{mapPage=mapPage?0:1;beep(660,.1);renderStages();};
-$('stages').addEventListener('click',e=>{const b=e.target.closest('.stage');if(!b||b.classList.contains('home'))return;const i=+b.dataset.i;if(!unlocked(i)){toast('앞 여행을 먼저 다녀와요');beep(240,.15);return;}startFlight(i);});
+$('stages').addEventListener('click',e=>{const b=e.target.closest('.stage');if(!b||b.classList.contains('home'))return;const i=+b.dataset.i;if(!unlocked(i)){toast('앞 여행을 먼저 다녀와요');(zz('deny')||beep(240,.15));return;}startFlight(i);});
 $('mode').onclick=()=>{SAVE.hard=!SAVE.hard;save();renderStages();toast(SAVE.hard?'어려움: 바람·번개구름, 별 2배':'쉬움: 실패 없이 도와줘요');};
 $('btnSound').onclick=()=>{SAVE.sound=!SAVE.sound;save();renderStages();if(SAVE.sound)ding();else engine(false);};
 $('btnQuit').onclick=toMap;$('rMap').onclick=toMap;$('rAgain').onclick=()=>startFlight(stageIdx);$('rNext').onclick=()=>startFlight(stageIdx+1);

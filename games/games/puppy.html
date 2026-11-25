@@ -94,6 +94,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 </section>
 
 <script src="./ticket.js"></script>
+<script src="./fx.js"></script>
 <script>
 (()=>{
 'use strict';
@@ -117,6 +118,9 @@ let SAVE=load();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(SAVE));}catch(e){}}
 const unlocked=()=>BREEDS.filter(b=>SAVE.saved>=b.need);
 /* ---------- 소리 ---------- */
+function zzOn(){return !!((SAVE.sound)&&window.MongFx);}
+function zz(n,k){return zzOn()&&MongFx.sfx(n,k);}
+function cf(k){if(window.MongFx)MongFx.confetti(k);}
 function audio(){if(!SAVE.sound)return null;try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){AC=null;}return AC;}
 function beep(f,d,type,vol,slide){const a=audio();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type=type||'triangle';o.frequency.setValueAtTime(f,a.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(slide,a.currentTime+d);g.gain.setValueAtTime(vol||.12,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+d);}catch(e){}}
 function bark(){beep(520,.09,'square',.1,300);setTimeout(()=>beep(620,.11,'square',.1,340),120);}
@@ -137,29 +141,29 @@ function makePiece(){const u=unlocked();return{id:++PID,cells:SHAPES[pickShape()
 function fits(p,x,y,cells){cells=cells||p.cells;for(const [cx,cy] of cells){const gx=x+cx,gy=y+cy;if(gx<0||gx>=W||gy>=H)return false;if(gy>=0&&grid[gy][gx])return false;}return true;}
 function spawn(){cur=next||makePiece();next=makePiece();const w=Math.max(...cur.cells.map(c=>c[0]))+1;cur.x=Math.floor((W-w)/2);cur.y=-1;if(!fits(cur,cur.x,cur.y)){cur.y=-2;if(!fits(cur,cur.x,cur.y)){gameOver();return;}}dropT=0;lockT=0;}
 function rotate(){if(!cur||clearing)return;const h=Math.max(...cur.cells.map(c=>c[1])),rc=cur.cells.map(([x,y])=>[h-y,x]);
-  for(const dx of[0,-1,1,-2,2])for(const dy of[0,-1]){if(fits(cur,cur.x+dx,cur.y+dy,rc)){cur.cells=rc;cur.x+=dx;cur.y+=dy;beep(660,.05);lockT=0;return;}}}
+  for(const dx of[0,-1,1,-2,2])for(const dy of[0,-1]){if(fits(cur,cur.x+dx,cur.y+dy,rc)){cur.cells=rc;cur.x+=dx;cur.y+=dy;(zz('tick')||beep(660,.05));lockT=0;return;}}}
 function move(dx){if(!cur||clearing)return false;if(fits(cur,cur.x+dx,cur.y)){cur.x+=dx;beep(440,.03,'sine',.06);lockT=0;return true;}return false;}
 function soft(){if(!cur||clearing)return false;if(fits(cur,cur.x,cur.y+1)){cur.y++;dropT=0;return true;}return false;}
-function hard(){if(!cur||clearing)return;let n=0;const y0=cur.y;while(fits(cur,cur.x,cur.y+1)){cur.y++;n++;}score+=n;if(n>1){dropFx={x:cur.x,cells:cur.cells.map(c=>c.slice()),y0:y0,y1:cur.y,t:.2};shakeT=.13;}beep(180,.12,'square',.1,90);lock();}
+function hard(){if(!cur||clearing)return;let n=0;const y0=cur.y;while(fits(cur,cur.x,cur.y+1)){cur.y++;n++;}score+=n;if(n>1){dropFx={x:cur.x,cells:cur.cells.map(c=>c.slice()),y0:y0,y1:cur.y,t:.2};shakeT=.13;}(zz('thud')||beep(180,.12,'square',.1,90));lock();}
 function ghostY(){let y=cur.y;while(fits(cur,cur.x,y+1))y++;return y;}
 function lock(){let over=false;cur.cells.forEach(([cx,cy],i)=>{const gx=cur.x+cx,gy=cur.y+cy;if(gy<0){over=true;return;}grid[gy][gx]={t:i===0?'head':'body',b:cur.b,land:T,pid:cur.id,tl:i===cur.cells.length-1};for(let k=0;k<3;k++)sparks.push({x:OX+gx*CELL+CELL*Math.random(),y:OY+(gy+1)*CELL,vx:rnd2(-40,40),vy:rnd2(-70,-20),t:.45,c:'#ffffff',r:2});});cur=null;
   if(over){gameOver();return;}
   const full=[];for(let y=0;y<H;y++)if(grid[y].every(c=>c))full.push(y);
-  if(full.length){clearing={rows:full,t:0};beep(880+Math.min(combo,8)*110,.18,'triangle',.14,1320+Math.min(combo,8)*160);}else{combo=0;spawn();}}
+  if(full.length){clearing={rows:full,t:0};(zz('clear',combo)||beep(880+Math.min(combo,8)*110,.18,'triangle',.14,1320+Math.min(combo,8)*160));}else{combo=0;spawn();}}
 function finishClear(){const rows=clearing.rows;let rescued=0;flashT=.25;
   for(const y of rows)for(let x=0;x<W;x++)for(let k=0;k<3;k++)sparks.push({x:OX+x*CELL+CELL/2,y:OY+y*CELL+CELL/2,vx:rnd2(-150,150),vy:rnd2(-190,40),t:rnd2(.5,.95),c:['#ffcf3f','#ff7a59','#ffffff','#8fdcb4'][k%4],r:rnd2(2,4.5),star:k===0});
   for(const y of rows)for(let x=0;x<W;x++){const c=grid[y][x];if(c&&c.t==='pup'){rescued++;parts.push({x:OX+x*CELL+CELL/2,y:OY+y*CELL+CELL/2,vy:-90,t:1.4,b:c.b});for(let k=0;k<7;k++)sparks.push({x:OX+x*CELL+CELL/2,y:OY+y*CELL+CELL/2,vx:rnd2(-110,110),vy:rnd2(-230,-60),t:rnd2(.8,1.3),c:k%2?'#ff5d7a':'#ffb3c1',r:rnd2(4,7),heart:true});}}
   for(const y of rows.sort((a,b)=>a-b)){grid.splice(y,1);grid.unshift(new Array(W).fill(null));}
   score+=[0,100,300,500,800][Math.min(4,rows.length)]*lv+rescued*200;clearing=null;
   combo++;if(combo>bestCombo)bestCombo=combo;if(combo>=2){score+=50*combo*lv;comboFx(combo);}
-  {const b4=Math.floor(linesRun/LV_LINES);linesRun+=rows.length;const up=Math.floor(linesRun/LV_LINES)-b4;if(up>0){spd+=up;setTimeout(()=>{if(state==='play'){toast('⚡ 스피드 업! 속도 '+spd);beep(660,.1,'square',.08,990);setTimeout(()=>beep(990,.14,'square',.08,1480),110);}},rescued?1500:500);}}
+  {const b4=Math.floor(linesRun/LV_LINES);linesRun+=rows.length;const up=Math.floor(linesRun/LV_LINES)-b4;if(up>0){spd+=up;setTimeout(()=>{if(state==='play'){toast('⚡ 스피드 업! 속도 '+spd);(zz('power')||beep(660,.1,'square',.08,990));setTimeout(()=>(zzOn()||beep(990,.14,'square',.08,1480)),110);}},rescued?1500:500);}}
   if(rescued){pupsLeft-=rescued;savedRun+=rescued;const before=unlocked().length;SAVE.saved+=rescued;save();bark();toast(rescued>1?'멍멍! '+rescued+'마리 구조!':'멍! 구조 성공!');
     if(unlocked().length>before)setTimeout(()=>toast('새 강아지 친구: '+unlocked()[unlocked().length-1].name+'!'),900);}
   else if(rows.length>1)toast(rows.length+'줄 한꺼번에!');
   hud();if(pupsLeft<=0){levelClear();return;}spawn();}
 const LV_LINES=6;
 function interval(){return Math.max(140,(SAVE.easy?1050:760)-(lv-1)*(SAVE.easy?45:55)-(spd-1)*(SAVE.easy?18:22));}
-function comboFx(n){const e=$('combo');e.className='';e.innerHTML=n+'연속!<small>+'+(50*n*lv)+'점</small>';void e.offsetWidth;e.className='go'+(n>=5?' c5':n>=3?' c3':'');shakeT=Math.max(shakeT,Math.min(.35,.1+n*.04));
+function comboFx(n){if(n>=3)cf('burst');const e=$('combo');e.className='';e.innerHTML=n+'연속!<small>+'+(50*n*lv)+'점</small>';void e.offsetWidth;e.className='go'+(n>=5?' c5':n>=3?' c3':'');shakeT=Math.max(shakeT,Math.min(.35,.1+n*.04));
   for(let k=0;k<10+n*6;k++)sparks.push({x:OX+W*CELL/2+rnd2(-70,70),y:OY+H*CELL*.27,vx:rnd2(-220,220),vy:rnd2(-260,60),t:rnd2(.6,1.1),c:['#ffcf3f','#ff7a59','#ff5d7a','#ffffff'][k%4],r:rnd2(2.5,5),star:k%2===0});}
 function update(dt){T+=dt;if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').style.opacity='0';}
   parts=parts.filter(p=>(p.t-=dt)>0);for(const p of parts){p.y+=p.vy*dt;p.vy+=40*dt;}
@@ -270,9 +274,9 @@ function show(id){['menu','albumS','pauseS','resultS'].forEach(s=>$(s).hidden=s!
 function startGame(){if(window.MongGate&&!autoPlay&&!MongGate.pass){MongGate.play(()=>{MongGate.pass=1;try{startGame();}finally{MongGate.pass=0;}});return;}
   lv=1;score=0;savedRun=0;spd=1;linesRun=0;bestCombo=0;audio();beginLevel();}
 function beginLevel(){setupLevel();next=null;cur=null;parts=[];clearing=null;combo=0;state='play';show(null);hud();spawn();toast(lv+'단계 · 강아지 '+pupsLeft+'마리');}
-function levelClear(){state='clear';cur=null;if(lv+1>SAVE.best)SAVE.best=lv+1;if(score>SAVE.top)SAVE.top=score;save();beep(784,.12);setTimeout(()=>beep(1047,.12),130);setTimeout(()=>beep(1319,.25),260);
+function levelClear(){state='clear';cur=null;if(lv+1>SAVE.best)SAVE.best=lv+1;if(score>SAVE.top)SAVE.top=score;save();cf('win');(zz('win')||beep(784,.12));setTimeout(()=>(zzOn()||beep(1047,.12)),130);setTimeout(()=>(zzOn()||beep(1319,.25)),260);
   $('rTitle').textContent='🎉 '+lv+'단계 구조 완료!';$('rText').textContent='강아지들이 모두 집으로 돌아갔어요.';$('rLv').textContent=lv;$('rSaved').textContent=savedRun;$('rScore').textContent=score;$('rNew').textContent='';$('rGo').textContent='다음 단계 →';$('rGo').onclick=()=>{lv++;beginLevel();};show('resultS');}
-function gameOver(){state='over';cur=null;if(score>SAVE.top)SAVE.top=score;save();lastRunLv=lv;beep(300,.3,'sawtooth',.1,120);
+function gameOver(){state='over';cur=null;if(score>SAVE.top)SAVE.top=score;save();lastRunLv=lv;(zz('lose')||beep(300,.3,'sawtooth',.1,120));
   $('rTitle').textContent='블록이 꼭대기까지 찼어요';$('rText').textContent=savedRun?'그래도 강아지 '+savedRun+'마리를 구했어요!':'다시 하면 더 잘할 수 있어요.';$('rLv').textContent=lv;$('rSaved').textContent=savedRun;$('rScore').textContent=score;$('rNew').textContent='';$('rGo').textContent='다시 하기';$('rGo').onclick=startGame;show('resultS');}
 function toMenu(){state='menu';cur=null;next=null;newGrid();renderMenu();show('menu');}
 function renderMenu(){$('mBest').textContent=SAVE.best;$('mSaved').textContent=SAVE.saved;$('mScore').textContent=SAVE.top;$('bEasy').textContent=SAVE.easy?'🐢 천천히':'🐇 빠르게';$('bSound').textContent=SAVE.sound?'🔊 소리 켜짐':'🔇 소리 꺼짐';}

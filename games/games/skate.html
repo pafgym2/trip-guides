@@ -321,6 +321,7 @@ h3{margin:0;font-size:14px;color:var(--muted);font-weight:600;letter-spacing:.04
 <div class="toast" id="toast"></div>
 
 <script src="./ticket.js"></script>
+<script src="./fx.js"></script>
 <script>
 (()=>{
 'use strict';
@@ -401,6 +402,9 @@ const lv=id=>prof().items[id]||0;
 
 /* ---------- 소리 ---------- */
 let AC=null;
+function zzOn(){return !!((SAVE.sound)&&window.MongFx);}
+function zz(n,k){return zzOn()&&MongFx.sfx(n,k);}
+function cf(k){if(window.MongFx)MongFx.confetti(k);}
 function audio(){if(!SAVE.sound)return null;try{if(!AC)AC=new (window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){AC=null;}return AC;}
 function beep(f,dur,type='sine',vol=.18){const a=audio();if(!a)return;const o=a.createOscillator(),g=a.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(vol,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+dur);o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+dur);}
 function gun(){const a=audio();if(!a)return;const n=a.sampleRate*.25,b=a.createBuffer(1,n,a.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/n,3);const s=a.createBufferSource(),g=a.createGain();g.gain.value=.5;s.buffer=b;s.connect(g).connect(a.destination);s.start();}
@@ -509,7 +513,7 @@ function step(dt){
       // 블록
       if(s.d<.22&&s.touchT<=0){s.touchT=1.2;s.v*=.95;s.st.touches++;knockBlock(p);if(s.me)banner('블록을 건드렸어요! 블록 안쪽은 실격','warn',1600);}
       if(s.d<-.05&&lgIdx<2&&s.me){s.d=-.05;}
-      if(s.d<-.05){s.inT+=dt;if(s.inT>.5&&!s.dq){s.dq=true;if(s.me){banner('블록 안쪽으로 들어가 실격(페널티)','bad',2600);beep(300,.5,'square');}}}
+      if(s.d<-.05){s.inT+=dt;if(s.inT>.5&&!s.dq){s.dq=true;if(s.me){banner('블록 안쪽으로 들어가 실격(페널티)','bad',2600);(zz('lose')||beep(300,.5,'square'));}}}
     }
     s.touchT-=dt;
     s.d=clamp(s.d,p.c?-.35:.12,MAXD);
@@ -517,7 +521,7 @@ function step(dt){
     s.P+=s.v*dt*(p.c?RM/(R+s.d):1);
     s.ph+=s.v*dt*.9;
     if(s.v>s.st.maxv)s.st.maxv=s.v;
-    if(s.me&&state==='race'&&stars.length){const u=(((U0+s.P)%LAP)+LAP)%LAP,lap=Math.floor(s.P/LAP);for(const q of stars){if(q.lap===lap)continue;let du=Math.abs(q.u-u);du=Math.min(du,LAP-du);if(du<.9&&Math.abs(q.d-s.d)<.8){q.lap=lap;starN++;if(!autoPilot)beep(1568,.07,'triangle',.08);}}}
+    if(s.me&&state==='race'&&stars.length){const u=(((U0+s.P)%LAP)+LAP)%LAP,lap=Math.floor(s.P/LAP);for(const q of stars){if(q.lap===lap)continue;let du=Math.abs(q.u-u);du=Math.min(du,LAP-du);if(du<.9&&Math.abs(q.d-s.d)<.8){q.lap=lap;starN++;if(!autoPilot)(zz('coin')||beep(1568,.07,'triangle',.08));}}}
     if(s.kick>0)s.kick-=dt;
     // 랩 기록
     while(s.P>=s.nextLap&&s.nextLap<=D+1e-6){s.laps.push(raceT);s.nextLap+=LAP;}
@@ -536,13 +540,13 @@ function step(dt){
       b.d=Math.max(Math.min(b.d,.35),b.d+(b.d<a.d?-1:1)*.9*dt);a.d=Math.max(Math.min(a.d,.35),a.d+(a.d<b.d?-1:1)*.5*dt);
       if(rel>1.2){b.st.bumps++;if(b.me&&!hintsShown['bump'+Math.floor(raceT/6)]){hintsShown['bump'+Math.floor(raceT/6)]=1;hint('앞 선수에 막혔어요. 바깥으로 빠져서 추월!');}}}}
   // 추월
-  if(state==='race'&&me&&!me.fin&&me.started&&!me.dq&&raceT>1.5){const pl=standings().indexOf(me)+1;if(lastPlace&&pl<lastPlace){passes++;if(passes<=6){const v=Math.max(5,Math.round(5*LEAGUES[lgIdx].mult/5)*5);passPts+=v;FX.pop('추월! +'+v+'P','gold');beep(1180,.12,'triangle',.14);}}lastPlace=pl;}
+  if(state==='race'&&me&&!me.fin&&me.started&&!me.dq&&raceT>1.5){const pl=standings().indexOf(me)+1;if(lastPlace&&pl<lastPlace){passes++;if(passes<=6){const v=Math.max(5,Math.round(5*LEAGUES[lgIdx].mult/5)*5);passPts+=v;FX.pop('추월! +'+v+'P','gold');(zz('pass')||beep(1180,.12,'triangle',.14));}}lastPlace=pl;}
   // 마지막 바퀴 종
   if(me&&!lastBell&&!me.fin&&D-me.P<LAP+.5&&state==='race'){lastBell=true;bell();hint('마지막 바퀴! 남은 체력 다 쓰기',true);if(me.gel){me.gel=false;me.E=Math.min(me.Emax,me.E+25);FX.pop('에너지 젤! 체력 +25','green');}}
   if(state==='attract'&&sk.every(s=>s.fin)&&raceT>sk.reduce((m,s)=>Math.max(m,s.time),0)+3){newRace(4,4,false);state='attract';sk.forEach(s=>s.react=rnd(.1,.3));}
   if(state==='race'&&me&&me.fin){const others=sk.filter(s=>!s.me);if(others.every(s=>s.fin)||raceT>me.time+6)finishRace();}
 }
-function fall(s){s.fallT=2.6*(s.fallMul||1);s.overT=0;s.st.falls++;s.v*=.7;if(s.me){shakeT=.4;banner('꽈당! 코너에 너무 빨리 들어갔어요','bad',1800);beep(140,.35,'sawtooth',.12);}}
+function fall(s){s.fallT=2.6*(s.fallMul||1);s.overT=0;s.st.falls++;s.v*=.7;if(s.me){shakeT=.4;banner('꽈당! 코너에 너무 빨리 들어갔어요','bad',1800);(zz('hit')||beep(140,.35,'sawtooth',.12));}}
 function knockBlock(p){knocks.push({x:p.x,y:p.y,t:1.5});}
 function tryKick(s){if(s.kicked)return;s.kicked=true;const rem=D-s.P;
   if(rem<=3.2&&rem>=0){s.kick=.5;s.st.kick='good';if(s.me)banner('날 내밀기 성공!','go',900);}
@@ -831,7 +835,7 @@ function updHud(dt){
   let fl='<span style="background:rgba(255,210,63,.18);color:#ffd23f">⭐ '+starN+'</span>';if(me.draft)fl+='<span class="dr">드래프팅 · 체력 절약</span>';if(me.slide)fl+='<span class="sl">코너 밀림</span>';if(me.dq)fl+='<span class="sl">실격</span>';
   $('hFlags').innerHTML=fl;
   $('stand').classList.toggle('side',camZ>1.3);
-  if(missions.length){const hm=$('hMis').children;missions.forEach((m,i)=>{const ok=(!m.end||me.fin)&&!me.dq&&m.ok();if(hm[i])hm[i].classList.toggle('ok',ok);if(ok&&!m.shown&&!m.end){m.shown=true;FX.pop('미션 성공! +'+misPts(m)+'P','green');beep(1500,.15,'triangle',.12);}});}
+  if(missions.length){const hm=$('hMis').children;missions.forEach((m,i)=>{const ok=(!m.end||me.fin)&&!me.dq&&m.ok();if(hm[i])hm[i].classList.toggle('ok',ok);if(ok&&!m.shown&&!m.end){m.shown=true;FX.pop('미션 성공! +'+misPts(m)+'P','green');(zz('bull')||beep(1500,.15,'triangle',.12));}});}
   $('stand').innerHTML='<div class="hd"><span>순위</span><span>체력</span></div>'+st.map((s,i)=>`<div class="r${s.me?' me':''}"><span class="p">${i+1}</span><span class="sw" style="background:${s.helm};outline:2px solid ${s.suit}"></span><span class="n">${esc(s.name)}${s.fallT>0?' 💥':''}${s.fin?' 🏁':''}</span><span class="mb"><i style="width:${Math.min(100,s.E)}%;background:${s.E>50?'var(--green)':s.E>25?'var(--amber)':'var(--red)'}"></i></span></div>`).join('');
   // 코치 힌트(어린 리그 위주)
   if(state==='race'&&!me.fin){
@@ -862,7 +866,7 @@ function showResults(order,place,earned,isPB,old){
   if(lastBonus.trophy)b+=`<span class="badge pb">🏆 ${L.name} 전 종목 금메달! +${lastBonus.trophy}P</span>`;
   $('rBadges').innerHTML=b;
   $('rMis').innerHTML=lastBonus.res.map(m=>`<li class="${m.ok?'ok':''}"><span>${m.ok?'✓':'✗'} ${m.t}</span><b>${m.ok?'+'+m.p+'P':'-'}</b></li>`).join('');
-  if(!me.dq&&place>=1&&place<=3){setTimeout(()=>{FX.confetti(place===1?240:110);cheer();},150);}
+  if(!me.dq&&place>=1&&place<=3){setTimeout(()=>{FX.confetti(place===1?240:110);cheer();if(place===1)cf('win');},150);}
   const winT=order[0]&&order[0].fin&&!order[0].dq?order[0].time:0;
   $('rTable').innerHTML=order.map((s,i)=>`<li class="${s.me?'me':''}"><span class="p">${s.dq?'-':i+1}</span><span class="sw" style="background:${s.suit}"></span><span>${esc(s.name)}</span><span class="t">${s.dq?'실격':s.fin?(i===0?fmtS(s.time):'+'+(s.time-winT).toFixed(3)):'-'}</span></li>`).join('');
   // 랩 타임
@@ -955,11 +959,11 @@ function renderShop(){const p=prof();
 $('sBody').addEventListener('click',e=>{const p=prof();
   const b=e.target.closest('.buy');
   if(b){const it=ITEMS.find(x=>x.id===b.dataset.id);
-    if(it.consumable){if(p.pts>=it.price[0]){p.pts-=it.price[0];if(it.id==='drink')p.drink++;else if(it.id==='sharp')consOf(p).sharp=(consOf(p).sharp|0)+5;else consOf(p)[it.id]=(consOf(p)[it.id]|0)+1;save();toast(it.name+' 구입!');beep(990,.12);renderShop();}return;}
-    const l=lv(it.id);if(l>=it.price.length||p.pts<it.price[l])return;p.pts-=it.price[l];p.items[it.id]=l+1;save();toast(it.name+' '+it.lv[l]+' 장착!');beep(990,.12);renderShop();return;}
+    if(it.consumable){if(p.pts>=it.price[0]){p.pts-=it.price[0];if(it.id==='drink')p.drink++;else if(it.id==='sharp')consOf(p).sharp=(consOf(p).sharp|0)+5;else consOf(p)[it.id]=(consOf(p)[it.id]|0)+1;save();toast(it.name+' 구입!');(zz('buy')||beep(990,.12));renderShop();}return;}
+    const l=lv(it.id);if(l>=it.price.length||p.pts<it.price[l])return;p.pts-=it.price[l];p.items[it.id]=l+1;save();toast(it.name+' '+it.lv[l]+' 장착!');(zz('buy')||beep(990,.12));renderShop();return;}
   const s=e.target.closest('.swatch');
   if(s){const kind=s.dataset.k,id=s.dataset.id,arr=kind==='suit'?SUITS:HELMS,o=arr.find(x=>x.id===id),own=kind==='suit'?p.suits:p.helms;
-    if(!own.includes(id)){if(p.pts<o.p){toast('포인트가 부족해요');return;}p.pts-=o.p;own.push(id);toast(o.name+' 구입!');beep(990,.12);}
+    if(!own.includes(id)){if(p.pts<o.p){toast('포인트가 부족해요');return;}p.pts-=o.p;own.push(id);toast(o.name+' 구입!');(zz('buy')||beep(990,.12));}
     if(kind==='suit')p.suit=id;else p.helm=id;save();renderShop();}
 });
 function drawSkaterCtx(g,s){g.save();g.fillStyle='rgba(20,40,70,.2)';g.beginPath();g.ellipse(-.05,-.08,.55,.36,0,0,7);g.fill();
