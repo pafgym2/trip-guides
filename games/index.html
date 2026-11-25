@@ -36,7 +36,7 @@ h1{font-family:var(--f-disp);font-weight:400;font-size:clamp(34px,10vw,46px);lin
 h1 b{font-weight:400;color:var(--tomato)}
 .count{font-family:var(--f-disp);font-size:14px;background:var(--ink);color:var(--ground);padding:6px 12px;border-radius:999px;white-space:nowrap;transform:rotate(3deg)}
 .row{display:grid;gap:12px;min-height:0}
-.games{grid-area:games;grid-template-columns:repeat(2,minmax(0,1fr))}
+.games{grid-area:games;grid-template-columns:repeat(3,minmax(0,1fr))}
 .learn{grid-area:learn;grid-template-columns:repeat(3,minmax(0,1fr))}
 .tile{position:relative;display:block;min-height:0;min-width:0;border:3px solid var(--ink);border-radius:20px;overflow:hidden;background:var(--c,var(--sky));color:var(--ink);text-decoration:none;
   box-shadow:0 6px 0 var(--ink);transition:transform .08s,box-shadow .08s}
@@ -72,7 +72,7 @@ footer{grid-area:foot;text-align:center;margin:0}
 <main>
   <header>
     <div><p class="kicker">MONGFAM · FAMILY ARCADE</p><h1>몽팸<b>게임</b>방</h1></div>
-    <span style="display:flex;align-items:center;gap:8px"><a class="count" href="../" style="transform:rotate(-3deg);text-decoration:none">🏠 홈</a><span class="count">게임 6개</span></span>
+    <span style="display:flex;align-items:center;gap:8px"><a class="count" href="../" style="transform:rotate(-3deg);text-decoration:none">🏠 홈</a><span class="count">게임 7개</span></span>
   </header>
 
   <a class="tile hero" href="games/plane3d.html" style="--c:var(--sky)">
@@ -84,6 +84,7 @@ footer{grid-area:foot;text-align:center;margin:0}
   <div class="row games">
     <a class="tile" href="games/skate.html" style="--c:var(--ice)"><canvas data-t="skate"></canvas><span class="label"><span class="nm">아이스 대시</span></span></a>
     <a class="tile" href="games/racing.html" style="--c:var(--grass)"><canvas data-t="race"></canvas><span class="label"><span class="nm">레이싱</span></span></a>
+    <a class="tile" href="games/puppy.html" style="--c:#ffe9c7"><canvas data-t="puppy"></canvas><span class="label"><span class="nm">멍멍 구조대</span></span></a>
   </div>
 
   <div class="row learn">
@@ -141,6 +142,13 @@ const D={
   const path=()=>{g.beginPath();for(let i=0;i<=48;i++){const p=P(i/48*TAU);g[i?'lineTo':'moveTo'](p[0],p[1]);}g.closePath();};
   g.lineJoin='round';path();g.strokeStyle='#f2f2f2';g.lineWidth=Math.min(20,H*.3);g.stroke();path();g.strokeStyle='#3b3f46';g.lineWidth=Math.min(15,H*.23);g.stroke();
   [['#ff5a4d',0],['#3fc4ff',1.1],['#ffd23f',2.6]].forEach(([c,o],i)=>{const a=t*(1.25-i*.08)+o,p=P(a),q=P(a+.05);g.save();g.translate(p[0],p[1]);g.rotate(Math.atan2(q[1]-p[1],q[0]-p[0]));g.fillStyle=INK;g.fillRect(-6,-5.5,3.5,11);g.fillRect(3,-5.5,3.5,11);g.fillStyle=c;rr(g,-8,-3.5,16,7,3);g.fill();g.restore();});},
+ puppy(g,w,h,t){g.fillStyle='#ffe9c7';g.fillRect(0,0,w,h);const H=h-30,s=Math.max(10,Math.min(H*.3,w*.26)),bx=w/2-s*1.5,by=H-s*1.15;
+  const tile=(x,y,c)=>{g.fillStyle=c;rr(g,x+1.5,y+1.5,s-3,s-3,s*.22);g.fill();g.strokeStyle=INK;g.lineWidth=2.2;g.stroke();};
+  tile(bx,by,'#c9a26b');tile(bx+s,by,'#f7d08a');tile(bx+s*2,by,'#c9a26b');
+  const dy=Math.abs(Math.sin(t*2.4))*H*.16,px=bx+s,py=by-s-dy;tile(px,py,'#f2a65a');tile(px+s,py,'#f2a65a');
+  const cx=px+s/2,cy=py+s/2,r=s*.3;g.lineWidth=1.6;g.fillStyle='#c9762e';for(const k of[-1,1]){g.beginPath();g.moveTo(cx+k*r*1.05,cy-r*.3);g.lineTo(cx+k*r*1.0,cy-r*1.35);g.lineTo(cx+k*r*.3,cy-r*.8);g.closePath();g.fill();g.stroke();}
+  g.fillStyle='#f2a65a';g.beginPath();g.arc(cx,cy,r,0,TAU);g.fill();g.stroke();g.fillStyle='#fff';g.beginPath();g.ellipse(cx,cy+r*.35,r*.5,r*.36,0,0,TAU);g.fill();
+  g.fillStyle=INK;g.beginPath();g.arc(cx-r*.38,cy-r*.1,r*.13,0,TAU);g.arc(cx+r*.38,cy-r*.1,r*.13,0,TAU);g.fill();g.beginPath();g.ellipse(cx,cy+r*.22,r*.17,r*.12,0,0,TAU);g.fill();},
  clock(g,w,h,t){g.fillStyle='#ff9f2e';g.fillRect(0,0,w,h);const H=h-30,cx=w/2,cy=H/2+2,r=Math.max(8,Math.min(H*.42,w*.3));g.fillStyle='#fffaf0';g.strokeStyle=INK;g.lineWidth=3;g.beginPath();g.arc(cx,cy,r,0,TAU);g.fill();g.stroke();
   g.fillStyle=INK;for(let i=0;i<12;i++){const a=i*Math.PI/6;g.beginPath();g.arc(cx+Math.sin(a)*r*.8,cy-Math.cos(a)*r*.8,i%3?1.4:2.4,0,TAU);g.fill();}
   const m=t*.6,hr=m/12;g.lineCap='round';g.lineWidth=4;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.sin(hr)*r*.45,cy-Math.cos(hr)*r*.45);g.stroke();g.strokeStyle='#ff5a4d';g.lineWidth=2.5;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.sin(m)*r*.72,cy-Math.cos(m)*r*.72);g.stroke();},
