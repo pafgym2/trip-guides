@@ -214,7 +214,7 @@ h2{font-family:var(--f-disp);font-style:italic;font-weight:700;font-size:34px;li
   <div class="card">
     <button type="button" onclick="if(history.length>1)history.back();else location.href='../index.html'" style="align-self:flex-start;border:1px solid rgba(255,255,255,.2);background:transparent;color:inherit;border-radius:9px;padding:7px 12px;font:600 13px inherit;cursor:pointer">← 게임 목록</button>
     <div>
-      <div class="kicker">14 Circuits · 5 Cars · Top-down</div>
+      <div class="kicker">20 Circuits · 5 Cars · Top-down</div>
       <h1>APEX<br><em>SPRINT</em></h1>
       <div class="curb"></div>
     </div>
@@ -322,7 +322,20 @@ const TRACK_DEFS=[
   {id:'glacier',name:'아이스 헤어핀',diff:6,ai:1.11,w:104,laps:3,style:'pine',g:['#cfe6f2','#dbeef7'],tc:['#1f4a5a','#2c6072'],seed:79,
    pts:[[0,0],[1100,0],[1550,150],[1650,550],[1350,800],[600,800],[300,1075],[600,1350],[1400,1350],[1800,1600],[1750,2000],[1350,2200],[400,2200],[-150,2050],[-500,1550],[-400,800],[-550,300]]},
   {id:'dragon',name:'드래곤 테일',diff:6,ai:1.14,w:98,laps:3,style:'tree',g:['#24402c','#294732'],tc:['#122318','#1b3323'],seed:83,
-   pts:[[0,0],[900,0],[1200,200],[1500,0],[1800,200],[2100,0],[2600,0],[3000,300],[2900,800],[2400,900],[2200,1300],[2600,1600],[3000,2000],[2600,2400],[2000,2200],[1700,1700],[1300,1500],[1000,1900],[1300,2400],[900,2700],[300,2500],[200,1900],[500,1400],[100,1000],[-400,1300],[-800,900],[-500,400]]}
+   pts:[[0,0],[900,0],[1200,200],[1500,0],[1800,200],[2100,0],[2600,0],[3000,300],[2900,800],[2400,900],[2200,1300],[2600,1600],[3000,2000],[2600,2400],[2000,2200],[1700,1700],[1300,1500],[1000,1900],[1300,2400],[900,2700],[300,2500],[200,1900],[500,1400],[100,1000],[-400,1300],[-800,900],[-500,400]]},
+  /* 월드 투어: 실제 서킷의 굽이 순서를 본뜬 모양(축척·폭은 게임용) */
+  {id:'wt_spielberg',wt:1,name:'오스트리아 · 스필베르크',diff:2,ai:.92,w:165,laps:3,style:'tree',g:['#4c9447','#549e4e'],tc:['#2a6f33','#378643'],seed:101,
+   pts:[[0,0],[1000,0],[1250,100],[1400,400],[1800,1100],[2050,1500],[2000,1750],[1750,1750],[1300,1300],[900,1000],[500,1000],[150,1150],[-250,1100],[-600,850],[-700,450],[-500,120]]},
+  {id:'wt_monza',wt:1,name:'이탈리아 · 몬차',diff:3,ai:.97,w:150,laps:3,style:'tree',g:['#3f8544','#468e4a'],tc:['#215c30','#2c703b'],seed:103,
+   pts:[[0,0],[900,0],[1700,0],[1850,70],[2000,30],[2400,120],[2750,400],[2850,800],[2780,1000],[2850,1150],[2750,1450],[2500,1600],[2200,1500],[1700,1150],[1200,900],[1000,820],[900,700],[750,720],[300,700],[-300,690],[-650,520],[-700,250],[-450,40]]},
+  {id:'wt_melbourne',wt:1,name:'호주 · 멜버른 호수공원',diff:3,ai:.96,w:145,laps:3,style:'tree',g:['#4a9150','#519a57'],tc:['#27683a','#337d47'],seed:107,lake:[1150,1080,700,360],
+   pts:[[0,0],[900,0],[1150,60],[1300,250],[1500,330],[1900,300],[2150,380],[2200,600],[2300,780],[2500,850],[2750,950],[2800,1200],[2600,1600],[2100,1850],[1500,1900],[1150,1820],[950,1900],[750,1850],[300,1800],[-100,1650],[-350,1350],[-300,1000],[-450,700],[-550,350],[-400,80]]},
+  {id:'wt_spa',wt:1,name:'벨기에 · 스파',diff:4,ai:1.0,w:138,laps:2,style:'tree',g:['#2f6a3f','#357445'],tc:['#1d4f2c','#286238'],seed:109,
+   pts:[[0,0],[600,0],[820,80],[800,280],[600,380],[200,560],[0,700],[-120,800],[-300,850],[-900,1150],[-1500,1450],[-1800,1560],[-1950,1450],[-2100,1420],[-2350,1350],[-2400,1100],[-2200,1000],[-2000,950],[-1950,750],[-2050,500],[-2300,380],[-2550,400],[-2800,350],[-2950,150],[-2850,-100],[-2600,-250],[-1900,-300],[-1200,-150],[-700,-50],[-450,-40],[-350,40],[-230,0]]},
+  {id:'wt_saopaulo',wt:1,name:'브라질 · 인터라고스',diff:4,ai:1.01,w:130,laps:3,style:'tree',g:['#3b7d3a','#418640'],tc:['#205a2b','#2b6e36'],seed:113,
+   pts:[[0,0],[800,0],[1050,-50],[1150,-250],[1300,-400],[1600,-550],[1750,-850],[1650,-1150],[1200,-1500],[500,-1800],[0,-1950],[-350,-1900],[-500,-1650],[-350,-1400],[100,-1300],[600,-1350],[900,-1200],[850,-950],[550,-900],[150,-950],[-200,-850],[-450,-550],[-520,-250],[-350,-50]]},
+  {id:'wt_monaco',wt:1,name:'모나코 · 시가지',diff:5,ai:1.04,w:108,laps:3,style:'block',g:['#4a5059','#505760'],tc:['#2b3038','#5d6672'],seed:127,lake:[600,320,350,105],
+   pts:[[0,0],[800,0],[1100,40],[1500,-150],[2000,-300],[2300,-250],[2450,-50],[2650,150],[2600,350],[2700,480],[2950,470],[3050,600],[2950,760],[2500,800],[1900,700],[1500,620],[1350,560],[1220,620],[950,540],[800,580],[600,540],[450,620],[300,580],[50,620],[-200,560],[-280,380],[-250,150],[-150,20]]}
 ];
 const DIFF_TXT=['','입문','쉬움','보통','어려움','최고난도','전설'];
 const PTS_MULT=[0,1,1.3,1.7,2.2,3,4];
@@ -962,12 +975,12 @@ function renderTrackList(){
     const top=document.createElement('span');top.className='top';
     top.innerHTML='<span class="nm"></span><span class="stars d'+d.diff+'">'+'★'.repeat(Math.min(5,d.diff))+(d.diff>5?'+':'')+'<i>'+'★'.repeat(Math.max(0,5-d.diff))+'</i></span>';
     top.firstChild.textContent=d.name;
-    const lvl=document.createElement('span');lvl.className='lvl d'+d.diff;lvl.textContent=DIFF_TXT[d.diff]+' · 포인트 ×'+PTS_MULT[d.diff];
+    const lvl=document.createElement('span');lvl.className='lvl d'+d.diff;lvl.textContent=(d.wt?'🌍 실제 모양 · ':'')+DIFF_TXT[d.diff]+' · 포인트 ×'+PTS_MULT[d.diff];
     const meta=document.createElement('span');meta.className='meta';meta.innerHTML=(t.L*M_PER_U/1000).toFixed(2)+' km · '+'5랩 · 피트 1번 · 베스트 <b>'+(r.lap!=null?fmt(r.lap):'--')+'</b>';
     b.append(c,top,lvl,meta);b.addEventListener('click',()=>{if(trackSel===i)return;trackSel=i;SAVE.lastTrack=i;saveRec(SAVE);toAttract();});box.appendChild(b);
     if(i===trackSel){const inf=$('trkInfo');if(inf)inf.innerHTML=d.name+' · '+lvl.textContent+' · '+meta.innerHTML;}});
   const nb=document.createElement('button');nb.className='trk nav';const pages=Math.ceil(TR.length/PER);
-  nb.innerHTML=trkPage<pages-1?'<b>🔥</b>더 어려운<br>서킷 →':'<b>🌱</b>← 쉬운<br>서킷';nb.addEventListener('click',()=>{trkPage=(trkPage+1)%pages;renderTrackList();});box.appendChild(nb);
+  nb.innerHTML=['<b>🔥</b>더 어려운<br>서킷 →','<b>🌍</b>월드 투어<br>실제 서킷 →','<b>🌱</b>← 쉬운<br>서킷'][pages>2?trkPage:trkPage?2:0];nb.addEventListener('click',()=>{trkPage=(trkPage+1)%pages;renderTrackList();});box.appendChild(nb);
 }
 
 /* ---------- loop ---------- */
