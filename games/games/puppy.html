@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=IBM+Plex+Sans+KR:wght@500;700&display=swap">
 <style>
-/* 한 화면 세로 배치: 위 머리줄(단계·남은 강아지·점수·다음 블록), 가운데 놀이판(10×16칸), 아래 조작 버튼 5개. 메뉴·결과·도감은 가운데 카드. */
+/* 한 화면 세로 배치: 위 머리줄(단계·남은 강아지·점수·다음 블록), 가운데 놀이판(10×20칸), 아래 조작 버튼 5개. 메뉴·결과·도감은 가운데 카드. */
 :root{--ground:#ffe9c7;--ink:#3a2a1e;--paper:#fffaf0;--line:#3a2a1e;--accent:#ff7a59;--ok:#3fae5a;--f-disp:"Jua","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;--f-body:"IBM Plex Sans KR","Apple SD Gothic Neo",system-ui,sans-serif;color-scheme:light}
 *,*::before,*::after{box-sizing:border-box}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--ground);color:var(--ink);font-family:var(--f-body);-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:none}
@@ -93,7 +93,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 const $=id=>document.getElementById(id);
 const cv=$('game'),ctx=cv.getContext('2d');
 /* ---------- 모든 상태는 여기서 선언 ---------- */
-const W=10,H=16,KEY='puppyRescue_v1';
+const W=10,H=20,KEY='puppyRescue_v1';
 let DPR=1,VW=360,VH=640,CELL=30,OX=0,OY=0,state='menu',grid=[],cur=null,next=null,lv=1,score=0,pupsLeft=0,savedRun=0,dropT=0,lockT=0,clearing=null,parts=[],AC=null,autoPlay=false,T=0,toastT=0,lastRunLv=1,sparks=[],landFx=[],flashT=0,PID=0,dropFx=null,shakeT=0;
 const BREEDS=[
  {id:'shiba',name:'시바',c:'#f2a65a',e:'#c9762e',ear:'up',need:0},{id:'poodle',name:'푸들',c:'#fff3e0',e:'#e6cfae',ear:'puff',need:0},
