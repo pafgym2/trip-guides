@@ -137,7 +137,7 @@ const clamp=(v,a,b)=>v<a?a:v>b?b:v,rnd=(a,b)=>a+Math.random()*(b-a),lerp=(a,b,t)
 /* ---------- 모든 상태는 여기 맨 위에서 선언 (초기화 순서 오류 방지) ---------- */
 let DPR=1,VW=360,VH=640,S=1,state='map',stage=null,stageIdx=0,T=0,hold=false,autoPilot=false,mapPage=0;
 let apRoll=false;let pl={x:0,alt:0,v:0,vy:0,air:false,pitch:0,landed:false},stars=[],run={rings:0,ringTotal:0,star:0,takeoff:0,landing:0,zone:false,tries:0,coins:0};
-let cr={px:0,py:0,tx:0,ty:0,bank:0,objs:[],z0:1,lastZ:1,endT:0,shake:0},puffs=[],tipT=0,parts=[],fxRun=false,AC=null,engOsc=null,engGain=null,mapT=0,resultAt=0,ptrDown=false,lastTap=0,bursts=[];
+let cr={px:0,py:0,tx:0,ty:0,bank:0,objs:[],z0:1,lastZ:1,endT:0,shake:0},puffs=[],goldTr=[],goldPh='',tipT=0,parts=[],fxRun=false,AC=null,engOsc=null,engGain=null,mapT=0,resultAt=0,ptrDown=false,lastTap=0,bursts=[];
 const keys={};
 
 const STAGES=[
@@ -347,6 +347,10 @@ function drawSide2(){const g=ctx,[c1,c2]=skyCols();const sky=g.createLinearGradi
   for(const s of stars)if(!s.got){g.font=(24*S)+'px sans-serif';g.textAlign='center';g.fillText('⭐',X(s.x),Y(s.alt)+8*S);}
   // 그림자·비행기
   g.fillStyle='rgba(0,0,0,.18)';g.beginPath();g.ellipse(X(pl.x),gy+6*S,(26-Math.min(16,pl.alt*.1))*S,4*S,0,0,TAU);g.fill();
+  if(goldPh!==state){goldPh=state;goldTr=[];}
+  if(pl.v>8&&!pl.landed){goldTr.push({x:pl.x-24+rnd(-3,3),a:pl.alt+13+rnd(-4,4),t:1,r:rnd(1.6,3.4)});if(goldTr.length>70)goldTr.shift();}
+  for(const q of goldTr){q.t-=.028;if(q.t<=0)continue;const tw=.6+.4*Math.sin(T*18+q.x);g.globalAlpha=q.t*tw;g.fillStyle=q.t>.6?'#fff3b0':'#ffc93c';g.beginPath();const px=X(q.x),py=Y(q.a),r=q.r*S*(.5+q.t*.7);g.moveTo(px,py-r*1.5);g.lineTo(px+r*.5,py);g.lineTo(px,py+r*1.5);g.lineTo(px-r*.5,py);g.closePath();g.fill();}
+  g.globalAlpha=1;goldTr=goldTr.filter(q=>q.t>0);
   g.save();g.translate(X(pl.x),Y(pl.alt)-13*S-(pl.bounce>0?Math.abs(Math.sin(pl.bounce*12))*6*S:0));g.rotate(pl.pitch);g.scale(S*1.25,S*1.25);drawSide(g,curPlane(),curCol(),T,pl.alt<60);g.restore();
   if(state==='takeoff'&&!pl.air){const w=Math.min(260,VW-60),x=(VW-w)/2,y=VH-64;g.fillStyle='rgba(14,42,71,.75)';rr(g,x-8,y-26,w+16,56,16);g.fill();
     g.fillStyle='#fff';g.font='15px Jua,sans-serif';g.textAlign='center';g.fillText('속도',VW/2,y-8);g.fillStyle='#dbe3ea';rr(g,x,y,w,18,9);g.fill();g.fillStyle='#2fc27a';rr(g,x+w*55/78,y,w*23/78,18,9);g.fill();
@@ -388,7 +392,12 @@ const G3=(()=>{const glc=$('gl');if(!window.THREE)return{ok:false};
   let fr=0,live=[],src=null,planeG=null,prop=null,pkey='',ay=.4,c=1.7,bgKey='',W=0,H=0;
   function resize(){W=VW;H=VH;R.setPixelRatio(Math.min(1.75,window.devicePixelRatio||1));R.setSize(VW,VH,false);cam.aspect=VW/VH;cam.updateProjectionMatrix();
     const k=VH/VW;ay=.22*k;c=k/(2*Math.tan(Math.PI/6));cam.position.set(0,.06*k,c);cam.rotation.set(0,0,0);scene.fog.near=c*7;scene.fog.far=c*17;sea.position.y=-(ay+.42);}
-  function clear(){for(const m of live)scene.remove(m);live=[];}
+  /* 금빛 꼬리: 나이대별 5묶음(묶음마다 투명도·크기가 달라 뒤로 갈수록 작고 옅어져요) */
+  const TB=5,TP=9,TN=TB*TP,dc=document.createElement('canvas');dc.width=dc.height=64;{const d=dc.getContext('2d'),gd=d.createRadialGradient(32,32,0,32,32,32);gd.addColorStop(0,'rgba(255,255,255,1)');gd.addColorStop(.3,'rgba(255,236,150,.95)');gd.addColorStop(.65,'rgba(255,196,50,.5)');gd.addColorStop(1,'rgba(255,180,30,0)');d.fillStyle=gd;d.fillRect(0,0,64,64);}
+  const dotTex=new THREE.CanvasTexture(dc),bands=[];let hist=[];
+  for(let b=0;b<TB;b++){const pos=new Float32Array(TP*3),geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    const pts=new THREE.Points(geo,new THREE.PointsMaterial({size:.085-b*.012,map:dotTex,color:0xffd65a,transparent:true,opacity:[1,.8,.55,.32,.15][b],depthWrite:false,fog:false,sizeAttenuation:true}));pts.frustumCulled=false;scene.add(pts);bands.push({pos,geo});}
+  function clear(){for(const m of live)scene.remove(m);live=[];hist=[];}
   function torus(r,t){const k=r+'_'+t;return GEO.tor[k]||(GEO.tor[k]=new THREE.TorusGeometry(r,t,10,44));}
   function make(o){let g;const rr=SAVE.hard?.15:.2;
     if(o.type==='ring'){g=new THREE.Group();const m=new THREE.Mesh(torus(rr,rr*.085),new THREE.MeshBasicMaterial({color:0xffc93c,transparent:true}));g.add(m);
@@ -442,6 +451,10 @@ const G3=(()=>{const glc=$('gl');if(!window.THREE)return{ok:false};
     const ang=cr.bank+(cr.roll>0?(1-cr.roll/.7)*TAU:0);
     planeG.position.set(cr.px*.36,cr.py*ay,0);planeG.rotation.set(clamp((cr.ty-cr.py)*.55,-.4,.4),-cr.bank*.45,-ang);
     if(prop)prop.rotation.z=T*40;
+    hist.unshift({x:planeG.position.x,y:planeG.position.y,j:Math.random()});if(hist.length>TN)hist.pop();
+    for(let i=0;i<TN;i++){const h=hist[i]||hist[hist.length-1],u=i/TN,sp=u*.05,bd=bands[Math.floor(i/TP)],k=(i%TP)*3;
+      bd.pos[k]=h.x+(h.j-.5)*sp*2;bd.pos[k+1]=h.y-.012-u*.035+Math.sin(i*1.9+h.j*9+T*6)*sp*.5;bd.pos[k+2]=.09+u*c*(cr.turbo>0?.42:.32);}
+    for(const bd of bands)bd.geo.attributes.position.needsUpdate=true;
     const sh=cr.shake>0?.02:0;cam.position.x=sh?rnd(-sh,sh):cr.px*.02;cam.rotation.z=-cr.bank*.05;
     R.render(scene,cam);}
   return{ok:true,draw,get n(){return live.length},get R(){return R}};})();
