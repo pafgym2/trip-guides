@@ -45,7 +45,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #bows{display:grid;gap:7px;margin:8px 0}#bows button{display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left;padding:8px 10px;background:#fff;border:3px solid var(--line);border-radius:14px}
 #bows button[aria-pressed=true]{background:#dff7e6}#bows b{font-family:var(--f-disp);font-weight:400;font-size:17px;display:block}#bows small{font-size:11.5px;opacity:.75}
 .fact{background:#e7f6ff;border:2px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;text-align:left;margin-top:8px}
-#btnHub{position:absolute;left:12px;top:12px;font-family:var(--f-disp);font-size:13px;background:#fff;border:2px solid var(--line);border-radius:999px;padding:3px 10px}
+#btnHub{position:absolute;left:12px;top:12px;font-family:var(--f-disp);font-size:13px;background:#fff;border:2px solid var(--line);border-radius:999px;padding:3px 10px;z-index:3}
 [hidden]{display:none!important}
 </style>
 
@@ -215,7 +215,7 @@ $('bMode').onclick=()=>{SAVE.easy=!SAVE.easy;save();renderMenu();};$('bSound').o
 $('bShop').onclick=()=>{renderShop();show('shop');};$('sBack').onclick=()=>{renderMenu();show('menu');};
 $('bows').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const it=BOWS.find(x=>x.id===b.dataset.id);if(!SAVE.bows.includes(it.id)){if(SAVE.pts<it.p){beep(240,.15);return;}SAVE.pts-=it.p;SAVE.bows.push(it.id);beep(990,.12);}SAVE.bow=it.id;save();renderShop();});
 $('btnQuit').onclick=toMenu;$('rMenu').onclick=toMenu;$('rAgain').onclick=()=>startStage(si);$('rNext').onclick=()=>startStage(si+1);
-if(/\/games\//.test(location.pathname)){$('btnHub').hidden=false;$('btnHub').onclick=()=>{if(history.length>1)history.back();else location.href='../index.html';};}
+if(/\/games\//.test(location.pathname)){$('btnHub').hidden=false;document.querySelector('#menu .kicker').style.marginTop='32px';$('btnHub').onclick=()=>{if(history.length>1)history.back();else location.href='../index.html';};}
 /* ---------- 루프 ---------- */
 let last=performance.now();
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;if(!document.hidden)update(dt);render();requestAnimationFrame(frame);}
