@@ -42,6 +42,11 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 #album div{border:2.5px solid var(--line);border-radius:12px;padding:5px 2px 4px;font-size:11px;font-weight:700;background:#fff}
 #album canvas{width:44px;height:44px;display:block;margin:0 auto 2px}
 #album .lock{opacity:.45;border-style:dashed}
+#combo{position:fixed;left:50%;top:27%;transform:translate(-50%,-50%);z-index:15;font-family:var(--f-disp);font-size:46px;font-weight:900;color:#ffcf3f;-webkit-text-stroke:3px var(--line);paint-order:stroke fill;text-shadow:0 4px 0 var(--line);pointer-events:none;opacity:0;white-space:nowrap;text-align:center;line-height:1}
+#combo small{display:block;font-size:17px;color:#fffaf0;-webkit-text-stroke:2px var(--line);margin-top:6px}
+#combo.go{animation:comboPop 1.1s ease-out forwards}
+#combo.c3{color:#ff9a3d;font-size:54px}#combo.c5{color:#ff5d7a;font-size:62px}
+@keyframes comboPop{0%{opacity:0;transform:translate(-50%,-50%) scale(.3) rotate(-8deg)}18%{opacity:1;transform:translate(-50%,-50%) scale(1.25) rotate(3deg)}32%{transform:translate(-50%,-50%) scale(1) rotate(-2deg)}75%{opacity:1;transform:translate(-50%,-58%) scale(1)}100%{opacity:0;transform:translate(-50%,-80%) scale(.9)}}
 #toast{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:15;font-family:var(--f-disp);font-size:30px;color:#fffaf0;-webkit-text-stroke:2px var(--line);paint-order:stroke fill;text-shadow:0 3px 0 var(--line);pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap}
 #btnHub{position:absolute;left:14px;top:14px;font-family:var(--f-disp);font-size:14px;background:#fff;border:2px solid var(--line);border-radius:999px;padding:4px 11px;z-index:3}
 [hidden]{display:none!important}
@@ -51,6 +56,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 <div id="hud" hidden>
   <div class="chip"><span>단계</span><b id="hLv">1</b></div>
   <div class="chip"><span>남은 강아지</span><b id="hPup">0</b></div>
+  <div class="chip"><span>속도</span><b id="hSpd">1</b></div>
   <div class="chip"><span>점수</span><b id="hScore">0</b></div>
   <button id="btnPause" aria-label="잠깐 멈춤">II</button>
 </div>
@@ -62,6 +68,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
   <button id="bDrop" class="drop" aria-label="한 번에 떨어뜨리기">⤓<small>쿵!</small></button>
 </div>
 <div id="toast"></div>
+<div id="combo"></div>
 
 <section id="menu" class="sheet">
   <div class="card" style="position:relative">
@@ -94,7 +101,7 @@ const $=id=>document.getElementById(id);
 const cv=$('game'),ctx=cv.getContext('2d');
 /* ---------- 모든 상태는 여기서 선언 ---------- */
 const W=10,H=20,KEY='puppyRescue_v1';
-let DPR=1,VW=360,VH=640,CELL=30,OX=0,OY=0,state='menu',grid=[],cur=null,next=null,lv=1,score=0,pupsLeft=0,savedRun=0,dropT=0,lockT=0,clearing=null,parts=[],AC=null,autoPlay=false,T=0,toastT=0,lastRunLv=1,sparks=[],landFx=[],flashT=0,PID=0,dropFx=null,shakeT=0;
+let DPR=1,VW=360,VH=640,CELL=30,OX=0,OY=0,state='menu',grid=[],cur=null,next=null,lv=1,score=0,pupsLeft=0,savedRun=0,dropT=0,lockT=0,clearing=null,parts=[],AC=null,autoPlay=false,T=0,toastT=0,lastRunLv=1,sparks=[],landFx=[],flashT=0,combo=0,spd=1,linesRun=0,bestCombo=0,PID=0,dropFx=null,shakeT=0;
 const BREEDS=[
  {id:'shiba',name:'시바',c:'#f2a65a',e:'#c9762e',ear:'up',need:0},{id:'poodle',name:'푸들',c:'#fff3e0',e:'#e6cfae',ear:'puff',need:0},
  {id:'retr',name:'리트리버',c:'#f7d08a',e:'#d9a94f',ear:'flop',need:0},{id:'husky',name:'허스키',c:'#aab7c9',e:'#5d6b82',ear:'up',need:3},
@@ -138,17 +145,22 @@ function ghostY(){let y=cur.y;while(fits(cur,cur.x,y+1))y++;return y;}
 function lock(){let over=false;cur.cells.forEach(([cx,cy],i)=>{const gx=cur.x+cx,gy=cur.y+cy;if(gy<0){over=true;return;}grid[gy][gx]={t:i===0?'head':'body',b:cur.b,land:T,pid:cur.id,tl:i===cur.cells.length-1};for(let k=0;k<3;k++)sparks.push({x:OX+gx*CELL+CELL*Math.random(),y:OY+(gy+1)*CELL,vx:rnd2(-40,40),vy:rnd2(-70,-20),t:.45,c:'#ffffff',r:2});});cur=null;
   if(over){gameOver();return;}
   const full=[];for(let y=0;y<H;y++)if(grid[y].every(c=>c))full.push(y);
-  if(full.length){clearing={rows:full,t:0};beep(880,.18,'triangle',.14,1320);}else spawn();}
+  if(full.length){clearing={rows:full,t:0};beep(880+Math.min(combo,8)*110,.18,'triangle',.14,1320+Math.min(combo,8)*160);}else{combo=0;spawn();}}
 function finishClear(){const rows=clearing.rows;let rescued=0;flashT=.25;
   for(const y of rows)for(let x=0;x<W;x++)for(let k=0;k<3;k++)sparks.push({x:OX+x*CELL+CELL/2,y:OY+y*CELL+CELL/2,vx:rnd2(-150,150),vy:rnd2(-190,40),t:rnd2(.5,.95),c:['#ffcf3f','#ff7a59','#ffffff','#8fdcb4'][k%4],r:rnd2(2,4.5),star:k===0});
   for(const y of rows)for(let x=0;x<W;x++){const c=grid[y][x];if(c&&c.t==='pup'){rescued++;parts.push({x:OX+x*CELL+CELL/2,y:OY+y*CELL+CELL/2,vy:-90,t:1.4,b:c.b});for(let k=0;k<7;k++)sparks.push({x:OX+x*CELL+CELL/2,y:OY+y*CELL+CELL/2,vx:rnd2(-110,110),vy:rnd2(-230,-60),t:rnd2(.8,1.3),c:k%2?'#ff5d7a':'#ffb3c1',r:rnd2(4,7),heart:true});}}
   for(const y of rows.sort((a,b)=>a-b)){grid.splice(y,1);grid.unshift(new Array(W).fill(null));}
   score+=[0,100,300,500,800][Math.min(4,rows.length)]*lv+rescued*200;clearing=null;
+  combo++;if(combo>bestCombo)bestCombo=combo;if(combo>=2){score+=50*combo*lv;comboFx(combo);}
+  {const b4=Math.floor(linesRun/LV_LINES);linesRun+=rows.length;const up=Math.floor(linesRun/LV_LINES)-b4;if(up>0){spd+=up;setTimeout(()=>{if(state==='play'){toast('⚡ 스피드 업! 속도 '+spd);beep(660,.1,'square',.08,990);setTimeout(()=>beep(990,.14,'square',.08,1480),110);}},rescued?1500:500);}}
   if(rescued){pupsLeft-=rescued;savedRun+=rescued;const before=unlocked().length;SAVE.saved+=rescued;save();bark();toast(rescued>1?'멍멍! '+rescued+'마리 구조!':'멍! 구조 성공!');
     if(unlocked().length>before)setTimeout(()=>toast('새 강아지 친구: '+unlocked()[unlocked().length-1].name+'!'),900);}
   else if(rows.length>1)toast(rows.length+'줄 한꺼번에!');
   hud();if(pupsLeft<=0){levelClear();return;}spawn();}
-function interval(){return Math.max(110,(SAVE.easy?1050:760)-(lv-1)*(SAVE.easy?45:55));}
+const LV_LINES=6;
+function interval(){return Math.max(140,(SAVE.easy?1050:760)-(lv-1)*(SAVE.easy?45:55)-(spd-1)*(SAVE.easy?18:22));}
+function comboFx(n){const e=$('combo');e.className='';e.innerHTML=n+'연속!<small>+'+(50*n*lv)+'점</small>';void e.offsetWidth;e.className='go'+(n>=5?' c5':n>=3?' c3':'');shakeT=Math.max(shakeT,Math.min(.35,.1+n*.04));
+  for(let k=0;k<10+n*6;k++)sparks.push({x:OX+W*CELL/2+rnd2(-70,70),y:OY+H*CELL*.27,vx:rnd2(-220,220),vy:rnd2(-260,60),t:rnd2(.6,1.1),c:['#ffcf3f','#ff7a59','#ff5d7a','#ffffff'][k%4],r:rnd2(2.5,5),star:k%2===0});}
 function update(dt){T+=dt;if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').style.opacity='0';}
   parts=parts.filter(p=>(p.t-=dt)>0);for(const p of parts){p.y+=p.vy*dt;p.vy+=40*dt;}
   sparks=sparks.filter(q=>(q.t-=dt)>0);for(const q of sparks){q.x+=q.vx*dt;q.y+=q.vy*dt;q.vy+=420*dt;}if(sparks.length>260)sparks.splice(0,sparks.length-260);if(flashT>0)flashT-=dt;if(shakeT>0)shakeT-=dt;if(dropFx&&(dropFx.t-=dt)<=0)dropFx=null;
@@ -252,12 +264,12 @@ function render(){const g=ctx;g.setTransform(DPR,0,0,DPR,0,0);
   for(const p of parts){g.globalAlpha=Math.min(1,p.t);face(g,p.x,p.y,CELL*1.25,p.b,false);g.fillStyle='#ff7a59';g.font='400 '+Math.round(CELL*.55)+'px Jua,sans-serif';g.textAlign='center';g.fillText('멍!',p.x+CELL*.7,p.y-CELL*.5);g.globalAlpha=1;}
   g.restore();}
 /* ---------- 흐름 ---------- */
-function hud(){$('hLv').textContent=lv;$('hPup').textContent=Math.max(0,pupsLeft);$('hScore').textContent=score;}
+function hud(){$('hSpd').textContent=spd;$('hLv').textContent=lv;$('hPup').textContent=Math.max(0,pupsLeft);$('hScore').textContent=score;}
 function toast(t){const e=$('toast');e.textContent=t;e.style.opacity='1';toastT=1.3;}
 function show(id){['menu','albumS','pauseS','resultS'].forEach(s=>$(s).hidden=s!==id);const play=!id;$('hud').hidden=!play&&id!=='pauseS';$('pad').hidden=!play;}
 function startGame(){if(window.MongGate&&!autoPlay&&!MongGate.pass){MongGate.play(()=>{MongGate.pass=1;try{startGame();}finally{MongGate.pass=0;}});return;}
-  lv=1;score=0;savedRun=0;audio();beginLevel();}
-function beginLevel(){setupLevel();next=null;cur=null;parts=[];clearing=null;state='play';show(null);hud();spawn();toast(lv+'단계 · 강아지 '+pupsLeft+'마리');}
+  lv=1;score=0;savedRun=0;spd=1;linesRun=0;bestCombo=0;audio();beginLevel();}
+function beginLevel(){setupLevel();next=null;cur=null;parts=[];clearing=null;combo=0;state='play';show(null);hud();spawn();toast(lv+'단계 · 강아지 '+pupsLeft+'마리');}
 function levelClear(){state='clear';cur=null;if(lv+1>SAVE.best)SAVE.best=lv+1;if(score>SAVE.top)SAVE.top=score;save();beep(784,.12);setTimeout(()=>beep(1047,.12),130);setTimeout(()=>beep(1319,.25),260);
   $('rTitle').textContent='🎉 '+lv+'단계 구조 완료!';$('rText').textContent='강아지들이 모두 집으로 돌아갔어요.';$('rLv').textContent=lv;$('rSaved').textContent=savedRun;$('rScore').textContent=score;$('rNew').textContent='';$('rGo').textContent='다음 단계 →';$('rGo').onclick=()=>{lv++;beginLevel();};show('resultS');}
 function gameOver(){state='over';cur=null;if(score>SAVE.top)SAVE.top=score;save();lastRunLv=lv;beep(300,.3,'sawtooth',.1,120);
@@ -289,7 +301,7 @@ if(/\/games\//.test(location.pathname)){$('btnHub').hidden=false;document.queryS
 let last=performance.now();
 function frame(now){const dt=Math.min(.05,(now-last)/1000);last=now;update(dt);render();requestAnimationFrame(frame);}
 layout();newGrid();renderMenu();requestAnimationFrame(frame);
-window.__pup={get state(){return state},get lv(){return lv},get score(){return score},get pups(){return pupsLeft},get save(){return SAVE},get grid(){return grid},get cur(){return cur},
+window.__pup={get state(){return state},get lv(){return lv},get spd(){return spd},get combo(){return combo},get lines(){return linesRun},interval(){return interval()},comboFx(n){comboFx(n)},get score(){return score},get pups(){return pupsLeft},get save(){return SAVE},get grid(){return grid},get cur(){return cur},
   start(){autoPlay=true;lv=1;score=0;savedRun=0;beginLevel();},auto(on){autoPlay=!!on;},sim(sec){for(let i=0;i<sec*60;i++)update(1/60);},draw(){render();},next(){if(state==='clear'){lv++;beginLevel();}},
   move,rotate,soft,hard,reset(){try{localStorage.removeItem(KEY);}catch(e){}SAVE=load();renderMenu();}};
 })();
