@@ -50,7 +50,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
 <div id="hud" hidden>
   <div class="chip"><b id="hDist">0m</b><span>거리</span></div>
   <div class="chip"><b id="hCoin">0</b><span>동전</span></div>
-  <div class="chip"><b id="hearts">❤❤❤</b><span>하트</span></div>
+  <div class="chip"><b id="hLv">1</b><span>레벨</span></div>
   <span class="sp"></span>
   <button class="hb" id="btnSound" aria-label="소리">🔊</button>
   <button class="hb" id="btnPause" aria-label="멈춤">Ⅱ</button>
@@ -62,13 +62,14 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
     <p class="kicker">OUTBACK HOP</p>
     <h1>캥거루 <b>점프</b></h1>
     <p>아기 캥거루가 호주 들판을 달려요.<br>돌과 개미집을 넘고 동전을 주머니에 모아요!</p>
+    <p style="font-weight:700">한 번 부딪히면 끝! 500m마다 레벨이 올라 더 빨라져요.</p>
     <div class="how">
       <div><b>톡!</b><span>짧게 누르면 낮은 점프</span></div>
       <div><b>꾹~</b><span>길게 누르면 높은 점프</span></div>
     </div>
     <div class="seg" id="segMode">
-      <button data-m="easy">쉬움<small>천천히 · 하트 5개</small></button>
-      <button data-m="normal">보통<small>빠르게 · 하트 3개</small></button>
+      <button data-m="easy">쉬움<small>천천히 시작</small></button>
+      <button data-m="normal">보통<small>빠르게 시작</small></button>
     </div>
     <p id="bestLine" style="font-weight:700"></p>
     <button class="big" id="btnStart">출발!</button>
@@ -106,7 +107,7 @@ const $=id=>document.getElementById(id),cv=$('game'),g=cv.getContext('2d'),TAU=M
 const GR=2600,JV=760,HOLD_G=.25,HOLD_MAX=.34,CUT_G=1.2,ROO_H=70;
 function apexOf(hold){let y=0,v=JV,t=0,m=0;const dt=1/240;do{const boost=t<hold&&t<HOLD_MAX&&v>0;v-=(boost?GR*HOLD_G:v>0?GR*CUT_G:GR)*dt;y+=v*dt;t+=dt;if(y>m)m=y;}while(y>0);return m;}
 const MOUND_H=120,BIRD_Y=Math.round(apexOf(.12)+ROO_H+8);
-const MODES={easy:{v0:250,v1:430,hearts:5,gap:[1.2,1.9],name:'쉬움'},normal:{v0:310,v1:600,hearts:3,gap:[1.0,1.6],name:'보통'}};
+const MODES={easy:{v0:250,step:30,v1:520,gap:[1.2,1.9],name:'쉬움'},normal:{v0:310,step:45,v1:700,gap:[1.0,1.6],name:'보통'}};
 const THEMES=[
  {name:'붉은 사막',top:'#7fd0ff',bot:'#ffe9b8',far:'#e9a468',mid:'#d87c44',gnd:'#cf5f2f',gd:'#a8431f',dim:0,star:0,sun:'#fff3a8'},
  {name:'유칼립투스 숲',top:'#6ec3f7',bot:'#e4f7d0',far:'#a8c984',mid:'#72ab5c',gnd:'#c98f4f',gd:'#9f6a33',dim:0,star:0,sun:'#fff3a8'},
@@ -115,7 +116,7 @@ const THEMES=[
 const hex=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
 THEMES.forEach(t=>{for(const k of ['top','bot','far','mid','gnd','gd','sun'])t[k]=hex(t[k]);});
 let DPR=1,VW=360,VH=640,S=1,W=520,H=640,GY=470,KX=110;
-let state='menu',mode='easy',M=MODES.easy,T=0,dist=0,cam=0,speed=0,coins=0,hearts=3,obs=[],cns=[],items=[],parts=[],spawnD=0,itemT=0,sup=0,inv=0,slowT=0,shake=0,banner=null,nextMile=100,thI=0,thJ=0,thK=1,seen={},autoPlay=false,autoRel=0,AC=null,newRec=false,hudKey='';
+let state='menu',mode='easy',M=MODES.easy,T=0,dist=0,cam=0,speed=0,coins=0,hearts=1,lv=1,obs=[],cns=[],items=[],parts=[],spawnD=0,itemT=0,sup=0,inv=0,slowT=0,shake=0,banner=null,nextMile=100,thI=0,thJ=0,thK=1,seen={},autoPlay=false,autoRel=0,AC=null,newRec=false,hudKey='';
 const roo={y:0,vy:0,held:false,holdT:0,ground:true,ph:0,buf:0};
 function load(){let s=null;try{s=JSON.parse(localStorage.getItem(KEY));}catch(e){}s=Object.assign({best:{},coins:0,sound:true,mode:'easy',plays:0},s||{});s.best=Object.assign({easy:0,normal:0},s.best);return s;}
 let SAVE=load();function save(){try{localStorage.setItem(KEY,JSON.stringify(SAVE));}catch(e){}}
@@ -133,7 +134,7 @@ function tnum(k){return lerp(THEMES[thI][k],THEMES[thJ][k],thK);}
 function say(t,sec){banner={t,life:sec||1.6,max:sec||1.6};}
 
 /* ───── 놀이 ───── */
-function reset(){M=MODES[mode];T=0;dist=0;cam=0;coins=0;hearts=M.hearts;obs=[];cns=[];items=[];parts=[];spawnD=M.v0*1.7;itemT=rnd(14,20);sup=0;inv=0;slowT=0;shake=0;nextMile=100;thI=thJ=0;thK=1;seen={};newRec=false;
+function reset(){M=MODES[mode];T=0;dist=0;cam=0;coins=0;hearts=1;lv=1;obs=[];cns=[];items=[];parts=[];spawnD=M.v0*1.7;itemT=rnd(14,20);sup=0;inv=0;slowT=0;shake=0;nextMile=100;thI=thJ=0;thK=1;seen={};newRec=false;
   Object.assign(roo,{y:0,vy:0,held:false,holdT:0,ground:true,ph:0,buf:0});speed=M.v0;}
 function startGame(){if(window.MongGate&&!autoPlay&&!MongGate.pass){MongGate.play(()=>{MongGate.pass=1;try{startGame();}finally{MongGate.pass=0;}});return;}
   reset();state='play';SAVE.plays++;SAVE.mode=mode;save();show();say('출발!',1.2);zz('pop');}
@@ -142,29 +143,29 @@ function release(){roo.held=false;}
 function jump(){roo.vy=JV;roo.ground=false;roo.holdT=0;roo.buf=0;beep(420,.1,'sine',.07,760);dust(KX-8,0,4);}
 function dust(x,y,n){for(let i=0;i<n;i++)parts.push({x,y:y+2,vx:rnd(-90,-10),vy:rnd(20,110),life:.4,max:.4,c:'#f4d7a8',r:rnd(3,6)});}
 function burst(x,y,c,n){for(let i=0;i<n;i++){const a=rnd(0,TAU),v=rnd(80,300);parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v+120,life:.6,max:.6,c,r:rnd(3,7),gr:1});}}
-function spawn(){const m=dist,pool=['rock','rock','bush','bush'];if(m>60)pool.push('log','log');if(m>120)pool.push('mound','mound');if(m>220)pool.push('bird','bird');if(m>500)pool.push('mound','bird');
+function spawn(){const m=dist,pool=['rock','rock','bush','bush'];if(m>60)pool.push('log','log');if(m>120)pool.push('mound','mound');if(m>220)pool.push('bird','bird');if(lv>=3)pool.push('mound','bird');if(lv>=5)pool.push('mound','bird','log');
   let type=pool[Math.floor(Math.random()*pool.length)];const last=obs[obs.length-1];if(last&&last.type===type&&(type==='mound'||type==='bird'))type='rock';
   const o={type,x:W+70,y:0,w:46,h:44,seed:Math.random()};
   if(type==='bush'){o.w=62;o.h=38;}else if(type==='log'){o.w=84;o.h=40;}else if(type==='mound'){o.w=44;o.h=MOUND_H;}else if(type==='bird'){o.w=56;o.h=30;o.y=BIRD_Y;}
   seen[type]=(seen[type]||0)+1;if(seen[type]<=2)o.hint=type==='mound'?'꾹~ 길게!':type==='bird'?'낮게 톡!':'톡!';
   obs.push(o);
-  let gt=rnd(M.gap[0],M.gap[1]);if(type==='mound')gt+=.2;const gap=speed*gt;spawnD=o.w+gap;
+  let gt=rnd(M.gap[0],M.gap[1])*Math.max(.82,1-.045*(lv-1));if(type==='mound')gt+=.2;const gap=speed*gt;spawnD=o.w+gap;
   const cx=o.x+o.w/2;
   if(type==='bird'){for(let i=0;i<4;i++)cns.push({x:cx-60+i*40,y:26});}
   else if(Math.random()<.65){const top=type==='mound'?205:124,side=type==='mound'?172:96,dx=type==='mound'?58:48+o.w*.25;cns.push({x:cx-dx,y:side},{x:cx,y:top},{x:cx+dx,y:side});}
   const mid=o.x+o.w+gap*.55;
-  if(itemT<=0&&gap>300){items.push({x:mid,y:118,type:(hearts<M.hearts&&Math.random()<.55)?'heart':'star'});itemT=rnd(22,32);}
+  if(itemT<=0&&gap>300){items.push({x:mid,y:118,type:'star'});itemT=rnd(22,32);}
   else if(gap>330&&Math.random()<.5){const n=3+(Math.random()<.5?1:0);for(let i=0;i<n;i++)cns.push({x:mid+(i-(n-1)/2)*40,y:26});}}
-function hurt(o){hearts--;inv=1.5;slowT=.5;shake=.35;zz('hit')||beep(160,.25,'sawtooth',.2,60);burst(KX+10,roo.y+40,'#ff7a3d',10);if(hearts<=0)gameOver();}
+function hurt(o){hearts=0;shake=.35;zz('hit')||beep(160,.25,'sawtooth',.2,60);burst(KX+10,roo.y+40,'#ff7a3d',10);if(hearts<=0)gameOver();}
 function gameOver(){state='over';const d=Math.floor(dist);newRec=d>SAVE.best[mode];if(newRec)SAVE.best[mode]=d;SAVE.coins+=coins;save();
   $('oDist').textContent=d+'m';$('oCoin').textContent=coins;$('recTag').hidden=!newRec;$('overTitle').textContent=newRec?'우와, 최고 기록!':d>=300?'멀리 왔어요!':'잘했어요!';
-  $('oBest').textContent=M.name+' 최고 기록 '+SAVE.best[mode]+'m';show();if(newRec&&d>0){zz('win');cf('win');}else zz('lose');}
+  $('oBest').textContent='레벨 '+lv+' 도달 · '+M.name+' 최고 기록 '+SAVE.best[mode]+'m';show();if(newRec&&d>0){zz('win');cf('win');}else zz('lose');}
 function auto(){if(roo.held&&T>=autoRel)release();if(!roo.ground)return;let o=null;for(const q of obs)if(q.x+q.w>KX-16){o=q;break;}
   if(!o||o.type==='bird')return;const d=o.x-(KX+18),lead=o.type==='mound'?speed*.2+8:speed*.1+6;if(d<=lead){press();autoRel=T+(o.type==='mound'?.4:o.type==='log'?.16:.06);}}
 function update(dt){T+=dt;
   if(state!=='play'){roo.ph+=dt*9;cam+=120*dt;for(const p of parts)p.life-=dt;parts=parts.filter(p=>p.life>0);return;}
   if(autoPlay)auto();
-  const k=1-Math.exp(-dist/550);speed=lerp(M.v0,M.v1,k)*(sup>0?1.35:1)*(slowT>0?.55:1);
+  speed=Math.min(M.v1,M.v0+M.step*(lv-1))*(sup>0?1.35:1)*(slowT>0?.55:1);
   const dx=speed*dt;dist+=dx/50;cam+=dx;
   sup=Math.max(0,sup-dt);inv=Math.max(0,inv-dt);slowT=Math.max(0,slowT-dt);shake=Math.max(0,shake-dt);itemT-=dt;
   if(banner){banner.life-=dt;if(banner.life<=0)banner=null;}
@@ -174,7 +175,7 @@ function update(dt){T+=dt;
     if(roo.y<=0){roo.y=0;roo.vy=0;roo.ground=true;dust(KX-6,0,5);beep(150,.05,'sine',.05);}}
   else roo.ph+=dt*(8+speed/90);
   /* 흐르기 */
-  for(const o of obs)o.x-=dx+(o.type==='bird'?40*dt:0);for(const c of cns)c.x-=dx;for(const it of items)it.x-=dx;
+  for(const o of obs)o.x-=dx+(o.type==='bird'?(30+lv*12)*dt:0);for(const c of cns)c.x-=dx;for(const it of items)it.x-=dx;
   obs=obs.filter(o=>o.x+o.w>-80&&!o.dead);cns=cns.filter(c=>c.x>-40&&!c.got);items=items.filter(it=>it.x>-40&&!it.got);
   spawnD-=dx;if(spawnD<=0)spawn();
   /* 부딪힘 */
@@ -189,8 +190,8 @@ function update(dt){T+=dt;
       if(it.type==='star'){sup=5;inv=Math.max(inv,5.3);say('슈퍼 캥거루!',1.4);zz('power');burst(it.x,it.y,'#ffd84d',14);}
       else{hearts=Math.min(M.hearts,hearts+1);say('하트 +1',1.1);zz('buy');burst(it.x,it.y,'#ff6b7d',10);}}}
   for(const p of parts){p.life-=dt;p.x+=p.vx*dt-dx*.6;p.y+=p.vy*dt;if(p.gr)p.vy-=900*dt;}parts=parts.filter(p=>p.life>0);
-  if(dist>=nextMile){say(nextMile+'m!',1.1);zz('pass');nextMile+=100;}
-  const ti=Math.floor(dist/250)%4;if(ti!==thJ){thI=thJ;thJ=ti;thK=0;say(THEMES[ti].name,1.8);}
+  if(dist>=nextMile){if(nextMile%500){say(nextMile+'m!',1.1);zz('pass');}nextMile+=100;}
+  const nl=Math.floor(dist/500)+1;if(nl>lv){lv=nl;thI=thJ;thJ=(lv-1)%4;thK=0;say('레벨 '+lv+'! 더 빠르게',2);zz('win');cf('burst');}
   if(thK<1)thK=Math.min(1,thK+dt/3);
 }
 
@@ -275,7 +276,7 @@ function render(){g.setTransform(DPR*S,0,0,DPR*S,0,0);
   if(sup>0&&state==='play'){const bw=Math.min(220,W*.5);g.fillStyle='#fffaf0';rr(W/2-bw/2,GY+18,bw,16,8);g.fill();g.strokeStyle=INK;g.lineWidth=3;g.stroke();g.fillStyle='#ffd84d';rr(W/2-bw/2+3,GY+21,Math.max(6,(bw-6)*sup/5),10,5);g.fill();}
   if(banner&&state==='play'){const a=clamp(banner.life/.3,0,1),pop=1+.25*clamp(1-(banner.max-banner.life)/.18,0,1);g.save();g.translate(W/2,H*.27);g.scale(pop,pop);g.globalAlpha=a;g.font='400 46px Jua,sans-serif';g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=9;g.strokeStyle=INK;g.strokeText(banner.t,0,0);g.fillStyle='#fffaf0';g.fillText(banner.t,0,0);g.restore();}
   hud();}
-function hud(){const k=Math.floor(dist)+'|'+coins+'|'+hearts+'|'+state;if(k===hudKey)return;hudKey=k;$('hDist').textContent=Math.floor(dist)+'m';$('hCoin').textContent=coins;$('hearts').textContent='❤'.repeat(Math.max(0,hearts))+'♡'.repeat(Math.max(0,M.hearts-hearts));}
+function hud(){const k=Math.floor(dist)+'|'+coins+'|'+lv+'|'+state;if(k===hudKey)return;hudKey=k;$('hDist').textContent=Math.floor(dist)+'m';$('hCoin').textContent=coins;$('hLv').textContent=lv;}
 
 /* ───── 화면 ───── */
 function show(){$('menu').hidden=state!=='menu';$('pause').hidden=state!=='pause';$('over').hidden=state!=='over';$('hud').hidden=state==='menu';if(state==='menu')renderMenu();}
@@ -296,6 +297,6 @@ if(/\/games\//.test(location.pathname)){$('btnHub').hidden=false;document.queryS
 resize();reset();show();
 let last=0;function loop(now){const dt=Math.min(.033,(now-last)/1000||0);last=now;update(dt);render();requestAnimationFrame(loop);}requestAnimationFrame(loop);
 window.__roo={start(m){autoPlay=true;if(m)mode=m;startGame();},auto(on){autoPlay=!!on;},sim(sec){for(let i=0;i<sec*60&&state==='play';i++)update(1/60);},draw(){render();},press,release,apexOf,
-  get state(){return state;},get dist(){return dist;},get coins(){return coins;},get hearts(){return hearts;},get speed(){return speed;},get obs(){return obs;},get roo(){return roo;},set hearts(v){hearts=v;},set dist(v){dist=v;},star(){sup=5;},BIRD_Y,MOUND_H};
+  get state(){return state;},get dist(){return dist;},get coins(){return coins;},get hearts(){return hearts;},get lv(){return lv;},get speed(){return speed;},get obs(){return obs;},get roo(){return roo;},set hearts(v){hearts=v;},set dist(v){dist=v;},star(){sup=5;},BIRD_Y,MOUND_H};
 })();
 </script>
