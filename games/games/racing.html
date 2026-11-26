@@ -722,7 +722,7 @@ function collide(){
 function step(dt){
   if(state==='countdown'){
     cd+=dt;const n=Math.min(5,Math.floor(cd/.6));
-    if(n!==lightsOn){if(n>lightsOn)lightSnd();lightsOn=n;[...$('lights').children].forEach((s,i)=>s.classList.toggle('on',i<n));}
+    if(n!==lightsOn){if(n>lightsOn)lightSnd(n);lightsOn=n;[...$('lights').children].forEach((s,i)=>s.classList.toggle('on',i<n));}
     if(cd>=goAt){launchSnd();state='race';raceTime=0;$('lights').hidden=true;banner('GO!',1,'go');setTimeout(()=>{if(state==='race')banner('5바퀴 · 피트 스톱 1번 필수!',2.4);},1100);}
     return;
   }
@@ -862,7 +862,7 @@ function renderShop(){
 }
 
 /* ---------- sound ---------- */
-let ac=null,osc=null,osc2=null,gain=null,engF=null,skG=null,skF=null,nzBuf=null;const ENG_VOL=.11,SKID_VOL=.9;
+let ac=null,osc=null,osc2=null,gain=null,engF=null,skG=null,skF=null,nzBuf=null,packO=[],packG=null;const ENG_VOL=.11,SKID_VOL=.9,PACK_VOL=.075;
 function initAudio(){
   if(ac||!soundOn)return;
   try{const AC=window.AudioContext||window.webkitAudioContext;ac=new AC();osc=ac.createOscillator();osc.type='sawtooth';osc2=ac.createOscillator();osc2.type='square';
@@ -870,21 +870,36 @@ function initAudio(){
     const g2=ac.createGain();g2.gain.value=.35;osc.connect(f);osc2.connect(g2).connect(f);f.connect(gain).connect(ac.destination);osc.start();osc2.start();
     try{const nb=ac.createBuffer(1,ac.sampleRate,ac.sampleRate),nd=nb.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;nzBuf=nb;const ns=ac.createBufferSource();ns.buffer=nb;ns.loop=true;
       skF=ac.createBiquadFilter();skF.type='bandpass';skF.frequency.value=1500;skF.Q.value=3;skG=ac.createGain();skG.gain.value=0;ns.connect(skF).connect(skG).connect(ac.destination);ns.start();}catch(e){skG=null;}
+    try{packG=ac.createGain();packG.gain.value=0;const sh=ac.createWaveShaper(),cv=new Float32Array(257);for(let i=0;i<257;i++){const x=i/128-1;cv[i]=Math.tanh(x*2.6);}sh.curve=cv;const pf=ac.createBiquadFilter();pf.type='lowpass';pf.frequency.value=2400;pf.Q.value=.7;
+      for(let i=0;i<3;i++){const o=ac.createOscillator(),g=ac.createGain();o.type='sawtooth';o.frequency.value=140;g.gain.value=.3;o.connect(g).connect(sh);o.start();packO.push(o);}sh.connect(pf).connect(packG).connect(ac.destination);}catch(e){packG=null;packO=[];}
   }catch(e){ac=null;}
 }
-function lightSnd(){if(!ac||!soundOn)return;try{const t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(210,t);o.frequency.exponentialRampToValueAtTime(90,t+.07);g.gain.setValueAtTime(.22,t);g.gain.exponentialRampToValueAtTime(.0001,t+.11);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+.13);
-    if(nzBuf){const s=ac.createBufferSource(),f=ac.createBiquadFilter(),k=ac.createGain();s.buffer=nzBuf;f.type='highpass';f.frequency.value=2500;k.gain.setValueAtTime(.05,t);k.gain.exponentialRampToValueAtTime(.0001,t+.03);s.connect(f).connect(k).connect(ac.destination);s.start(t,Math.random()*.5,.05);}}catch(e){}}
-function launchSnd(){if(!ac||!soundOn||!nzBuf)return;try{const t=ac.currentTime,s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=nzBuf;s.loop=true;f.type='bandpass';f.Q.value=.6;f.frequency.setValueAtTime(450,t);f.frequency.exponentialRampToValueAtTime(1500,t+.6);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.2,t+.22);g.gain.exponentialRampToValueAtTime(.06,t+1.2);g.gain.exponentialRampToValueAtTime(.0001,t+2.4);s.connect(f).connect(g).connect(ac.destination);s.start(t);s.stop(t+2.5);}catch(e){}}
+function nzHit(t,type,f0,f1,q,vol,a,d){const s=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();s.buffer=nzBuf;s.loop=true;f.type=type;f.Q.value=q;f.frequency.setValueAtTime(f0,t);if(f1)f.frequency.exponentialRampToValueAtTime(f1,t+d*.6);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+a);g.gain.exponentialRampToValueAtTime(.0001,t+d);s.connect(f).connect(g).connect(ac.destination);s.start(t,Math.random()*.5);s.stop(t+d+.05);return g;}
+function thump(t,f0,f1,vol,d){const o=ac.createOscillator(),g=ac.createGain();o.type='sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+d*.7);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(ac.destination);o.start(t);o.stop(t+d+.03);}
+/* 빨간 불 하나: 묵직한 '철컥' + 릴레이 딸깍 + 짧은 전기 웅 소리. n이 클수록 조금 더 세게 */
+function lightSnd(n){if(!ac||!soundOn)return;try{const t=ac.currentTime,k=1+.08*(n||1);thump(t,230,85,.26*k,.13);
+    if(nzBuf){nzHit(t,'highpass',2600,0,.7,.07*k,.002,.035);nzHit(t+.012,'bandpass',900,0,2,.05*k,.004,.07);}
+    const o=ac.createOscillator(),g=ac.createGain();o.type='square';o.frequency.value=100;g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.022,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.22);const lf=ac.createBiquadFilter();lf.type='lowpass';lf.frequency.value=700;o.connect(lf).connect(g).connect(ac.destination);o.start(t);o.stop(t+.25);}catch(e){}}
+/* 불 꺼짐: 딸깍(소등) → 쿵(출발 충격) → 타이어 비명 → 바람·굉음 → 관중 함성 */
+function launchSnd(){if(!ac||!soundOn||!nzBuf)return;try{const t=ac.currentTime;
+    nzHit(t,'highpass',3000,0,.7,.09,.002,.04);thump(t+.02,150,38,.42,.34);
+    nzHit(t+.03,'bandpass',2100,1500,5,.16,.03,.7);
+    nzHit(t,'bandpass',420,1600,.6,.2,.22,2.6);
+    const c=nzHit(t+.15,'lowpass',650,900,.5,.11,.5,4.2);const lfo=ac.createOscillator(),lg=ac.createGain();lfo.frequency.value=5.5;lg.gain.value=.03;lfo.connect(lg).connect(c.gain);lfo.start(t);lfo.stop(t+4.5);}catch(e){}}
 function updateAudio(){
   if(!ac)return;const on=soundOn&&!paused&&(state==='race'||state==='countdown')&&player&&!$('hud').hidden;
   const v=player?Math.abs(player.v):0;const gear=Math.min(7,Math.floor(v/75));const fr=(v-gear*75)/75;
   const rv=lightsOn>=5?1:.3+.13*lightsOn,cdn=state==='countdown';
-  let hz=cdn?(150+rv*190)*(lightsOn>=5?1+.035*Math.sin(cd*150):.82+.3*Math.max(0,Math.sin(cd*7.5))):120+fr*150+gear*20;if(state==='race'&&raceTime<1.1)hz=Math.max(hz,345-raceTime*170);const hot=player&&(player.boost>0||player.dboost>0);
+  let hz=cdn?(150+rv*190)*(lightsOn>=5?1+.035*Math.sin(cd*150):.76+.44*Math.exp(-((cd*1.75)%1)*4.5)):120+fr*150+gear*20;if(state==='race'&&raceTime<1.1)hz=Math.max(hz,345-raceTime*170);const hot=player&&(player.boost>0||player.dboost>0);
   const sk=on&&state==='race'&&player&&!player.finished?(raceTime<.55?.8:player.drift>0?1:(player.slide>70&&!player.off?.35:0)):0;
   try{osc.frequency.setTargetAtTime(hz,ac.currentTime,.03);osc2.frequency.setTargetAtTime(hz*.5,ac.currentTime,.03);gain.gain.setTargetAtTime(on?ENG_VOL*(cdn?.6+.6*rv:hot?1.3:1):0,ac.currentTime,.05);engF.frequency.setTargetAtTime(hot?2600:1700,ac.currentTime,.08);
+    if(packG){const tn=ac.currentTime;let pv=0;
+      if(on&&cdn){pv=PACK_VOL*(.45+.55*rv);for(let i=0;i<3;i++){const ph=(cd*(1.35+i*.37)+i*.31)%1;const h=(140+rv*185)*(lightsOn>=5?1+.03*Math.sin(cd*(120+i*23)):.74+.46*Math.exp(-ph*(4+i)))*(.93+i*.06);packO[i].frequency.setTargetAtTime(h,tn,.025);}}
+      else if(on&&state==='race'&&raceTime<4.5){const rt=raceTime;pv=PACK_VOL*1.25*Math.pow(Math.max(0,1-rt/4.5),1.4);for(let i=0;i<3;i++){const k=1.5+i*.28,g=Math.floor(rt*k+i*.2),ph=(rt*k+i*.2)%1;const h=(rt<.35?330-rt*200:205+ph*(190-g*9)+g*7)*(.93+i*.06);packO[i].frequency.setTargetAtTime(h,tn,.02);}}
+      packG.gain.setTargetAtTime(pv,tn,pv?.06:.15);}
     if(skG){skG.gain.setTargetAtTime(sk*SKID_VOL,ac.currentTime,sk?.03:.09);skF.frequency.setTargetAtTime(1300+Math.min(900,v*1.6)+(player&&player.driftRdy?500:0),ac.currentTime,.06);}}catch(e){}
 }
-$('btnSound').addEventListener('click',()=>{soundOn=!soundOn;SAVE.sound=soundOn;saveRec(SAVE);$('btnSound').textContent=soundOn?'켜짐':'꺼짐';if(!soundOn&&ac)try{gain.gain.value=0;if(skG)skG.gain.value=0;}catch(e){}});
+$('btnSound').addEventListener('click',()=>{soundOn=!soundOn;SAVE.sound=soundOn;saveRec(SAVE);$('btnSound').textContent=soundOn?'켜짐':'꺼짐';if(!soundOn&&ac)try{gain.gain.value=0;if(skG)skG.gain.value=0;if(packG)packG.gain.value=0;}catch(e){}});
 $('btnSound').textContent=soundOn?'켜짐':'꺼짐';
 
 /* ---------- render ---------- */
