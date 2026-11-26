@@ -49,6 +49,7 @@ body.cine .hud-tl,body.cine .minibox,body.cine .keyhint,body.cine .zone,body.cin
 .minibox{padding:4px}
 #btnPause{pointer-events:auto;width:40px;height:40px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-family:var(--f-disp);font-weight:700}
 #hWx{position:absolute;bottom:calc(108px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(10,16,30,.78);color:#cfe3ff;border:1px solid rgba(160,200,255,.45);border-radius:999px;padding:5px 13px;font:700 12.5px/1.2 var(--f-body);white-space:nowrap}
+#hDmg{position:absolute;bottom:calc(138px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(120,20,20,.85);color:#ffe2e0;border:1px solid #ff8a80;border-radius:999px;padding:5px 13px;font:700 12.5px/1.2 var(--f-body);white-space:nowrap}
 #hWx.warn{background:rgba(120,20,20,.85);color:#ffe2e0;border-color:#ff8a80}
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.opts button{background:transparent;border:1px solid var(--line);border-radius:8px;padding:8px 6px;font-size:13px;color:inherit}
 #lights{position:absolute;top:calc(84px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;gap:8px;padding:10px 12px;background:#101010;border:1px solid #2a2a2a;border-radius:12px}
@@ -205,6 +206,7 @@ h2{font-family:var(--f-disp);font-style:italic;font-weight:700;font-size:34px;li
   <div id="lights" hidden><span></span><span></span><span></span><span></span><span></span></div>
   <div id="banner"></div>
   <div id="hWx" hidden></div>
+ <div id="hDmg" hidden></div>
   <div class="zone l touch-only">◀</div>
   <div class="zone r touch-only">▶</div>
   <div class="controls">
@@ -227,7 +229,7 @@ h2{font-family:var(--f-disp);font-style:italic;font-weight:700;font-size:34px;li
     <div class="tracks" id="trackList"></div>
     <p id="trkInfo"></p>
     <button id="btnStart" class="go">출발</button>
-    <div class="opts"><button id="btnWx">날씨: 랜덤</button><button id="btnQ">예선: 켜짐</button></div>
+    <div class="opts"><button id="btnWx">날씨: 랜덤</button><button id="btnQ">예선: 켜짐</button><button id="btnHard" style="grid-column:1/-1">실제 서킷 상대: 강함</button></div>
     <dl class="howto">
       <dt>폰</dt><dd>화면 왼쪽·오른쪽 누르기 = 조향 (자동 가속), 브레이크·PIT·N2O 버튼. <b>같은 쪽을 톡톡 두 번 누르고 그대로 있으면 드리프트</b>, 떼면 부스트</dd>
       <dt>맥</dt><dd>↑ 가속 · ↓ 브레이크 · ←→ 조향 · <b>←← / →→ 두 번 눌러 드리프트</b> · P 피트 · N 니트로 · Esc 일시정지</dd>
@@ -531,11 +533,14 @@ const lv=id=>SAVE.items[id]|0;
 let state='attract',T=TR[trackSel],cars=[],player=null,raceTime=0,cd=0,goAt=3.6,lightsOn=0,resultT=-1,paused=false;
 let autoPilot=false,speedMul=1;
 /* 날씨(비)·예선 */
-let wet=0,wxMode='dry',rainAt=0,rainAnn=false,forceWx='',gridOverride=null,qTimes=null,rnG=null;
+let wet=0,wxMode='dry',rainOn=false,wxEv=[],bowT=0,hard=0,fl=null,forceWx='',gridOverride=null,qTimes=null,rnG=null;
+const hardSel=()=>SAVE.hard==null?1:SAVE.hard;
 function tyreK(c){const w=wet;return c.tyreW?{grip:.88,top:.93+.03*w,wear:1+1.2*(1-w),brake:1-.07*w}:{grip:1-.42*w,top:1-.08*w,wear:1,brake:1-.22*w};}
 function aiK(c){return c.tyreW?.95-.01*wet:1-.15*wet;}
-function pickWeather(){const o=SAVE.wx||'rand';let m=o==='dry'?'dry':o==='wet'?(Math.random()<.5?'wet':'later'):(Math.random()<.3?(Math.random()<.5?'wet':'later'):'dry');
-  if(forceWx)m=forceWx;wxMode=m;wet=m==='wet'?1:0;rainAnn=false;rainAt=m==='later'?14+Math.random()*30:0;}
+function pickWeather(){const o=SAVE.wx||'rand',real=!!TR[trackSel].def.wt,R=Math.random;let m=o==='dry'?'dry':o==='wet'?(R()<.5?'wet':'later'):(R()<(real?.4:.3)?(R()<.5?'wet':'later'):'dry');
+  if(forceWx)m=forceWx;wxMode=m;wet=m==='wet'?1:0;rainOn=m==='wet';wxEv=[];bowT=0;let t=0;
+  if(m==='later'){t=14+R()*30;wxEv.push({t,on:true});}
+  if(real&&m!=='dry'){t+=(m==='wet'?30:28)+R()*(m==='wet'?30:17);wxEv.push({t,on:false});if(R()<.4){t+=28+R()*20;wxEv.push({t,on:true});t+=26+R()*16;wxEv.push({t,on:false});}}}
 let coins=[],coinPts=0,coinN=0,trailPts=[],missions=[],passes=0,lastPlace=0,passPts=0,padHits=0,hits=0,hitCool=0,shakeT=0,finPos=0,bonusInfo={pass:0,mis:0,res:[]};
 function zzOn(){return !!((soundOn)&&window.MongFx);}
 function zz(n,k){return zzOn()&&MongFx.sfx(n,k);}
@@ -560,16 +565,17 @@ const cam={x:0,y:0,a:0,z:1};
 setTrack(T);
 
 function makeCars(mode){
-  cars=[];const paint=PAINTS.find(p=>p.id===SAVE.paint)||PAINTS[0];
+  hard=T.def.wt?hardSel():0;cars=[];const paint=PAINTS.find(p=>p.id===SAVE.paint)||PAINTS[0];
   (gridOverride||GRID).forEach((ti,g)=>{let tm=TEAMS[ti];if(ti===0)tm={...tm,c1:paint.c1,c2:paint.c2,helm:paint.helm};
     const idx=(T.N-3-g*5+T.N)%T.N;const lat=(g%2?1:-1)*W*.2;
     const c={team:tm,ti,isPlayer:ti===0&&mode==='race',x:T.X[idx]+T.NX[idx]*lat,y:T.Y[idx]+T.NY[idx]*lat,h:T.A[idx],v:0,vx:0,vy:0,
       idx,lat,prog:-3,cross:0,maxCross:0,laps:[],lapStart:0,finished:false,finishTime:0,tire:1,steer:0,off:false,slide:0,drift:0,dboost:0,driftRdy:false,
-      skill:tm.skill*T.def.ai,home:lat*.6,lane:lat,laneGoal:lat*.6,laneT:0,pitReq:false,pit:null,pitLaps:[],best:null,auto:false,
+      skill:tm.skill*T.def.ai*(1+.04*hard),vK:ti===0?1:1+.03*lv('engine')*.5*hard,cK:ti===0?1:1+.03*lv('grip')*.5*hard,dmg:0,home:lat*.6,lane:lat,laneGoal:lat*.6,laneT:0,pitReq:false,pit:null,pitLaps:[],best:null,auto:false,
       tyreW:0,rePit:Math.random()<.75,nitro:0,boost:0,pitLap:2+Math.floor(Math.random()*3)};
     cars.push(c);});
   player=cars.find(c=>c.isPlayer)||null;
   if(player){player.nitro=lv('nitro');}
+  if(hard)for(const c of cars)if(!c.isPlayer)c.nitro=hard;
 }
 
 /* ---------- input ---------- */
@@ -642,16 +648,17 @@ function onCross(c){
   if(state!=='race'||c.finished)return;
   if(c.cross>=2){
     const lt=raceTime-c.lapStart;c.laps.push(lt);c.lapStart=raceTime;
-    if(!c.isPlayer)c.skill*=.988;
+    if(!c.isPlayer)c.skill*=hard?.997:.988;
+    if(!fl||lt<fl.t)fl={t:lt,c};const isFl=fl.c===c&&cars.some(o=>o!==c&&o.laps.length);
     const newBest=c.best==null||lt<c.best;if(newBest)c.best=lt;
     if(c.cross===LAPS+1){c.finished=true;c.finishTime=raceTime;if(c.isPlayer&&!c.pitLaps.length){c.finishTime+=10;c.pen=true;}if(c.isPlayer)playerFinish();return;}
-    if(!c.isPlayer&&(c.cross-1===c.pitLap||(wet>.5&&!c.tyreW&&c.rePit&&c.cross<LAPS&&c.pitLaps.length<2))){startPit(c);return;}
+    if(!c.isPlayer&&(c.cross-1===c.pitLap||(rainOn&&wet>.5&&!c.tyreW&&c.rePit&&c.cross<LAPS&&c.pitLaps.length<3)||(!rainOn&&wet<.25&&c.tyreW&&c.rePit&&c.cross<LAPS-1&&c.pitLaps.length<3))){startPit(c);return;}
     if(c.isPlayer){
-      if(autoPilot&&((c.cross===3&&!c.pitLaps.length)||(wet>.5&&!c.tyreW&&c.cross<LAPS)))c.pitReq=true;
+      if(autoPilot&&((c.cross===3&&!c.pitLaps.length)||(rainOn&&wet>.5&&!c.tyreW&&c.cross<LAPS)||(!rainOn&&wet<.25&&c.tyreW&&c.cross<LAPS-1)))c.pitReq=true;
       if(c.pitReq)startPit(c);
       else if(!c.pitLaps.length&&c.cross>=3)banner(c.cross===LAPS?'마지막 랩인데 피트를 안 했어요! +10초 페널티':'피트 필수! PIT 누르면 다음 출발선에서 정비',2.4);
-      else if(c.cross===LAPS)banner('마지막 랩!  '+fmt(lt),1.8,newBest&&c.laps.length>1?'purple':'');
-      else banner('랩 '+(c.cross-1)+'  '+fmt(lt),1.8,newBest&&c.laps.length>1?'purple':'');
+      else if(c.cross===LAPS)banner('마지막 랩!  '+fmt(lt)+(isFl?' · 가장 빠른 랩!':''),1.8,newBest&&c.laps.length>1?'purple':'');
+      else banner('랩 '+(c.cross-1)+'  '+fmt(lt)+(isFl?' · 가장 빠른 랩!':''),1.8,newBest&&c.laps.length>1?'purple':'');
     }
   }
 }
@@ -662,7 +669,9 @@ function kin(c,tx,ty,vT,dt,turn){
 }
 function aiDrive(c,dt){
   const N=T.N;const bst=c.boost>0;if(bst&&!c.isPlayer){c.boost-=dt;if(c.boost<0)c.boost=0;}
-  let vT=Math.min(VMAX*c.skill*(bst?1.2:1),T.REC[(c.idx+2)%N]*c.skill*(bst?1.08:1))*aiK(c);
+  let tow=1;if(hard&&!c.isPlayer&&state==='race'){for(const o of cars){if(o===c||o.pit)continue;const dp=o.prog-c.prog;if(dp>=8&&dp<18&&Math.abs(o.lat-c.lat)<30){tow=1.03;break;}}
+    if(c.nitro>0&&!bst&&raceTime>6&&player&&!player.finished&&!player.pit&&Math.abs(player.prog-c.prog)<14&&T.REC[(c.idx+2)%N]>=VMAX*.97&&T.REC[(c.idx+30)%N]>=VMAX*.97){c.nitro--;c.boost=2;}}
+  let vT=Math.min(VMAX*c.skill*(c.vK||1)*tow*(bst?1.2:1),T.REC[(c.idx+2)%N]*c.skill*(c.cK||1)*(bst?1.08:1))*aiK(c);
   let blocked=false;
   for(const o of cars){if(o===c||o.pit)continue;const dp=o.prog-c.prog;
     if(dp>0&&dp<8&&Math.abs(o.lat-c.lat)<24&&o.v<c.v+10){blocked=true;vT=Math.min(vT,o.v*.97+dp*6);}}
@@ -688,7 +697,7 @@ function playerPhys(c,dt){
   let vf=c.vx*fx+c.vy*fy,vl=-c.vx*fy+c.vy*fx;
   let slip=1;if(state==='race')for(const o of cars){if(o===c)continue;const dx=o.x-c.x,dy=o.y-c.y,fw=dx*fx+dy*fy,la=Math.abs(-dx*fy+dy*fx);if(fw>30&&fw<170&&la<26){slip=1.03+.02*lv('slip');break;}}
   c.slipping=slip>1;
-  const top=VMAX*(1+.03*lv('engine'))*(.94+.06*c.tire)*(off?.45:1)*(boost?1.2:1)*(db?1.1:1)*slip*tk.top;
+  const top=VMAX*(1-.03*(c.dmg||0))*(1+.03*lv('engine'))*(.94+.06*c.tire)*(off?.45:1)*(boost?1.2:1)*(db?1.1:1)*slip*tk.top;
   const acc=ACC*(1+.05*lv('engine'))*(boost?1.8:1)*(db?1.6:1)*(state==='race'&&raceTime<3?1+.25*lv('start'):1);
   c.braking=!!inp.brake;
   if(inp.brake){vf-=BRAKE*(1+.15*lv('brake'))*(off?.6:1)*tk.brake*dt;if(vf<-90)vf=-90;}
@@ -715,18 +724,19 @@ function pitDrive(c,dt){
     if(d<8||(c.idx>k+2&&c.idx<k+40)){p.ph='stop';p.t=c.isPlayer?Math.max(.6,2.4-.6*lv('pit')):2.2+Math.random()*.6;c.v=0;c.vx=c.vy=0;c.h=T.A[k];}
   }else if(p.ph==='stop'){
     p.t-=dt;if(c.isPlayer)banner('타이어 교체 '+Math.max(0,p.t).toFixed(1)+'s',.2);
-    if(p.t<=0){c.tire=1;c.tyreW=wet>.3?1:0;p.ph='out';if(c.isPlayer){banner(c.tyreW?'비 타이어로 교체!':'새 타이어!',1.4);const hm=$('hPit');if(hm)hm.classList.add('ok');}}
+    if(p.t<=0){c.tire=1;c.tyreW=(rainOn||wet>.6)?1:0;const fx_=c.dmg>0;c.dmg=0;p.ph='out';if(c.isPlayer){banner((c.tyreW?'비 타이어로 교체!':wxMode!=='dry'?'마른 타이어로 교체!':'새 타이어!')+(fx_?' · 날개 수리':''),1.6);const hm=$('hPit');if(hm)hm.classList.add('ok');}}
   }else{
     const ti=(c.idx+16)%N;kin(c,T.X[ti],T.Y[ti],Math.min(VMAX,c.v+200),dt,2.2);
     if(Math.abs(c.lat)<HW*.5){c.pit=null;}
   }
 }
+function dmgHit(){if(!hard||!player||player.dmg>=3)return;player.dmg++;banner('🔧 날개 손상! 최고속 -'+player.dmg*3+'% · PIT에서 수리',2);}
 function barrier(c){
   if(Math.abs(c.lat)<=BARRIER)return;
   const k=c.idx,s=Math.sign(c.lat),ex=Math.abs(c.lat)-BARRIER;
   c.x-=T.NX[k]*ex*s;c.y-=T.NY[k]*ex*s;c.lat=s*BARRIER;
   const vn=c.vx*T.NX[k]+c.vy*T.NY[k];
-  if(vn*s>60&&c===player&&state==='race'&&!c.finished&&hitCool<=0){hits++;hitCool=.6;shakeT=.3;hitSparks(c.x,c.y);}
+  if(vn*s>60&&c===player&&state==='race'&&!c.finished&&hitCool<=0){hits++;hitCool=.6;shakeT=.3;hitSparks(c.x,c.y);if(vn*s>150)dmgHit();}
   if(vn*s>0){c.vx-=T.NX[k]*vn*1.3;c.vy-=T.NY[k]*vn*1.3;c.vx*=.6;c.vy*=.6;}
 }
 function collide(){
@@ -737,7 +747,7 @@ function collide(){
     const d=Math.sqrt(d2),nx=dx/d,ny=dy/d,push=(R-d)/2;
     a.x-=nx*push;a.y-=ny*push;b.x+=nx*push;b.y+=ny*push;
     const rel=(b.vx-a.vx)*nx+(b.vy-a.vy)*ny;
-    if(rel<-40&&(a===player||b===player)&&state==='race'&&!player.finished&&hitCool<=0){hits++;hitCool=.6;shakeT=.25;hitSparks(player.x,player.y);zz('hit');}
+    if(rel<-40&&(a===player||b===player)&&state==='race'&&!player.finished&&hitCool<=0){hits++;hitCool=.6;shakeT=.25;hitSparks(player.x,player.y);zz('hit');if(rel<-110)dmgHit();}
     if(rel<0){const imp=rel*.6;a.vx+=nx*imp;a.vy+=ny*imp;b.vx-=nx*imp;b.vy-=ny*imp;
       for(const c of[a,b]){if(!(c.isPlayer&&!c.auto&&!autoPilot)){c.v=Math.max(0,c.vx*Math.cos(c.h)+c.vy*Math.sin(c.h));}}}
   }
@@ -750,8 +760,12 @@ function step(dt){
     return;
   }
   if(state==='race'||state==='quali')raceTime+=dt;
-  if(state==='race'&&wxMode==='later'){if(!rainAnn&&raceTime>rainAt-7){rainAnn=true;banner('☁ 곧 비가 와요!',2.2);}
-    if(raceTime>rainAt){if(wet===0&&player&&!player.finished&&!player.pit)banner('☔ 비! PIT에서 비 타이어로 바꿔요',2.8);wet=Math.min(1,wet+dt/7);}}
+  if(state==='race'){const e=wxEv[0],live=player&&!player.finished&&!player.pit;
+    if(e){if(!e.ann&&raceTime>e.t-7){e.ann=1;if(live)banner(e.on?'☁ 곧 비가 와요!':'🌤 곧 비가 그쳐요!',2.2);}
+      if(raceTime>e.t){wxEv.shift();rainOn=e.on;if(!e.on)bowT=14;if(live)banner(e.on?(player.tyreW?'☔ 비가 와요!':'☔ 비! PIT에서 비 타이어로 바꿔요'):'🌈 비가 그쳤어요 · 길이 말라가요',2.8);}}
+    const w0=wet;wet=rainOn?Math.min(1,wet+dt/7):Math.max(0,wet-dt/12);
+    if(w0>=.3&&wet<.3&&live&&player.tyreW)banner('☀ 길이 말랐어요! 마른 타이어가 더 빨라요',2.8);
+    if(bowT>0)bowT-=dt;}
   for(const c of cars){
     if(c.pit)pitDrive(c,dt);
     else if(c.isPlayer&&!c.auto&&!autoPilot)playerPhys(c,dt);
@@ -787,7 +801,7 @@ function aiQuali(){const keep=state,out=[];state='attract';
     out.push({ti,t:(t-t1)*(1+(Math.random()-.5)*.012)});}
   state=keep;gridOverride=null;return out;}
 function startQuali(){
-  wet=0;wxMode='dry';setTrack(TR[trackSel]);qTimes=aiQuali();gridOverride=[0];makeCars('race');gridOverride=null;
+  wet=0;wxMode='dry';rainOn=false;wxEv=[];setTrack(TR[trackSel]);qTimes=aiQuali();gridOverride=[0];makeCars('race');gridOverride=null;
   state='quali';raceTime=0;resultT=-1;paused=false;$('lights').hidden=true;
   $('btnPit').classList.remove('on');$('btnPit').textContent='PIT';$('hLaps').textContent=1;showOnly(null);$('hud').hidden=false;updateNitroBtn();
   makePads();coins=[];trailPts=[];skids=[];dust=[];sparksW=[];missions=[];passes=0;lastPlace=0;hits=0;coinPts=0;coinN=0;
@@ -802,7 +816,7 @@ function endQuali(t){
   $('hud').hidden=true;showOnly('qres');(zz(pos===1?'win':'pass')||sfx(880,.2,'triangle',.12));
 }
 function beginRace(){
-  pickWeather();setTrack(TR[trackSel]);makeCars('race');gridOverride=null;if(wet>.3)cars.forEach(c=>c.tyreW=1);state='countdown';cd=0;lightsOn=0;goAt=3.0+.3+Math.random()*.6;raceTime=0;resultT=-1;paused=false;
+  pickWeather();setTrack(TR[trackSel]);makeCars('race');gridOverride=null;fl=null;if(wet>.3)cars.forEach(c=>c.tyreW=1);state='countdown';cd=0;lightsOn=0;goAt=3.0+.3+Math.random()*.6;raceTime=0;resultT=-1;paused=false;
   [...$('lights').children].forEach(s=>s.classList.remove('on'));$('lights').hidden=false;
   $('btnPit').classList.remove('on');$('btnPit').textContent='PIT';$('hLaps').textContent=LAPS;
   showOnly(null);$('hud').hidden=false;updateNitroBtn();
@@ -813,7 +827,7 @@ function beginRace(){
   else if(wxMode==='later')setTimeout(()=>{if(state==='countdown')banner('☁ 비 예보 · 경기 중에 비가 올 수 있어요',2.6);},350);
 }
 function toAttract(){
-  wet=0;wxMode='dry';gridOverride=null;setTrack(TR[trackSel]);makeCars('attract');state='attract';paused=false;resultT=-1;
+  wet=0;wxMode='dry';rainOn=false;wxEv=[];gridOverride=null;setTrack(TR[trackSel]);makeCars('attract');state='attract';paused=false;resultT=-1;
   $('hud').hidden=true;showOnly('menu');
   renderTrackList();renderWallet();snapCam();
 }
@@ -824,14 +838,14 @@ function playerFinish(){
   if(player.best!=null&&(r.lap==null||player.best<r.lap)){r.lap=player.best;isNew=true;}
   if(!player.pen&&(r.race5==null||player.finishTime<r.race5)){r.race5=player.finishTime;isNew=true;}
   finPos=pos;const misRes=missions.map(m=>({t:m.t,ok:!!m.ok(),p:misPts(m)}));const misSum=misRes.filter(m=>m.ok).reduce((a,m)=>a+m.p,0);
-  bonusInfo={pass:passPts,mis:misSum,res:misRes};
-  const earned=Math.round(PTS_BASE[pos-1]*PTS_MULT[T.def.diff]*(wxMode!=='dry'?1.2:1)/5)*5+(isNew?30:0)+passPts+misSum+coinPts;bonusInfo.coin=coinPts;bonusInfo.coinN=coinN;
+  const flP=(fl&&fl.c===player)?Math.round(20*PTS_MULT[T.def.diff]/5)*5:0;bonusInfo={pass:passPts,mis:misSum,res:misRes,fl:flP};
+  const earned=Math.round(PTS_BASE[pos-1]*PTS_MULT[T.def.diff]*(wxMode!=='dry'?1.2:1)/5)*5+(isNew?30:0)+passPts+misSum+coinPts+flP;bonusInfo.coin=coinPts;bonusInfo.coinN=coinN;
   SAVE[id]=r;SAVE.points+=earned;if(pos===1)SAVE.wins++;saveRec(SAVE);
   player.newRec=isNew;player.earned=earned;player.finalPos=pos;
 }
 function showResults(){
   const st=finalOrder(),pos=st.indexOf(player)+1;
-  $('rPos').textContent='P'+pos;$('rTrack').textContent=T.def.name+(wxMode!=='dry'?' · ☔ 비 +20%':'');$('rTotal').textContent=fmt(player.finishTime)+(player.pen?' (피트 안 함 +10초)':'');
+  $('rPos').textContent='P'+pos;$('rTrack').textContent=T.def.name+(wxMode!=='dry'?' · ☔ 비 +20%':'')+(hard?' · 상대 '+['','강함','최강'][hard]:'');$('rTotal').textContent=fmt(player.finishTime)+(player.pen?' (피트 안 함 +10초)':'');
   $('rBest').textContent=fmt(player.best);$('rNew').hidden=!player.newRec;
   $('rEarn').textContent='+'+nf(player.earned)+'P'+(T.def.diff>1?' (×'+PTS_MULT[T.def.diff]+')':'');$('rPts').textContent=nf(SAVE.points);
   const ol=$('rTable');ol.innerHTML='';
@@ -844,7 +858,7 @@ function showResults(){
   const lp=$('rLaps');lp.innerHTML='';
   player.laps.forEach((t,i)=>{const s=document.createElement('span');if(t===player.best)s.className='b';
     s.textContent='L'+(i+1)+' '+fmt(t)+(player.pitLaps.includes(i+1)?' · PIT':'');if(player.pitLaps.includes(i+1))s.classList.add('pit');lp.appendChild(s);});
-  $('rBonus').textContent='추월 +'+bonusInfo.pass+' · 미션 +'+bonusInfo.mis+' · 코인 '+(bonusInfo.coinN||0)+'개 +'+(bonusInfo.coin||0);$('rBonus').hidden=!(bonusInfo.pass||bonusInfo.mis||bonusInfo.coin);
+  $('rBonus').textContent='추월 +'+bonusInfo.pass+' · 미션 +'+bonusInfo.mis+' · 코인 '+(bonusInfo.coinN||0)+'개 +'+(bonusInfo.coin||0)+(bonusInfo.fl?' · 가장 빠른 랩 +'+bonusInfo.fl:'');$('rBonus').hidden=!(bonusInfo.pass||bonusInfo.mis||bonusInfo.coin||bonusInfo.fl);
   $('rMis').innerHTML=bonusInfo.res.map(m=>'<li class="'+(m.ok?'ok':'')+'"><span>'+(m.ok?'✓ ':'✗ ')+m.t+'</span><b>'+(m.ok?'+'+m.p+'P':'-')+'</b></li>').join('');
   $('hud').hidden=true;showOnly('result');
   if(pos<=3)setTimeout(()=>{FX.confetti(pos===1?240:110);cheer();if(pos===1)cf('win');},150);
@@ -1203,6 +1217,7 @@ function render(dt){
   if(DARK){ctx.fillStyle='rgba(20,30,90,.14)';ctx.fillRect(0,0,cw,ch);}
   else{const sg=ctx.createRadialGradient(cw*.05,0,0,cw*.05,0,Math.max(cw,ch)*.75);sg.addColorStop(0,'rgba(255,248,214,.20)');sg.addColorStop(1,'rgba(255,248,214,0)');ctx.fillStyle=sg;ctx.fillRect(0,0,cw,ch);}
   if(wet>.02){ctx.fillStyle='rgba(55,75,115,'+(.22*wet).toFixed(3)+')';ctx.fillRect(0,0,cw,ch);}
+  if(bowT>0&&state==='race'){const al=Math.min(1,bowT/3,(14-bowT)/3)*.42,R0=Math.max(cw,ch)*.62,cx0=cw*.5,cy0=ch*.2+R0,bc=['#ff5a5a','#ffa23f','#ffe14d','#5ad66f','#4db4ff','#7d6bff','#c06bff'];ctx.save();ctx.globalAlpha=al;ctx.lineWidth=7;bc.forEach((c0,i)=>{ctx.strokeStyle=c0;ctx.beginPath();ctx.arc(cx0,cy0,R0-i*7,Math.PI*1.12,Math.PI*1.88);ctx.stroke();});ctx.restore();}
   {const tt=performance.now()/1000,id=d.id,kind=wet>.05?'rain':d.style==='pine'?'snow':id==='volcano'?'ember':id==='neon'?'rain':(id==='dune'||id==='canyon'||id==='beach'||id==='wt_bahrain'||id==='wt_lusail')?'sand':'pollen',n=kind==='rain'?(wet>.05?Math.round(40+100*wet):46):kind==='snow'?42:kind==='pollen'?14:26,md=(v,m)=>((v%m)+m)%m;ctx.lineCap='round';
     for(let i=0;i<n;i++){const px0=(i*.6180339*cw)%cw,py0=(i*.7548777*ch)%ch;
       if(kind==='snow'){const x=md(px0+Math.sin(tt*.8+i)*18+tt*14,cw),y=md(py0+tt*(42+(i%5)*13),ch);ctx.fillStyle='rgba(255,255,255,'+(.55+.35*((i%3)/2))+')';ctx.beginPath();ctx.arc(x,y,1.4+(i%4)*.6,0,TAU);ctx.fill();}
@@ -1230,7 +1245,8 @@ function drawMini(){
 }
 function updateHud(){
   if($('hud').hidden||!player)return;
-  {const e=$('hWx');let t='';if(state==='race'){if(wet>.05)t='☔ 비 · '+(player.tyreW?'비 타이어':'마른 타이어 · 미끄러워요!');else if(wxMode==='later')t='☁ 비 예보';}if(e.dataset.s!==t){e.dataset.s=t;e.textContent=t;e.hidden=!t;}e.classList.toggle('warn',wet>.05&&!player.tyreW);}
+  {const e=$('hWx');let t='';if(state==='race'){if(player.tyreW&&wet<.3&&!rainOn)t='☀ 마른 길 · 비 타이어 · 느려요!';else if(wet>.05)t=(rainOn?'☔ 비 · ':'🌤 그치는 중 · ')+(player.tyreW?'비 타이어':'마른 타이어 · 미끄러워요!');else if(wxEv[0]&&wxEv[0].on)t='☁ 비 예보';}if(e.dataset.s!==t){e.dataset.s=t;e.textContent=t;e.hidden=!t;}e.classList.toggle('warn',(wet>.05&&!player.tyreW)||(player.tyreW&&wet<.3&&!rainOn));}
+  {const e=$('hDmg'),n=state==='race'?(player.dmg|0):0,t=n?'🔧 날개 손상 '+n+' · 최고속 -'+n*3+'% · PIT에서 수리':'';if(e.dataset.s!==t){e.dataset.s=t;e.textContent=t;e.hidden=!t;}}
   const st=standings();$('hPos').textContent='P'+(st.indexOf(player)+1);
   $('hLap').textContent=clamp(player.cross,1,LAPS);
   const t=state==='race'?(player.finished?player.finishTime:raceTime):0;$('hTime').textContent=fmt(t);
@@ -1274,7 +1290,8 @@ function frame(now){
   render(paused?0:dt);updateHud();updateAudio();
   requestAnimationFrame(frame);
 }
-function optUi(){const w=SAVE.wx||'rand';$('btnWx').textContent='날씨: '+(w==='dry'?'맑음':w==='wet'?'비':'랜덤');$('btnQ').textContent='예선: '+(SAVE.quali!==false?'켜짐':'꺼짐');}
+function optUi(){const w=SAVE.wx||'rand';$('btnWx').textContent='날씨: '+(w==='dry'?'맑음':w==='wet'?'비':'랜덤');$('btnQ').textContent='예선: '+(SAVE.quali!==false?'켜짐':'꺼짐');$('btnHard').textContent='실제 서킷 상대: '+['보통','강함','최강'][hardSel()];}
+$('btnHard').addEventListener('click',()=>{SAVE.hard=(hardSel()+1)%3;saveRec(SAVE);optUi();});
 $('btnWx').addEventListener('click',()=>{const o=['rand','dry','wet'];SAVE.wx=o[(o.indexOf(SAVE.wx||'rand')+1)%3];saveRec(SAVE);optUi();});
 $('btnQ').addEventListener('click',()=>{SAVE.quali=SAVE.quali===false;saveRec(SAVE);optUi();});optUi();
 $('btnQGo').addEventListener('click',beginRace);$('btnQRetry').addEventListener('click',startQuali);$('btnQMenu').addEventListener('click',toAttract);
@@ -1283,7 +1300,7 @@ resize();toAttract();requestAnimationFrame(frame);
 window.__apex={get state(){return state},get player(){return player},get cars(){return cars},get raceTime(){return raceTime},get track(){return T},tracks:TR,
   start(i){if(i!=null){trackSel=i;trkPage=Math.floor(i/PER);}startRace();},page(n){trkPage=n;renderTrackList();},auto(on){autoPilot=!!on;},get drift(){return driftDir},speed(n){speedMul=n;},pit(){togglePit();},nitro(){fireNitro();},
   sim(sec){for(let i=0;i<sec/STEP;i++)step(STEP);},draw(){cineSlow();render(.016);updateHud();},get cine(){return cnOn},get laps(){return LAPS},
-  quali(){startQuali();},beginRace(){beginRace();},wx(m){forceWx=m||'';},setWet(v){wet=v;},get wet(){return wet},get wxMode(){return wxMode},get qTimes(){return qTimes},get grid(){return gridOverride},
+  quali(){startQuali();},beginRace(){beginRace();},wx(m){forceWx=m||'';},setWet(v){wet=v;},setHard(n){SAVE.hard=n;optUi();},get hard(){return hard},get rainOn(){return rainOn},get wxEv(){return wxEv},get fl(){return fl},dmgHit(){dmgHit();},get wet(){return wet},get wxMode(){return wxMode},get qTimes(){return qTimes},get grid(){return gridOverride},
   addPoints(n){SAVE.points+=n;saveRec(SAVE);renderWallet();},get save(){return SAVE}};
 })();
 </script>
