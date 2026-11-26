@@ -232,6 +232,7 @@ h2{font-family:var(--f-disp);font-style:italic;font-weight:700;font-size:34px;li
     <div class="tracks" id="trackList"></div>
     <p id="trkInfo"></p>
     <button id="btnStart" class="go">출발</button>
+    <button id="btnSeason" class="ghost">🏆 시즌 (5라운드)</button>
     <div class="opts"><button id="btnWx">날씨: 랜덤</button><button id="btnQ">예선: 켜짐</button><button id="btnHard" style="grid-column:1/-1">실제 서킷 상대: 강함</button><button id="btnGh" style="grid-column:1/-1">유령차: 켜짐</button></div>
     <dl class="howto">
       <dt>폰</dt><dd>화면 왼쪽·오른쪽 누르기 = 조향 (자동 가속), 브레이크·PIT·N2O 버튼. <b>같은 쪽을 톡톡 두 번 누르고 그대로 있으면 드리프트</b>, 떼면 부스트</dd>
@@ -276,6 +277,16 @@ h2{font-family:var(--f-disp);font-style:italic;font-weight:700;font-size:34px;li
     <div class="laps" id="rLaps"></div>
     <div class="row2"><button id="btnAgain" class="go">다시 하기</button><button id="btnMenu" class="ghost">메뉴</button></div>
     <button id="btnResShop" class="ghost">상점 · <span id="rPts">0</span>P</button>
+  </div>
+</section>
+<section id="season" class="sheet" hidden>
+  <div class="card">
+    <div><div class="kicker">Championship · 실제 서킷 5라운드</div><h2 id="seaTitle">시즌</h2><div class="sub" id="seaSub"></div></div>
+    <ol class="rtable" id="seaRounds"></ol>
+    <div class="sec-t">Standings · 시즌 순위</div>
+    <ol class="rtable" id="seaTable"></ol>
+    <button id="btnSeaGo" class="go">출발</button>
+    <div class="row2"><button id="btnSeaNew" class="ghost">새 시즌</button><button id="btnSeaBack" class="ghost">메뉴</button></div>
   </div>
 </section>
 <section id="qres" class="sheet" hidden>
@@ -802,7 +813,7 @@ function step(dt){
 function standings(){
   return cars.slice().sort((a,b)=>{if(a.finished&&b.finished)return a.finishTime-b.finishTime;if(a.finished)return-1;if(b.finished)return 1;return b.prog-a.prog;});
 }
-function showOnly(id){['menu','shop','pause','result','qres'].forEach(s=>$(s).hidden=s!==id);}
+function showOnly(id){['menu','shop','pause','result','qres','season'].forEach(s=>$(s).hidden=s!==id);}
 function startRace(){if(window.MongGate&&!autoPilot&&!MongGate.pass){MongGate.play(()=>{MongGate.pass=1;try{startRace();}finally{MongGate.pass=0;}});return;}
   initAudio();
   if(SAVE.quali!==false&&!autoPilot){startQuali();return;}
@@ -840,6 +851,7 @@ function beginRace(){
   else if(wxMode==='later')setTimeout(()=>{if(state==='countdown')banner('☁ 비 예보 · 경기 중에 비가 올 수 있어요',2.6);},350);
 }
 function toAttract(){
+  seasonOn=false;seaShow=false;seaBtn();
   wet=0;wxMode='dry';rainOn=false;wxEv=[];gridOverride=null;setTrack(TR[trackSel]);makeCars('attract');state='attract';paused=false;resultT=-1;
   $('hud').hidden=true;showOnly('menu');
   renderTrackList();renderWallet();snapCam();
@@ -873,9 +885,30 @@ function showResults(){
     s.textContent='L'+(i+1)+' '+fmt(t)+(player.pitLaps.includes(i+1)?' · PIT':'');if(player.pitLaps.includes(i+1))s.classList.add('pit');lp.appendChild(s);});
   $('rBonus').textContent='추월 +'+bonusInfo.pass+' · 미션 +'+bonusInfo.mis+' · 코인 '+(bonusInfo.coinN||0)+'개 +'+(bonusInfo.coin||0)+(bonusInfo.fl?' · 가장 빠른 랩 +'+bonusInfo.fl:'');$('rBonus').hidden=!(bonusInfo.pass||bonusInfo.mis||bonusInfo.coin||bonusInfo.fl);
   $('rMis').innerHTML=bonusInfo.res.map(m=>'<li class="'+(m.ok?'ok':'')+'"><span>'+(m.ok?'✓ ':'✗ ')+m.t+'</span><b>'+(m.ok?'+'+m.p+'P':'-')+'</b></li>').join('');
+  if(seasonOn&&seaOk()&&!SAVE.season.done){const S=SAVE.season;seaAward(st,pos);seasonOn=false;seaShow=true;$('rTrack').textContent+=' · 시즌 R'+S.r+'/'+S.tr.length+' +'+((SEA_PTS[pos-1]||0)+(S.res[S.r-1].f?1:0))+'점';}
+  $('btnAgain').textContent=seaShow?'시즌 순위':'다시 하기';
   $('hud').hidden=true;showOnly('result');
   if(pos<=3)setTimeout(()=>{FX.confetti(pos===1?240:110);cheer();if(pos===1)cf('win');},150);
 }
+/* ---------- 시즌(챔피언십) ---------- */
+const SEA_PTS=[25,18,15,12,10],SEA_BONUS=[1000,500,250,0,0];let seasonOn=false,seaShow=false,seaNewArm=0;
+function seaIdx(id){return TR.findIndex(t=>t.def.id===id);}
+function seaOk(){const S=SAVE.season;return !!(S&&S.tr&&S.tr.length&&S.tr.every(id=>seaIdx(id)>=0));}
+function seaNew(){const p=TR.filter(t=>t.def.wt).map(t=>t.def);for(let i=p.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[p[i],p[j]]=[p[j],p[i]];}
+  SAVE.season={tr:p.slice(0,5).sort((a,b)=>a.diff-b.diff).map(d=>d.id),r:0,pts:[0,0,0,0,0],res:[],done:false};saveRec(SAVE);}
+function seaRank(){const S=SAVE.season;return TEAMS.map((t,ti)=>({ti,p:S.pts[ti]})).sort((a,b)=>b.p-a.p||a.ti-b.ti);}
+function seaAward(st,pos){const S=SAVE.season;st.forEach((c,i)=>{S.pts[c.ti]+=SEA_PTS[i]||0;});const f=fl?fl.c.ti:-1;if(f>=0)S.pts[f]+=1;S.res.push({p:pos,f:f===0});S.r++;
+  if(S.r>=S.tr.length){S.done=true;S.rank=seaRank().findIndex(e=>e.ti===0)+1;S.bonus=SEA_BONUS[S.rank-1]||0;SAVE.points+=S.bonus;if(S.rank===1)SAVE.titles=(SAVE.titles|0)+1;S.fresh=true;}
+  saveRec(SAVE);}
+function seaBtn(){const S=SAVE.season,b=$('btnSeason');b.textContent=seaOk()&&!S.done&&S.r>0?'🏆 시즌 이어하기 · R'+(S.r+1)+'/'+S.tr.length:'🏆 시즌 (5라운드)'+((SAVE.titles|0)?' · 트로피 '+SAVE.titles+'개':'');}
+function renderSeason(){if(!seaOk())seaNew();const S=SAVE.season,n=S.tr.length,paint=PAINTS.find(p=>p.id===SAVE.paint)||PAINTS[0];seaNewArm=0;$('btnSeaNew').textContent='새 시즌';
+  $('seaTitle').textContent=S.done?(S.rank===1?'🏆 챔피언!':'시즌 끝 · '+S.rank+'위'):'시즌 · 라운드 '+(S.r+1)+'/'+n;
+  $('seaSub').textContent=S.done?(S.bonus?'시즌 보너스 +'+nf(S.bonus)+'P':'3위 안에 들면 시즌 보너스를 받아요')+((SAVE.titles|0)?' · 트로피 '+SAVE.titles+'개':''):'1등 25점 · 2등 18 · 3등 15 · 4등 12 · 5등 10 · 가장 빠른 랩 +1';
+  $('seaRounds').innerHTML=S.tr.map((id,i)=>{const d=TR[seaIdx(id)].def,r=S.res[i],cur=!S.done&&i===S.r;return '<li'+(cur?' class="me"':'')+'><span class="p">R'+(i+1)+'</span><span class="sw" style="background:'+(r?'#36d98a':cur?'#e8322a':'#4a515c')+'"></span><span>'+d.name+' '+'★'.repeat(d.diff)+'</span><span class="t">'+(r?'P'+r.p+(r.f?' 🟣':''):cur?'다음':'')+'</span></li>';}).join('');
+  $('seaTable').innerHTML=seaRank().map((e,i)=>'<li'+(e.ti===0?' class="me"':'')+'><span class="p">'+(i+1)+'</span><span class="sw" style="background:'+(e.ti===0?paint.c1:TEAMS[e.ti].c1)+'"></span><span>'+TEAMS[e.ti].name+'</span><span class="t">'+e.p+'점</span></li>').join('');
+  $('btnSeaGo').textContent=S.done?'새 시즌 시작':'R'+(S.r+1)+' 출발';}
+function openSeason(){renderSeason();$('hud').hidden=true;showOnly('season');$('season').scrollTop=0;const S=SAVE.season;if(S.done&&S.fresh){S.fresh=false;saveRec(SAVE);if(S.rank<=3)setTimeout(()=>{FX.confetti(S.rank===1?260:120);cheer();if(S.rank===1)cf('win');},200);}}
+function seaGo(){const S=SAVE.season;if(!seaOk()||S.done){seaNew();renderSeason();return;}const i=seaIdx(S.tr[S.r]);trackSel=i;trkPage=Math.floor(i/PER);seasonOn=true;seaShow=false;startRace();}
 let shopBack='menu';
 function openShop(from){shopBack=from;renderShop();showOnly('shop');$('shop').scrollTop=0;}
 function pause(){paused=true;$('pause').hidden=false;}
@@ -884,7 +917,9 @@ $('btnPause').addEventListener('click',pause);
 $('btnResume').addEventListener('click',resume);
 $('btnRestart').addEventListener('click',startRace);
 $('btnQuit').addEventListener('click',toAttract);
-$('btnAgain').addEventListener('click',startRace);
+$('btnAgain').addEventListener('click',()=>{if(seaShow)openSeason();else startRace();});
+$('btnSeason').addEventListener('click',openSeason);$('btnSeaGo').addEventListener('click',seaGo);$('btnSeaBack').addEventListener('click',toAttract);
+$('btnSeaNew').addEventListener('click',()=>{const S=SAVE.season;if(seaOk()&&!S.done&&S.r>0&&!seaNewArm){seaNewArm=1;$('btnSeaNew').textContent='지금 시즌 버릴까요? 한 번 더';return;}seaNew();renderSeason();});
 $('btnMenu').addEventListener('click',toAttract);
 $('btnStart').addEventListener('click',startRace);
 $('btnShop').addEventListener('click',()=>openShop('menu'));
@@ -1316,7 +1351,7 @@ resize();toAttract();requestAnimationFrame(frame);
 window.__apex={get state(){return state},get player(){return player},get cars(){return cars},get raceTime(){return raceTime},get track(){return T},tracks:TR,
   start(i){if(i!=null){trackSel=i;trkPage=Math.floor(i/PER);}startRace();},page(n){trkPage=n;renderTrackList();},auto(on){autoPilot=!!on;},get drift(){return driftDir},speed(n){speedMul=n;},pit(){togglePit();},nitro(){fireNitro();},
   sim(sec){for(let i=0;i<sec/STEP;i++)step(STEP);},draw(){cineSlow();render(.016);updateHud();},get cine(){return cnOn},get laps(){return LAPS},
-  quali(){startQuali();},beginRace(){beginRace();},wx(m){forceWx=m||'';},setWet(v){wet=v;},setHard(n){SAVE.hard=n;optUi();},get hard(){return hard},get rainOn(){return rainOn},get wxEv(){return wxEv},get fl(){return fl},dmgHit(){dmgHit();},get ghost(){return gh},ghPos(){return ghAt();},ghDelta(){return ghDelta();},ghTest(v){ghTest=!!v;},ghClear(){try{localStorage.removeItem(ghKey());}catch(e){}gh=null;},get wet(){return wet},get wxMode(){return wxMode},get qTimes(){return qTimes},get grid(){return gridOverride},
+  quali(){startQuali();},beginRace(){beginRace();},wx(m){forceWx=m||'';},setWet(v){wet=v;},setHard(n){SAVE.hard=n;optUi();},get hard(){return hard},get rainOn(){return rainOn},get wxEv(){return wxEv},get fl(){return fl},dmgHit(){dmgHit();},sea:{open(){openSeason();},go(){seaGo();},fresh(){seaNew();},get on(){return seasonOn}},get ghost(){return gh},ghPos(){return ghAt();},ghDelta(){return ghDelta();},ghTest(v){ghTest=!!v;},ghClear(){try{localStorage.removeItem(ghKey());}catch(e){}gh=null;},get wet(){return wet},get wxMode(){return wxMode},get qTimes(){return qTimes},get grid(){return gridOverride},
   addPoints(n){SAVE.points+=n;saveRec(SAVE);renderWallet();},get save(){return SAVE}};
 })();
 </script>

@@ -1,6 +1,6 @@
 // 몽팸게임방 오프라인 지원: 한 번 열면 파일과 글꼴을 기기에 저장해 두고, 인터넷이 없을 때 저장본으로 엽니다.
 // 게임을 고치면 CACHE 이름의 숫자를 올려서 새 버전이 저장되게 합니다.
-const CACHE = 'games-v43';
+const CACHE = 'games-v44';
 const CORE = ['./', './index.html', './games/plane.html', './games/plane3d.html', './games/three.min.js', './games/skate.html', './games/puppy.html', './games/archery.html', './games/ticket.js', './games/fx.js', './games/racing.html', './games/kangaroo.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
