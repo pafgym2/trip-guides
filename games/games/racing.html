@@ -26,6 +26,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
 
 /* HUD */
 #hud{position:fixed;inset:0;pointer-events:none;font-family:var(--f-disp);}
+body.cine .hud-tl,body.cine .minibox,body.cine .keyhint,body.cine .zone,body.cine #btnPit,body.cine #btnNitro{display:none}
 .chip{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:7px 10px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);}
 .hud-tl{position:absolute;left:calc(10px + env(safe-area-inset-left,0px));top:calc(10px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .hud-tr{position:absolute;right:calc(10px + env(safe-area-inset-right,0px));top:calc(10px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:6px;align-items:flex-end}
@@ -859,8 +860,122 @@ function drawScenery(viewR){
     ctx.fillStyle='rgba(255,255,255,.12)';ctx.beginPath();ctx.arc(t.x-t.r*.25,t.y-t.r*.25,t.r*.55,0,TAU);ctx.fill();
     ctx.fillStyle='rgba(255,255,255,.12)';ctx.beginPath();ctx.arc(t.x-t.r*.42,t.y-t.r*.4,t.r*.22,0,TAU);ctx.fill();}
 }
+
+/* ---------- 체커기 카메라: 마지막 결승선 통과를 3D로 ---------- */
+const CINE_N=32;let cnC=[0,0,0],cnF=[1,0,0],cnR=[0,1,0],cnU=[0,0,1],cnFoc=400,cnT=[0,0,0],cnOn=false,cnFlash=0,cnSp=[],cnFaces=[],cnWas=false,cnT0=0;
+function cineOn(){return !!(player&&state==='race'&&!player.pit&&((!player.finished&&player.cross===LAPS&&player.idx>T.N-CINE_N)||(player.finished&&resultT>0)));}
+function cineSlow(){const on=cineOn();if(on!==cnOn){cnOn=on;document.body.classList.toggle('cine',on);if(on){cnT=[player.x,player.y,5];cnSp=[];cnWas=false;cnFlash=0;cnT0=performance.now();}}
+  return on?(player.finished?.5:.34):1;}
+function nP(p){const vx=p[0]-cnC[0],vy=p[1]-cnC[1],vz=p[2]-cnC[2],z=vx*cnF[0]+vy*cnF[1]+vz*cnF[2],zz=Math.max(z,1);
+  return{x:cw/2+(vx*cnR[0]+vy*cnR[1])/zz*cnFoc,y:ch*.56-(vx*cnU[0]+vy*cnU[1]+vz*cnU[2])/zz*cnFoc,z:z,s:cnFoc/zz};}
+function nDepth(p){return (p[0]-cnC[0])*cnF[0]+(p[1]-cnC[1])*cnF[1]+(p[2]-cnC[2])*cnF[2];}
+function nPoly(pts,fill,dark){const NR=5,d=pts.map(nDepth),out=[];
+  for(let i=0;i<pts.length;i++){const j=(i+1)%pts.length,a=pts[i],b=pts[j],da=d[i],db=d[j];if(da>=NR)out.push(a);
+    if((da>=NR)!==(db>=NR)){const t=(NR-da)/(db-da);out.push([a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t]);}}
+  if(out.length<3)return;ctx.beginPath();out.forEach((p,i)=>{const q=nP(p);ctx[i?'lineTo':'moveTo'](q.x,q.y);});ctx.closePath();ctx.fillStyle=fill;ctx.fill();
+  if(dark>0){ctx.fillStyle='rgba(6,10,20,'+dark.toFixed(3)+')';ctx.fill();}}
+function nFace(pts,col){let cx=0,cy=0,cz=0;for(const p of pts){cx+=p[0];cy+=p[1];cz+=p[2];}const n=pts.length;
+  const a=pts[0],b=pts[1],c=pts[2],ux=b[0]-a[0],uy=b[1]-a[1],uz=b[2]-a[2],vx=c[0]-a[0],vy=c[1]-a[1],vz=c[2]-a[2];
+  let nx=uy*vz-uz*vy,ny=uz*vx-ux*vz,nz=ux*vy-uy*vx;const l=Math.hypot(nx,ny,nz)||1;const lum=.5+.5*Math.abs((nx*.35+ny*.25+nz*.9)/l);
+  cnFaces.push({p:pts,c:col,k:(1-lum)*.75,d:nDepth([cx/n,cy/n,cz/n])});}
+function nBox(tf,x0,x1,y0,y1,z0,z1,col){const P=(a,b,c)=>tf(a,b,c);
+  nFace([P(x0,y1,z0),P(x1,y1,z0),P(x1,y1,z1),P(x0,y1,z1)],col);nFace([P(x0,y0,z0),P(x1,y0,z0),P(x1,y1,z0),P(x0,y1,z0)],col);nFace([P(x0,y0,z1),P(x1,y0,z1),P(x1,y1,z1),P(x0,y1,z1)],col);
+  nFace([P(x0,y0,z0),P(x0,y0,z1),P(x0,y1,z1),P(x0,y1,z0)],col);nFace([P(x1,y0,z0),P(x1,y0,z1),P(x1,y1,z1),P(x1,y1,z0)],col);}
+function nPrism(tf,prof,z0,z1,col,capCol){const n=prof.length;for(let i=0;i<n;i++){const a=prof[i],b=prof[(i+1)%n];nFace([tf(a[0],a[1],z0),tf(b[0],b[1],z0),tf(b[0],b[1],z1),tf(a[0],a[1],z1)],col);}
+  nFace(prof.map(p=>tf(p[0],p[1],z0)),capCol||col);nFace(prof.map(p=>tf(p[0],p[1],z1)),capCol||col);}
+const WHEEL=[0,1,2,3,4,5,6,7,8,9].map(i=>[Math.cos(i*TAU/10),Math.sin(i*TAU/10)]);
+function cineCar(c){const cs=Math.cos(c.h),sn=Math.sin(c.h),tm=c.team;
+  const tf=(lx,ly,lz)=>[c.x+cs*lx-sn*lz,c.y+sn*lx+cs*lz,ly];
+  // 바퀴(앞 2, 뒤 2)
+  for(const [wx,wz,r,w] of[[12,9.6,3.9,5.2],[12,-9.6,3.9,5.2],[-11.5,10,4.5,6.6],[-11.5,-10,4.5,6.6]]){
+    nPrism(tf,WHEEL.map(p=>[wx+p[0]*r,r+p[1]*r]),wz-w/2,wz+w/2,'#15171b','#22262c');
+    const zo=wz+(wz>0?w/2+.15:-w/2-.15);nFace(WHEEL.map(p=>tf(wx+p[0]*r*.52,r+p[1]*r*.52,zo)),'#9aa3ad');nBox(tf,wx-.8,wx+.8,r-.5,r+.5,Math.min(wz*.45,wz),Math.max(wz*.45,wz),'#2b2b2b');}
+  // 바닥판, 차체(옆모습을 폭 방향으로 밀어낸 모양), 사이드포드
+  nBox(tf,-17,14,1,1.8,-8.4,8.4,'#141414');
+  nPrism(tf,[[21,1.6],[21,2.8],[9,4.2],[4,6.4],[1,6.6],[-3,9.6],[-8,8.2],[-17,4.6],[-18,1.8]],-2.9,2.9,tm.c1);
+  nPrism(tf,[[5,1.8],[4,5],[-9,5.4],[-15,3.6],[-15,1.8]],3,8.2,tm.c1);nPrism(tf,[[5,1.8],[4,5],[-9,5.4],[-15,3.6],[-15,1.8]],-8.2,-3,tm.c1);
+  nBox(tf,3.6,5.2,2.2,4.8,3.2,8,'#101010');nBox(tf,3.6,5.2,2.2,4.8,-8,-3.2,'#101010');
+  // 앞날개, 뒷날개
+  nBox(tf,17,21.5,1,1.9,-11.4,11.4,tm.c2);nBox(tf,16.5,21.5,1,4,11.4,12.2,tm.c1);nBox(tf,16.5,21.5,1,4,-12.2,-11.4,tm.c1);
+  nBox(tf,-21,-16.5,9.6,10.6,-8.6,8.6,'#1b1b1b');nBox(tf,-21,-16.2,5,11.2,8.6,9.4,tm.c2);nBox(tf,-21,-16.2,5,11.2,-9.4,-8.6,tm.c2);nBox(tf,-19.5,-18,3,9.6,-.5,.5,'#1b1b1b');
+  // 헬멧
+  const hp=tf(0,8.4,0);cnFaces.push({ball:1,p:hp,r:2.7,c:tm.helm,d:nDepth(hp)+2,isP:c.isPlayer});
+  if(c.boost>0||(!c.finished&&Math.abs(c.v)>300&&Math.random()<.5)){const q=tf(-14,1,rnd2(-6,6));cnSp.push({p:q,v:[-cs*rnd2(40,160)+rnd2(-30,30),-sn*rnd2(40,160)+rnd2(-30,30),rnd2(10,70)],t:rnd2(.15,.4),c:c.boost>0?'#7fe0ff':'#ffd27a'});}
+}
+const rnd2=(a,b)=>a+Math.random()*(b-a);
+function drawCine(dt){
+  const d=T.def,N=T.N,a0=T.A[0],fx0=Math.cos(a0),fy0=Math.sin(a0),nx0=T.NX[0],ny0=T.NY[0],Lx=T.X[0],Ly=T.Y[0],tt=(performance.now()-cnT0)/1000;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  // 카메라: 결승선을 지난 트랙 옆 낮은 자리에서 내 차를 따라 돌아요
+  const k=1-Math.exp(-(dt||.016)*24);cnT[0]+=(player.x-cnT[0])*k;cnT[1]+=(player.y-cnT[1])*k;
+  cnC=[Lx+fx0*185+nx0*(HW+24),Ly+fy0*185+ny0*(HW+24),8.5];
+  let fx=cnT[0]-cnC[0],fy=cnT[1]-cnC[1],fz=cnT[2]-cnC[2];const dist=Math.hypot(fx,fy,fz)||1;fx/=dist;fy/=dist;fz/=dist;
+  if(dist<170&&!paused){const sh=(170-dist)/170*.012;fx+=rnd2(-sh,sh);fz+=rnd2(-sh,sh);}
+  cnF=[fx,fy,fz];const hl=Math.hypot(fx,fy)||1;cnR=[-fy/hl,fx/hl,0];cnU=[-fx*fz/hl,-fy*fz/hl,hl];
+  cnFoc=(cw<ch?ch*.7:Math.min(cw,ch)*1.05)*clamp(dist/230,.9,2.1);
+  // 하늘과 땅
+  const hy=clamp(nP([cnC[0]+fx/hl*9000,cnC[1]+fy/hl*9000,0]).y,-ch,ch*2);
+  let g=ctx.createLinearGradient(0,0,0,Math.max(1,hy));if(DARK){g.addColorStop(0,'#04081a');g.addColorStop(1,'#1c2a52');}else{g.addColorStop(0,'#3d9bf0');g.addColorStop(1,'#d9f0ff');}
+  ctx.fillStyle=g;ctx.fillRect(0,0,cw,hy+1);
+  if(DARK){ctx.fillStyle='rgba(255,255,255,.8)';for(let i=0;i<40;i++){const sx=(i*197+((fx*400)|0)*3)%cw,sy=(i*113)%Math.max(1,hy*.8);ctx.fillRect((sx+cw)%cw,sy,1.5,1.5);}}
+  else{const sg=ctx.createRadialGradient(cw*.78,hy*.25,4,cw*.78,hy*.25,Math.max(cw,ch)*.5);sg.addColorStop(0,'rgba(255,250,220,.95)');sg.addColorStop(.08,'rgba(255,244,200,.5)');sg.addColorStop(1,'rgba(255,244,200,0)');ctx.fillStyle=sg;ctx.fillRect(0,0,cw,hy+1);}
+  g=ctx.createLinearGradient(0,hy,0,ch);g.addColorStop(0,d.g[1]);g.addColorStop(1,d.g[0]);ctx.fillStyle=g;ctx.fillRect(0,hy,cw,ch-hy);
+  // 도로·연석·벽 (결승선 앞뒤 구간)
+  const I0=-72,I1=64,E=(i,off,h)=>{const j=((i%N)+N)%N;return[T.X[j]+T.NX[j]*off,T.Y[j]+T.NY[j]*off,h||0];};
+  const BW=HW+105;
+  for(let i=I0;i<I1;i++){nPoly([E(i,-BW),E(i+1,-BW),E(i+1,-HW-10),E(i,-HW-10)],(i&3)<2?d.g[0]:d.g[1]);nPoly([E(i,BW),E(i+1,BW),E(i+1,HW+10),E(i,HW+10)],(i&3)<2?d.g[0]:d.g[1]);}
+  for(let i=I0;i<I1;i++){nPoly([E(i,-HW),E(i+1,-HW),E(i+1,HW),E(i,HW)],(i&7)<4?'#3a3f47':'#41464f');
+    const kc=(i&1)?'#e8323c':'#f4f6f8';nPoly([E(i,-HW-10),E(i+1,-HW-10),E(i+1,-HW),E(i,-HW)],kc);nPoly([E(i,HW),E(i+1,HW),E(i+1,HW+10),E(i,HW+10)],kc);
+    nPoly([E(i,-HW+3),E(i+1,-HW+3),E(i+1,-HW+6),E(i,-HW+6)],'rgba(255,255,255,.8)');nPoly([E(i,HW-6),E(i+1,HW-6),E(i+1,HW-3),E(i,HW-3)],'rgba(255,255,255,.8)');}
+  // 출발 칸 표시, 결승선 체크무늬
+  for(let gI=0;gI<8;gI++){const i=-3-gI*5,lat=(gI%2?1:-1)*W*.2;nPoly([E(i,lat-13),E(i+.35,lat-13),E(i+.35,lat+13),E(i,lat+13)],'rgba(255,255,255,.6)');}
+  {const rows=3,cols=Math.round(W/12),cwid=W/cols;for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const u0=r*5-2,u1=u0+5,v0=-HW+c*cwid,v1=v0+cwid;const Q=(u,v)=>[Lx+fx0*u+nx0*v,Ly+fy0*u+ny0*v,0];nPoly([Q(u0,v0),Q(u1,v0),Q(u1,v1),Q(u0,v1)],(r+c)%2?'#111418':'#ffffff');}}
+  // 건너편 관중석과 벽
+  const far=-1;
+  for(let i=I0+18;i<I1-18;i+=2){nPoly([E(i,far*BW,14),E(i+2,far*BW,14),E(i+2,far*(BW+90),78),E(i,far*(BW+90),78)],DARK?'#0e1524':'#27364d');}
+  for(let i=I0+18;i<I1-18;i++)for(let r=0;r<8;r++)for(let s=0;s<2;s++){const hsh=((i*73856093)^(r*19349663)^(s*83492791))>>>0;if(hsh%6===0)continue;
+    const q=nP(E(i+s*.5+(r%2)*.25,far*(BW+8+r*10.5),22+r*7.4+((hsh>>5)%5)*.5*Math.abs(Math.sin(tt*7+hsh))));if(q.z<20||q.x<-30||q.x>cw+30)continue;const rr=3.2*q.s;if(rr<.6)continue;
+    ctx.fillStyle=CN_CROWD[hsh%CN_CROWD.length];ctx.beginPath();ctx.arc(q.x,q.y-rr*1.3,rr*.7,0,TAU);ctx.fill();ctx.fillRect(q.x-rr*.75,q.y-rr*.7,rr*1.5,rr*1.7);}
+  for(const sd of[-1,1])for(let i=I0;i<I1;i++){nPoly([E(i,sd*BW),E(i+1,sd*BW),E(i+1,sd*BW,14),E(i,sd*BW,14)],(i&3)<2?'#d7dde4':'#e8323c',sd===far?.05:.3);nPoly([E(i,sd*BW,14),E(i+1,sd*BW,14),E(i+1,sd*BW,26),E(i,sd*BW,26)],'rgba(150,170,190,.28)');}
+  // 입체 물체: 결승 게이트, 체커기, 차 → 먼 면부터 그려요
+  cnFaces=[];
+  const WT=(u,h,v)=>[Lx+fx0*u+nx0*v,Ly+fy0*u+ny0*v,h];
+  for(const v of[-HW-30,HW+30]){nBox(WT,2,10,0,74,v-4,v+4,'#3b434e');}
+  nBox(WT,1,11,64,76,-HW-34,HW+34,'#2a2f37');
+  {const cols=Math.round((W+60)/11),cwid=(W+60)/cols;for(let r=0;r<2;r++)for(let c=0;c<cols;c++){const v0=-HW-30+c*cwid;for(const u of[.6,11.4])nFace([WT(u,52+r*6,v0),WT(u,52+r*6,v0+cwid),WT(u,58+r*6,v0+cwid),WT(u,58+r*6,v0)],(r+c)%2?'#111418':'#ffffff');}}
+  // 깃발 든 진행요원 단상(건너편)
+  {const v=far*(HW+20);nBox(WT,-10,6,0,20,v-8,v+8,'#f4f6f8');nBox(WT,-10,6,16,20,v-8.4,v+8.4,'#e8323c');nBox(WT,-4,0,20,33,v-2.4,v+2.4,'#ff8a3d');
+    const hd=WT(-2,36.5,v);cnFaces.push({ball:1,p:hd,r:2.8,c:'#f1d6b8',d:nDepth(hd)});
+    const sw=Math.sin(tt*6.2),ang=.55+.5*sw,B=WT(-2,31,v-far*2),pd=[fx0*-.12+nx0*(-far)*Math.sin(ang),fy0*-.12+ny0*(-far)*Math.sin(ang),Math.cos(ang)],PL=52;
+    const PP=s=>[B[0]+pd[0]*s,B[1]+pd[1]*s,B[2]+pd[2]*s];
+    cnFaces.push({line:1,a:B,b:PP(PL),w:1.1,c:'#d9dee4',d:nDepth(PP(PL/2))});
+    const CW=8,CH=5,FL=50,FH=PL-18;const fp=(i,j)=>{const u=i/CW,s=18+FH*(1-j/CH),w=Math.sin(tt*11-u*5.2+j*.5)*7*u,b=PP(s);
+      return[b[0]-fx0*u*FL*.2+(-far)*nx0*u*FL*Math.cos(ang)*.9+fx0*w,b[1]-fy0*u*FL*.2+(-far)*ny0*u*FL*Math.cos(ang)*.9+fy0*w,b[2]-(-far)*0-u*FL*Math.sin(ang)*.55-u*u*5+w*.25];};
+    for(let i=0;i<CW;i++)for(let j=0;j<CH;j++)nFace([fp(i,j),fp(i+1,j),fp(i+1,j+1),fp(i,j+1)],(i+j)%2?'#101216':'#ffffff');}
+  for(const c of cars){if(Math.hypot(c.x-cnC[0],c.y-cnC[1])>1500)continue;
+    const o=nP([c.x,c.y,0]);if(o.z>12){ctx.fillStyle='rgba(0,0,0,.33)';ctx.beginPath();ctx.ellipse(o.x,o.y,26*o.s,7.5*o.s*Math.max(.25,Math.abs(cnF[2])*4+.25),0,0,TAU);ctx.fill();}
+    cineCar(c);}
+  cnFaces.sort((a,b)=>b.d-a.d);
+  for(const f of cnFaces){
+    if(f.ball){const q=nP(f.p);if(q.z<6)continue;const r=f.r*q.s;ctx.fillStyle=f.c;ctx.beginPath();ctx.arc(q.x,q.y,r,0,TAU);ctx.fill();ctx.fillStyle='rgba(255,255,255,.45)';ctx.beginPath();ctx.arc(q.x-r*.3,q.y-r*.35,r*.3,0,TAU);ctx.fill();
+      if(f.isP){ctx.fillStyle='rgba(255,255,255,.95)';ctx.beginPath();ctx.moveTo(q.x,q.y-r*2.2);ctx.lineTo(q.x-r*1.1,q.y-r*4);ctx.lineTo(q.x+r*1.1,q.y-r*4);ctx.closePath();ctx.fill();}}
+    else if(f.line){const p=nP(f.a),q=nP(f.b);if(p.z<6||q.z<6)continue;ctx.strokeStyle=f.c;ctx.lineWidth=Math.max(1.5,f.w*(p.s+q.s)/2);ctx.lineCap='round';ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke();}
+    else nPoly(f.p,f.c,f.k);}
+  // 불꽃, 통과 순간 번쩍임과 색종이
+  const sdt=paused?0:(dt||.016)*(player.finished?.5:.34);cnSp=cnSp.filter(q=>(q.t-=sdt)>0);if(cnSp.length>240)cnSp.splice(0,cnSp.length-240);
+  for(const q of cnSp){q.v[2]-=220*sdt;for(let i=0;i<3;i++)q.p[i]+=q.v[i]*sdt;if(q.p[2]<0){q.p[2]=0;q.v[2]*=-.4;}const a=nP(q.p);if(a.z<6)continue;ctx.globalAlpha=Math.min(1,q.t*5);ctx.fillStyle=q.c;ctx.beginPath();ctx.arc(a.x,a.y,Math.max(1.2,.8*a.s),0,TAU);ctx.fill();}ctx.globalAlpha=1;
+  if(player.finished&&!cnWas){cnWas=true;cnFlash=1;cf(player.finalPos===1?'win':'burst');
+    for(let i=0;i<70;i++)cnSp.push({p:WT(rnd2(-10,30),rnd2(40,70),rnd2(-HW,HW)),v:[rnd2(-60,60),rnd2(-60,60),rnd2(-20,90)],t:rnd2(.5,1.3),c:CN_CROWD[i%CN_CROWD.length]});}
+  // 속도선, 영화 화면 띠, 가장자리 어둡게
+  if(!player.finished&&!paused){ctx.strokeStyle='rgba(255,255,255,.16)';ctx.lineWidth=2;for(let i=0;i<14;i++){const y=Math.random()*ch,x=Math.random()*cw,l=60+Math.random()*160;ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+l,y);ctx.stroke();}}
+  const vg=ctx.createRadialGradient(cw/2,ch/2,Math.min(cw,ch)*.42,cw/2,ch/2,Math.hypot(cw,ch)*.62);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.5)');ctx.fillStyle=vg;ctx.fillRect(0,0,cw,ch);
+  const bar=Math.min(1,tt*4)*ch*.07;ctx.fillStyle='#05070b';ctx.fillRect(0,0,cw,bar);ctx.fillRect(0,ch-bar,cw,bar);
+  if(cnFlash>0){ctx.fillStyle='rgba(255,255,255,'+(cnFlash*.65).toFixed(3)+')';ctx.fillRect(0,0,cw,ch);if(!paused)cnFlash=Math.max(0,cnFlash-.08);}
+}
+const CN_CROWD=['#ff6b6b','#ffd23f','#62c8ff','#9be15d','#c7a2ff','#ffffff','#ff9f43','#f78fb3'];
 function render(dt){
   const d=T.def;{const h=parseInt(d.g[0].slice(1),16);DARK=((h>>16&255)*.3+(h>>8&255)*.59+(h&255)*.11)<62;}
+  if(cnOn&&cineOn()){updateCam(dt);drawCine(dt);return;}
   ctx.setTransform(dpr,0,0,dpr,0,0);ctx.fillStyle=d.g[0];ctx.fillRect(0,0,cw,ch);
   updateCam(dt);
   let shx=0,shy=0;if(shakeT>0){shakeT-=dt;shx=(Math.random()-.5)*12;shy=(Math.random()-.5)*12;}
@@ -991,7 +1106,7 @@ function renderTrackList(){
 let last=performance.now(),accT=0;
 function frame(now){
   let dt=Math.min(.05,(now-last)/1000);last=now;
-  if(!paused){accT+=dt*speedMul;let n=0;const cap=8*speedMul;while(accT>=STEP&&n<cap){step(STEP);accT-=STEP;n++;}if(n>=cap)accT=0;}
+  const cs_=cineSlow();if(!paused){accT+=dt*speedMul*cs_;let n=0;const cap=8*speedMul;while(accT>=STEP&&n<cap){step(STEP);accT-=STEP;n++;}if(n>=cap)accT=0;}
   if(bannerT>0){bannerT-=dt;if(bannerT<=0)$('banner').className='';}
   if(toastT>0){toastT-=dt;if(toastT<=0)$('toast').className='';}
   render(paused?0:dt);updateHud();updateAudio();
@@ -1001,7 +1116,7 @@ resize();toAttract();requestAnimationFrame(frame);
 
 window.__apex={get state(){return state},get player(){return player},get cars(){return cars},get raceTime(){return raceTime},get track(){return T},tracks:TR,
   start(i){if(i!=null){trackSel=i;trkPage=Math.floor(i/PER);}startRace();},page(n){trkPage=n;renderTrackList();},auto(on){autoPilot=!!on;},speed(n){speedMul=n;},pit(){togglePit();},nitro(){fireNitro();},
-  sim(sec){for(let i=0;i<sec/STEP;i++)step(STEP);},draw(){render(0);updateHud();},
+  sim(sec){for(let i=0;i<sec/STEP;i++)step(STEP);},draw(){cineSlow();render(.016);updateHud();},get cine(){return cnOn},get laps(){return LAPS},
   addPoints(n){SAVE.points+=n;saveRec(SAVE);renderWallet();},get save(){return SAVE}};
 })();
 </script>
