@@ -50,6 +50,8 @@ body.cine .hud-tl,body.cine .minibox,body.cine .keyhint,body.cine .zone,body.cin
 #btnPause{pointer-events:auto;width:40px;height:40px;border-radius:10px;background:var(--panel);border:1px solid var(--line);font-family:var(--f-disp);font-weight:700}
 #hWx{position:absolute;bottom:calc(108px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(10,16,30,.78);color:#cfe3ff;border:1px solid rgba(160,200,255,.45);border-radius:999px;padding:5px 13px;font:700 12.5px/1.2 var(--f-body);white-space:nowrap}
 #hDmg{position:absolute;bottom:calc(138px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(120,20,20,.85);color:#ffe2e0;border:1px solid #ff8a80;border-radius:999px;padding:5px 13px;font:700 12.5px/1.2 var(--f-body);white-space:nowrap}
+#hGh{position:absolute;bottom:calc(168px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(10,16,30,.78);color:#9dffb8;border:1px solid rgba(160,255,190,.45);border-radius:999px;padding:5px 13px;font:700 12.5px/1.2 var(--f-body);white-space:nowrap;font-variant-numeric:tabular-nums}
+#hGh.slow{color:#ffb3ad;border-color:rgba(255,150,140,.5)}
 #hWx.warn{background:rgba(120,20,20,.85);color:#ffe2e0;border-color:#ff8a80}
 .opts{display:grid;grid-template-columns:1fr 1fr;gap:8px}.opts button{background:transparent;border:1px solid var(--line);border-radius:8px;padding:8px 6px;font-size:13px;color:inherit}
 #lights{position:absolute;top:calc(84px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;gap:8px;padding:10px 12px;background:#101010;border:1px solid #2a2a2a;border-radius:12px}
@@ -207,6 +209,7 @@ h2{font-family:var(--f-disp);font-style:italic;font-weight:700;font-size:34px;li
   <div id="banner"></div>
   <div id="hWx" hidden></div>
  <div id="hDmg" hidden></div>
+ <div id="hGh" hidden></div>
   <div class="zone l touch-only">◀</div>
   <div class="zone r touch-only">▶</div>
   <div class="controls">
@@ -229,7 +232,7 @@ h2{font-family:var(--f-disp);font-style:italic;font-weight:700;font-size:34px;li
     <div class="tracks" id="trackList"></div>
     <p id="trkInfo"></p>
     <button id="btnStart" class="go">출발</button>
-    <div class="opts"><button id="btnWx">날씨: 랜덤</button><button id="btnQ">예선: 켜짐</button><button id="btnHard" style="grid-column:1/-1">실제 서킷 상대: 강함</button></div>
+    <div class="opts"><button id="btnWx">날씨: 랜덤</button><button id="btnQ">예선: 켜짐</button><button id="btnHard" style="grid-column:1/-1">실제 서킷 상대: 강함</button><button id="btnGh" style="grid-column:1/-1">유령차: 켜짐</button></div>
     <dl class="howto">
       <dt>폰</dt><dd>화면 왼쪽·오른쪽 누르기 = 조향 (자동 가속), 브레이크·PIT·N2O 버튼. <b>같은 쪽을 톡톡 두 번 누르고 그대로 있으면 드리프트</b>, 떼면 부스트</dd>
       <dt>맥</dt><dd>↑ 가속 · ↓ 브레이크 · ←→ 조향 · <b>←← / →→ 두 번 눌러 드리프트</b> · P 피트 · N 니트로 · Esc 일시정지</dd>
@@ -535,6 +538,14 @@ let autoPilot=false,speedMul=1;
 /* 날씨(비)·예선 */
 let wet=0,wxMode='dry',rainOn=false,wxEv=[],bowT=0,hard=0,fl=null,forceWx='',gridOverride=null,qTimes=null,rnG=null;
 const hardSel=()=>SAVE.hard==null?1:SAVE.hard;
+/* 유령차: 내 최고 한 바퀴(서킷별)를 0.1초 간격으로 저장해 두었다가 다시 보여줌 */
+let gh=null,ghRec=[],ghN=0,ghTest=false;const GH_DT=.1,ghKey=()=>'apexGhost_'+(T.def.rk||T.def.id);
+function ghLoad(){gh=null;try{const g=JSON.parse(localStorage.getItem(ghKey()));if(g&&g.p&&g.p.length>10)gh=g;}catch(e){}}
+function ghReset(){ghRec=[];ghN=0;}
+function ghSave(t){if((autoPilot&&!ghTest)||ghRec.length<20||(gh&&gh.t<=t))return false;gh={t:+t.toFixed(3),p:ghRec.slice()};try{localStorage.setItem(ghKey(),JSON.stringify(gh));}catch(e){}return true;}
+function ghLive(){return gh&&SAVE.ghost!==false&&player&&!player.finished&&!player.pit&&((state==='quali'&&player.cross>=1)||(state==='race'&&player.cross>=2));}
+function ghAt(){if(!ghLive())return null;const f=(raceTime-player.lapStart)/GH_DT,i=Math.floor(f);if(i<0||i>=gh.p.length-1)return null;const a=gh.p[i],b=gh.p[i+1],k=f-i;return{x:a[0]+(b[0]-a[0])*k,y:a[1]+(b[1]-a[1])*k,h:a[2]+wrapA(b[2]-a[2])*k};}
+function ghDelta(){if(!ghLive())return null;const p=gh.p,k=player.idx,N=T.N;if(k>N-6||k<3)return null;for(let j=1;j<p.length;j++){if(p[j][3]>=k&&p[j][3]-k<N/2){const a=p[j-1][3],b=p[j][3];const tg=(j-1+(b>a?(k-a)/(b-a):1))*GH_DT;return(raceTime-player.lapStart)-tg;}}return null;}
 function tyreK(c){const w=wet;return c.tyreW?{grip:.88,top:.93+.03*w,wear:1+1.2*(1-w),brake:1-.07*w}:{grip:1-.42*w,top:1-.08*w,wear:1,brake:1-.22*w};}
 function aiK(c){return c.tyreW?.95-.01*wet:1-.15*wet;}
 function pickWeather(){const o=SAVE.wx||'rand',real=!!TR[trackSel].def.wt,R=Math.random;let m=o==='dry'?'dry':o==='wet'?(R()<.5?'wet':'later'):(R()<(real?.4:.3)?(R()<.5?'wet':'later'):'dry');
@@ -644,10 +655,11 @@ function locate(c){
 }
 function onCross(c){
   c.cross++;if(c.cross<=c.maxCross)return;c.maxCross=c.cross;
-  if(state==='quali'){if(c.isPlayer){if(c.cross===1){c.lapStart=raceTime;banner('기록 시작!',1,'go');}else if(c.cross===2)endQuali(raceTime-c.lapStart);}return;}
+  if(state==='quali'){if(c.isPlayer){if(c.cross===1){c.lapStart=raceTime;ghReset();banner('기록 시작!',1,'go');}else if(c.cross===2){ghSave(raceTime-c.lapStart);endQuali(raceTime-c.lapStart);}}return;}
   if(state!=='race'||c.finished)return;
   if(c.cross>=2){
     const lt=raceTime-c.lapStart;c.laps.push(lt);c.lapStart=raceTime;
+    if(c.isPlayer){if(c.laps.length>1&&!c.pitLaps.includes(c.laps.length)&&ghSave(lt)&&!autoPilot)toast('유령차를 새 기록으로 바꿨어요');ghReset();}
     if(!c.isPlayer)c.skill*=hard?.997:.988;
     if(!fl||lt<fl.t)fl={t:lt,c};const isFl=fl.c===c&&cars.some(o=>o!==c&&o.laps.length);
     const newBest=c.best==null||lt<c.best;if(newBest)c.best=lt;
@@ -771,6 +783,7 @@ function step(dt){
     else if(c.isPlayer&&!c.auto&&!autoPilot)playerPhys(c,dt);
     else aiDrive(c,dt);
   }
+  if((state==='race'||state==='quali')&&player&&!player.finished&&!player.auto&&(!autoPilot||ghTest)){if(ghN++%12===0)ghRec.push([Math.round(player.x),Math.round(player.y),+player.h.toFixed(2),player.idx]);}
   collide();
   for(const c of cars){locate(c);if(c.isPlayer&&!c.pit)barrier(c);}
   if(hitCool>0)hitCool-=dt;
@@ -801,7 +814,7 @@ function aiQuali(){const keep=state,out=[];state='attract';
     out.push({ti,t:(t-t1)*(1+(Math.random()-.5)*.012)});}
   state=keep;gridOverride=null;return out;}
 function startQuali(){
-  wet=0;wxMode='dry';rainOn=false;wxEv=[];setTrack(TR[trackSel]);qTimes=aiQuali();gridOverride=[0];makeCars('race');gridOverride=null;
+  wet=0;wxMode='dry';rainOn=false;wxEv=[];setTrack(TR[trackSel]);qTimes=aiQuali();gridOverride=[0];makeCars('race');gridOverride=null;ghLoad();ghReset();
   state='quali';raceTime=0;resultT=-1;paused=false;$('lights').hidden=true;
   $('btnPit').classList.remove('on');$('btnPit').textContent='PIT';$('hLaps').textContent=1;showOnly(null);$('hud').hidden=false;updateNitroBtn();
   makePads();coins=[];trailPts=[];skids=[];dust=[];sparksW=[];missions=[];passes=0;lastPlace=0;hits=0;coinPts=0;coinN=0;
@@ -816,7 +829,7 @@ function endQuali(t){
   $('hud').hidden=true;showOnly('qres');(zz(pos===1?'win':'pass')||sfx(880,.2,'triangle',.12));
 }
 function beginRace(){
-  pickWeather();setTrack(TR[trackSel]);makeCars('race');gridOverride=null;fl=null;if(wet>.3)cars.forEach(c=>c.tyreW=1);state='countdown';cd=0;lightsOn=0;goAt=3.0+.3+Math.random()*.6;raceTime=0;resultT=-1;paused=false;
+  pickWeather();setTrack(TR[trackSel]);makeCars('race');gridOverride=null;fl=null;ghLoad();ghReset();if(wet>.3)cars.forEach(c=>c.tyreW=1);state='countdown';cd=0;lightsOn=0;goAt=3.0+.3+Math.random()*.6;raceTime=0;resultT=-1;paused=false;
   [...$('lights').children].forEach(s=>s.classList.remove('on'));$('lights').hidden=false;
   $('btnPit').classList.remove('on');$('btnPit').textContent='PIT';$('hLaps').textContent=LAPS;
   showOnly(null);$('hud').hidden=false;updateNitroBtn();
@@ -1203,6 +1216,7 @@ function render(dt){
     if(player.boost>0&&Math.random()<.6)dust.push({x:player.x-24*ca,y:player.y-24*sa,t:.35,r:4,b:1});}
   ctx.lineCap='round';ctx.lineWidth=5;ctx.strokeStyle='rgba(12,12,14,.34)';ctx.beginPath();for(const k of skids){ctx.moveTo(k[0],k[1]);ctx.lineTo(k[2],k[3]);}ctx.stroke();
   dust=dust.filter(q=>(q.t-=dt||1/60)>0);for(const q of dust){ctx.globalAlpha=Math.min(.5,q.t);ctx.fillStyle=q.b?'#bfefff':(d.style==='pine'?'#ffffff':'#cdb88a');ctx.beginPath();ctx.arc(q.x,q.y,q.r+(1-q.t)*10,0,TAU);ctx.fill();}ctx.globalAlpha=1;if(dust.length>120)dust.splice(0,dust.length-120);
+  {const g=ghAt();if(g){ctx.save();ctx.translate(g.x,g.y);ctx.rotate(g.h);ctx.globalAlpha=.42;drawCarShape(ctx,{c1:'#eaf6ff',c2:'#8fd0ff',helm:'#ffffff'});ctx.globalAlpha=.7;ctx.strokeStyle='#bfe6ff';ctx.lineWidth=1.5;ctx.setLineDash([4,4]);ctx.beginPath();ctx.arc(0,0,25,0,TAU);ctx.stroke();ctx.restore();}}
   for(const c of cars)if(c!==player)drawCar(c);if(player)drawCar(player);
   if(player&&player.drift>0&&!paused){const ca2=Math.cos(player.h),sa2=Math.sin(player.h),rdy=player.driftRdy;for(const dy of[-9,9]){if(Math.random()<(rdy?.9:.35)){const a=player.h+Math.PI+(Math.random()-.5)*1.1,v=(rdy?240:130)+Math.random()*120;sparksW.push({x:player.x-14*ca2-dy*sa2,y:player.y-14*sa2+dy*ca2,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:.16+Math.random()*.2});}}}
   sparksW=sparksW.filter(q=>(q.t-=(dt||1/60))>0);ctx.lineCap='round';for(const q of sparksW){const k=(dt||1/60);q.x+=q.vx*k;q.y+=q.vy*k;ctx.strokeStyle='rgba(255,'+(170+Math.random()*80|0)+',60,'+Math.min(1,q.t*4)+')';ctx.lineWidth=2.5;ctx.beginPath();ctx.moveTo(q.x,q.y);ctx.lineTo(q.x-q.vx*.035,q.y-q.vy*.035);ctx.stroke();}
@@ -1246,6 +1260,7 @@ function drawMini(){
 function updateHud(){
   if($('hud').hidden||!player)return;
   {const e=$('hWx');let t='';if(state==='race'){if(player.tyreW&&wet<.3&&!rainOn)t='☀ 마른 길 · 비 타이어 · 느려요!';else if(wet>.05)t=(rainOn?'☔ 비 · ':'🌤 그치는 중 · ')+(player.tyreW?'비 타이어':'마른 타이어 · 미끄러워요!');else if(wxEv[0]&&wxEv[0].on)t='☁ 비 예보';}if(e.dataset.s!==t){e.dataset.s=t;e.textContent=t;e.hidden=!t;}e.classList.toggle('warn',(wet>.05&&!player.tyreW)||(player.tyreW&&wet<.3&&!rainOn));}
+  {const e=$('hGh'),d=ghDelta(),t=d==null?(e.dataset.s&&ghLive()?e.dataset.s:''):'👻 유령차 '+(d>=0?'+':'−')+Math.abs(d).toFixed(1)+'초';if(e.dataset.s!==t){e.dataset.s=t;e.textContent=t;e.hidden=!t;e.classList.toggle('slow',d!=null?d>0:e.classList.contains('slow'));}}
   {const e=$('hDmg'),n=state==='race'?(player.dmg|0):0,t=n?'🔧 날개 손상 '+n+' · 최고속 -'+n*3+'% · PIT에서 수리':'';if(e.dataset.s!==t){e.dataset.s=t;e.textContent=t;e.hidden=!t;}}
   const st=standings();$('hPos').textContent='P'+(st.indexOf(player)+1);
   $('hLap').textContent=clamp(player.cross,1,LAPS);
@@ -1290,7 +1305,8 @@ function frame(now){
   render(paused?0:dt);updateHud();updateAudio();
   requestAnimationFrame(frame);
 }
-function optUi(){const w=SAVE.wx||'rand';$('btnWx').textContent='날씨: '+(w==='dry'?'맑음':w==='wet'?'비':'랜덤');$('btnQ').textContent='예선: '+(SAVE.quali!==false?'켜짐':'꺼짐');$('btnHard').textContent='실제 서킷 상대: '+['보통','강함','최강'][hardSel()];}
+function optUi(){const w=SAVE.wx||'rand';$('btnWx').textContent='날씨: '+(w==='dry'?'맑음':w==='wet'?'비':'랜덤');$('btnQ').textContent='예선: '+(SAVE.quali!==false?'켜짐':'꺼짐');$('btnHard').textContent='실제 서킷 상대: '+['보통','강함','최강'][hardSel()];$('btnGh').textContent='유령차: '+(SAVE.ghost!==false?'켜짐':'꺼짐');}
+$('btnGh').addEventListener('click',()=>{SAVE.ghost=SAVE.ghost===false;saveRec(SAVE);optUi();});
 $('btnHard').addEventListener('click',()=>{SAVE.hard=(hardSel()+1)%3;saveRec(SAVE);optUi();});
 $('btnWx').addEventListener('click',()=>{const o=['rand','dry','wet'];SAVE.wx=o[(o.indexOf(SAVE.wx||'rand')+1)%3];saveRec(SAVE);optUi();});
 $('btnQ').addEventListener('click',()=>{SAVE.quali=SAVE.quali===false;saveRec(SAVE);optUi();});optUi();
@@ -1300,7 +1316,7 @@ resize();toAttract();requestAnimationFrame(frame);
 window.__apex={get state(){return state},get player(){return player},get cars(){return cars},get raceTime(){return raceTime},get track(){return T},tracks:TR,
   start(i){if(i!=null){trackSel=i;trkPage=Math.floor(i/PER);}startRace();},page(n){trkPage=n;renderTrackList();},auto(on){autoPilot=!!on;},get drift(){return driftDir},speed(n){speedMul=n;},pit(){togglePit();},nitro(){fireNitro();},
   sim(sec){for(let i=0;i<sec/STEP;i++)step(STEP);},draw(){cineSlow();render(.016);updateHud();},get cine(){return cnOn},get laps(){return LAPS},
-  quali(){startQuali();},beginRace(){beginRace();},wx(m){forceWx=m||'';},setWet(v){wet=v;},setHard(n){SAVE.hard=n;optUi();},get hard(){return hard},get rainOn(){return rainOn},get wxEv(){return wxEv},get fl(){return fl},dmgHit(){dmgHit();},get wet(){return wet},get wxMode(){return wxMode},get qTimes(){return qTimes},get grid(){return gridOverride},
+  quali(){startQuali();},beginRace(){beginRace();},wx(m){forceWx=m||'';},setWet(v){wet=v;},setHard(n){SAVE.hard=n;optUi();},get hard(){return hard},get rainOn(){return rainOn},get wxEv(){return wxEv},get fl(){return fl},dmgHit(){dmgHit();},get ghost(){return gh},ghPos(){return ghAt();},ghDelta(){return ghDelta();},ghTest(v){ghTest=!!v;},ghClear(){try{localStorage.removeItem(ghKey());}catch(e){}gh=null;},get wet(){return wet},get wxMode(){return wxMode},get qTimes(){return qTimes},get grid(){return gridOverride},
   addPoints(n){SAVE.points+=n;saveRec(SAVE);renderWallet();},get save(){return SAVE}};
 })();
 </script>
