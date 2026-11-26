@@ -36,7 +36,10 @@ h1{font-family:var(--f-disp);font-weight:400;font-size:clamp(34px,10vw,46px);lin
 h1 b{font-weight:400;color:var(--tomato)}
 .count{font-family:var(--f-disp);font-size:14px;background:var(--ink);color:var(--ground);padding:6px 12px;border-radius:999px;white-space:nowrap;transform:rotate(3deg)}
 .row{display:grid;gap:12px;min-height:0}
-.games{grid-area:games;grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+.games{grid-area:games;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+.games .tile{grid-column:span 3}.games .tile:nth-child(n+3){grid-column:span 2}
+.games .tile:nth-child(n+3) .label{padding:7px 6px 8px;justify-content:center}.games .tile:nth-child(n+3) .nm{font-size:clamp(12px,3.7vw,18px)}
+.tag.new{background:var(--tomato);color:var(--paper);font-family:var(--f-disp);font-weight:400;font-size:12px;transform:rotate(-5deg)}
 .learn{grid-area:learn;grid-template-columns:repeat(3,minmax(0,1fr))}
 .tile{position:relative;display:block;min-height:0;min-width:0;border:3px solid var(--ink);border-radius:20px;overflow:hidden;background:var(--c,var(--sky));color:var(--ink);text-decoration:none;
   box-shadow:0 6px 0 var(--ink);transition:transform .08s,box-shadow .08s}
@@ -72,7 +75,7 @@ footer{grid-area:foot;text-align:center;margin:0}
 <main>
   <header>
     <div><p class="kicker">MONGFAM · FAMILY ARCADE</p><h1>몽팸<b>게임</b>방</h1></div>
-    <span style="display:flex;align-items:center;gap:8px"><a class="count" href="../" style="transform:rotate(-3deg);text-decoration:none">🏠 홈</a><span class="count">게임 8개</span></span>
+    <span style="display:flex;align-items:center;gap:8px"><a class="count" href="../" style="transform:rotate(-3deg);text-decoration:none">🏠 홈</a><span class="count">게임 9개</span></span>
   </header>
 
   <a class="tile hero" href="games/plane3d.html" style="--c:var(--sky)">
@@ -86,6 +89,7 @@ footer{grid-area:foot;text-align:center;margin:0}
     <a class="tile" href="games/racing.html" style="--c:var(--grass)"><canvas data-t="race"></canvas><span class="label"><span class="nm">레이싱</span></span></a>
     <a class="tile" href="games/puppy.html" style="--c:#ffe9c7"><canvas data-t="puppy"></canvas><span class="label"><span class="nm">멍멍 구조대</span></span></a>
     <a class="tile" href="games/archery.html" style="--c:#8fd0f5"><canvas data-t="archery"></canvas><span class="label"><span class="nm">텐텐 양궁</span></span></a>
+    <a class="tile" href="games/kangaroo.html" style="--c:#ffd9a0"><span class="tag new">NEW</span><canvas data-t="roo"></canvas><span class="label"><span class="nm">캥거루 점프</span></span></a>
   </div>
 
   <div class="row learn">
@@ -154,6 +158,17 @@ const D={
   const cx=w*.58,cy=H*.48,R=Math.max(8,Math.min(H*.4,w*.3));['#fff','#2b2f36','#3d8fe0','#e8483f','#ffd23f'].forEach((c,i)=>{g.fillStyle=c;g.beginPath();g.arc(cx,cy,R*(5-i)/5,0,TAU);g.fill();g.strokeStyle=INK;g.lineWidth=i?1:2.2;g.stroke();});
   const p=(t*.7)%1,ax=cx-R*2.6*(1-Math.min(1,p*1.6)),wob=p>.62?Math.sin((p-.62)*60)*2*(1-p):0;g.strokeStyle=INK;g.lineWidth=3;g.lineCap='round';g.beginPath();g.moveTo(ax-R*1.1,cy+wob);g.lineTo(ax,cy);g.stroke();
   g.fillStyle='#ff5a4d';g.beginPath();g.moveTo(ax-R*1.1,cy+wob);g.lineTo(ax-R*1.35,cy-5+wob);g.lineTo(ax-R*1.35,cy+5+wob);g.closePath();g.fill();},
+ roo(g,w,h,t){const H=h-30,gy=H*.8;const sk=g.createLinearGradient(0,0,0,gy);sk.addColorStop(0,'#7fd0ff');sk.addColorStop(1,'#ffe9b8');g.fillStyle=sk;g.fillRect(0,0,w,h);
+  g.fillStyle='#fff3a8';g.beginPath();g.arc(w*.8,H*.2,Math.min(12,H*.13),0,TAU);g.fill();g.fillStyle='#e9a468';g.beginPath();g.moveTo(w*.42,gy);g.lineTo(w*.5,gy-H*.3);g.lineTo(w*.92,gy-H*.27);g.lineTo(w,gy-H*.12);g.lineTo(w,gy);g.closePath();g.fill();
+  g.fillStyle='#cf5f2f';g.fillRect(0,gy,w,h);g.strokeStyle=INK;g.lineWidth=2.5;g.beginPath();g.moveTo(0,gy);g.lineTo(w,gy);g.stroke();
+  const p=(t*.9)%1,s=Math.max(.3,Math.min(H*.0085,w*.006));
+  g.fillStyle='#a79a8e';g.beginPath();g.moveTo(w*.5,gy);g.quadraticCurveTo(w*.5,gy-34*s,w*.5+22*s,gy-36*s);g.quadraticCurveTo(w*.5+46*s,gy-36*s,w*.5+46*s,gy);g.closePath();g.fill();g.stroke();
+  const y=Math.sin(p*Math.PI)*H*.34,B='#cf8a4e';g.save();g.translate(w*.2+p*w*.5,gy-y);g.scale(s,s);g.rotate((p-.5)*.5);g.lineCap='round';g.lineJoin='round';
+  const fat=(a,wd)=>{for(let k=0;k<2;k++){g.strokeStyle=k?B:INK;g.lineWidth=k?wd:wd+6;g.beginPath();g.moveTo(a[0],a[1]);g.quadraticCurveTo(a[2],a[3],a[4],a[5]);g.stroke();}};
+  const el=(x,y,a,b,r,f)=>{g.beginPath();g.ellipse(x,y,a,b,r,0,TAU);g.fillStyle=f;g.fill();g.strokeStyle=INK;g.lineWidth=3;g.stroke();};
+  fat([-14,-36,-42,-24,-66,-38],9);el(12,-94,5,13,-.28,B);el(22,-95,5,13,.14,B);el(2,-42,19,27,.38,B);g.fillStyle='#f6dcae';g.beginPath();g.ellipse(10,-36,9,15,.3,0,TAU);g.fill();
+  el(20,-74,13,11.5,0,B);el(31,-70,9,7,0,'#f6dcae');g.fillStyle=INK;g.beginPath();g.arc(24,-77,2.8,0,TAU);g.arc(38.5,-72,2.6,0,TAU);g.fill();
+  el(-4,-24,15,13,.2,B);fat([-6,-16,-8,-2,14,4],7);fat([13,-50,24,-42,29,-47],5);g.restore();},
  clock(g,w,h,t){g.fillStyle='#ff9f2e';g.fillRect(0,0,w,h);const H=h-30,cx=w/2,cy=H/2+2,r=Math.max(8,Math.min(H*.42,w*.3));g.fillStyle='#fffaf0';g.strokeStyle=INK;g.lineWidth=3;g.beginPath();g.arc(cx,cy,r,0,TAU);g.fill();g.stroke();
   g.fillStyle=INK;for(let i=0;i<12;i++){const a=i*Math.PI/6;g.beginPath();g.arc(cx+Math.sin(a)*r*.8,cy-Math.cos(a)*r*.8,i%3?1.4:2.4,0,TAU);g.fill();}
   const m=t*.6,hr=m/12;g.lineCap='round';g.lineWidth=4;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.sin(hr)*r*.45,cy-Math.cos(hr)*r*.45);g.stroke();g.strokeStyle='#ff5a4d';g.lineWidth=2.5;g.beginPath();g.moveTo(cx,cy);g.lineTo(cx+Math.sin(m)*r*.72,cy-Math.cos(m)*r*.72);g.stroke();},
