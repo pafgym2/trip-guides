@@ -446,7 +446,7 @@ let coins=[],coinPts=0,coinN=0,trailPts=[],missions=[],passes=0,lastPlace=0,pass
 function zzOn(){return !!((soundOn)&&window.MongFx);}
 function zz(n,k){return zzOn()&&MongFx.sfx(n,k);}
 function cf(k){if(window.MongFx)MongFx.confetti(k);}
-function sfx(f,dur,type,vol){if(!ac||!soundOn)return;try{const o=ac.createOscillator(),g=ac.createGain();o.type=type||'triangle';o.frequency.value=f;g.gain.setValueAtTime(vol||.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+dur);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+dur);}catch(e){}}
+function sfx(f,dur,type,vol){if(!ac||!soundOn)return;if(window.MongFx&&MongFx.tone){MongFx.tone(ac,f,dur,type,vol);return;}try{const o=ac.createOscillator(),g=ac.createGain();o.type=type||'triangle';o.frequency.value=f;g.gain.setValueAtTime(vol||.15,ac.currentTime);g.gain.exponentialRampToValueAtTime(.0001,ac.currentTime+dur);o.connect(g).connect(ac.destination);o.start();o.stop(ac.currentTime+dur);}catch(e){}}
 function cheer(){if(!ac||!soundOn)return;try{const n=ac.sampleRate*2,b=ac.createBuffer(1,n,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*Math.min(1,i/(n*.1))*Math.pow(1-i/n,1.5);const sr=ac.createBufferSource(),f=ac.createBiquadFilter(),g=ac.createGain();f.type='bandpass';f.frequency.value=1100;f.Q.value=.6;g.gain.value=.35;sr.buffer=b;sr.connect(f).connect(g).connect(ac.destination);sr.start();}catch(e){}}
 function misPts(m){return Math.round(30*(m.big?2:1)*PTS_MULT[T.def.diff]/5)*5;}
 function missionPool(){return[

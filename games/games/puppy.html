@@ -122,7 +122,7 @@ function zzOn(){return !!((SAVE.sound)&&window.MongFx);}
 function zz(n,k){return zzOn()&&MongFx.sfx(n,k);}
 function cf(k){if(window.MongFx)MongFx.confetti(k);}
 function audio(){if(!SAVE.sound)return null;try{if(!AC)AC=new(window.AudioContext||window.webkitAudioContext)();if(AC.state==='suspended')AC.resume();}catch(e){AC=null;}return AC;}
-function beep(f,d,type,vol,slide){const a=audio();if(!a)return;try{const o=a.createOscillator(),g=a.createGain();o.type=type||'triangle';o.frequency.setValueAtTime(f,a.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(slide,a.currentTime+d);g.gain.setValueAtTime(vol||.12,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+d);}catch(e){}}
+function beep(f,d,type,vol,slide){const a=audio();if(!a)return;if(window.MongFx&&MongFx.tone){MongFx.tone(a,f,d,type,vol,slide);return;}try{const o=a.createOscillator(),g=a.createGain();o.type=type||'triangle';o.frequency.setValueAtTime(f,a.currentTime);if(slide)o.frequency.exponentialRampToValueAtTime(slide,a.currentTime+d);g.gain.setValueAtTime(vol||.12,a.currentTime);g.gain.exponentialRampToValueAtTime(.0001,a.currentTime+d);o.connect(g).connect(a.destination);o.start();o.stop(a.currentTime+d);}catch(e){}}
 function bark(){beep(520,.09,'square',.1,300);setTimeout(()=>beep(620,.11,'square',.1,340),120);}
 /* ---------- 화면 크기 ---------- */
 function layout(){DPR=Math.min(2,window.devicePixelRatio||1);VW=Math.max(200,innerWidth);VH=Math.max(300,innerHeight);cv.width=VW*DPR;cv.height=VH*DPR;

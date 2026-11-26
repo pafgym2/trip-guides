@@ -1,51 +1,61 @@
 /* 몽팸게임방 공용 효과: 효과음 + 색종이
-   - ZzFX (ZzFXMicro v1.4.0) by Frank Force — MIT License — github.com/KilledByAPixel/ZzFX
+   - 효과음: 직접 만든 부드러운 신스(종·마림바 느낌, 잔향 포함) — 2026-11-26, 8비트 소리를 대체
    - canvas-confetti 1.9.3 by Kiril Vatev — ISC License — github.com/catdad/canvas-confetti */
 (function(){
-
-let // ZzFXMicro - Zuper Zmall Zound Zynth - v1.4.0 by Frank Force
-zzfxV=.3,               // volume
-zzfxX=null,             // audio context
-zzfx=                   // play sound
-(p=1,k=.05,b=220,e=0,r=0,t=.1,q=0,D=1,u=0,y=0,v=0,z=0,l=0,E=0,A=0,F=0,c=0,w=1,m=0,B=0
-,N=0)=>{let M=Math,d=2*M.PI,R=44100,G=u*=500*d/R/R,C=b*=(1-k+2*k*M.random(k=[]))*d/R,
-g=0,H=0,a=0,n=1,I=0,J=0,f=0,h=N<0?-1:1,x=d*h*N*2/R,L=M.cos(x),Z=M.sin,K=Z(x)/4,O=1+K,
-X=-2*L/O,Y=(1-K)/O,P=(1+h*L)/2/O,Q=-(h+L)/O,S=P,T=0,U=0,V=0,W=0;e=R*e+9;m*=R;r*=R;t*=
-R;c*=R;y*=500*d/R**3;A*=d/R;v*=d/R;z*=R;l=R*l|0;p*=zzfxV;for(h=e+m+r+t+c|0;a<h;k[a++]
-=f*p)++J%(100*F|0)||(f=q?1<q?2<q?3<q?4<q?(g/d%1<D/2)*2-1:Z(g**3):M.max(M.min(M.tan(g)
-,1),-1):1-(2*g/d%2+2)%2:1-4*M.abs(M.round(g/d)-g/d):Z(g),f=(l?1-B+B*Z(d*a/l):1)*(4<q?
-f:(f<0?-1:1)*M.abs(f)**D)*(a<e?a/e:a<e+m?1-(a-e)/m*(1-w):a<e+m+r?w:a<h-c?(h-a-c)/t*w:
-0),f=c?f/2+(c>a?0:(a<h-c?1:(h-a)/c)*k[a-c|0]/2/p):f,N?f=W=S*T+Q*(T=U)+P*(U=f)-Y*V-X*(
-V=W):0),x=(b+=u+=y)*M.cos(A*H++),g+=x+x*E*(a*a*d%2-1),n&&++n>z&&(b+=v,C+=v,n=0),!l||++I%l
-||(b=C,u=G,n=n||1);X=zzfxX,p=X.createBuffer(1,h,R);p.getChannelData(0).set(k);b=X.
-createBufferSource();b.buffer=p;b.connect(X.destination);b.start()}
-
+var X=null;
+function ready(){try{if(!X)X=new(window.AudioContext||window.webkitAudioContext)();if(X.state==='suspended'&&!X.startRendering){var p=X.resume();if(p&&p.catch)p.catch(function(){});}return true;}catch(e){return false;}}
+/* 소리길: 모든 소리 → 압축기 → 스피커, 일부는 잔향으로도 보냄 */
+function bus(c){if(c.__mf)return c.__mf;
+  var out=c.createGain(),comp=c.createDynamicsCompressor(),wet=c.createGain(),cv=c.createConvolver();
+  out.gain.value=.9;comp.threshold.value=-14;comp.knee.value=18;comp.ratio.value=4;comp.attack.value=.004;comp.release.value=.18;
+  var n=Math.floor(c.sampleRate*1.1),ir=c.createBuffer(2,n,c.sampleRate);
+  for(var ch=0;ch<2;ch++){var d=ir.getChannelData(ch),lp=0;for(var i=0;i<n;i++){var w=(Math.random()*2-1)*Math.pow(1-i/n,3.2);lp+=(w-lp)*.35;d[i]=lp;}}
+  cv.buffer=ir;wet.gain.value=.22;out.connect(comp);wet.connect(cv);cv.connect(comp);comp.connect(c.destination);
+  var nb=c.createBuffer(1,Math.floor(c.sampleRate*.6),c.sampleRate),nd=nb.getChannelData(0);for(var j=0;j<nd.length;j++)nd[j]=Math.random()*2-1;
+  return c.__mf={out:out,wet:wet,noise:nb};}
+/* 음 하나: o={f,to,d,type,vol,at,bell,cut,dry} */
+function voice(c,o){var b=bus(c),t=c.currentTime+(o.at||0)+.005,d=Math.max(.03,o.d||.2),v=o.vol==null?.2:o.vol,f=Math.max(30,o.f),
+    g=c.createGain(),lp=c.createBiquadFilter();lp.type='lowpass';lp.frequency.value=Math.min(o.cut||f*6,11000);lp.Q.value=.4;
+  g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+Math.min(.012,d*.25));g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  lp.connect(g);g.connect(b.out);if(!o.dry)g.connect(b.wet);
+  function osc(type,mul,lvl,cents,dd){var s=c.createOscillator(),k=c.createGain();s.type=type;s.frequency.setValueAtTime(f*mul,t);if(cents)s.detune.value=cents;
+    if(o.to)s.frequency.exponentialRampToValueAtTime(Math.max(30,o.to)*mul,t+d*(dd||1));
+    k.gain.setValueAtTime(lvl,t);if(dd&&dd<1)k.gain.exponentialRampToValueAtTime(.0001,t+d*dd);s.connect(k);k.connect(lp);s.start(t);s.stop(t+d+.03);}
+  var ty=o.type||'sine';osc(ty,1,1,0);osc(ty==='sine'?'triangle':'sine',1,.35,7);
+  if(o.bell){osc('sine',2,.28,0,.6);osc('sine',3.01,.12,0,.35);osc('sine',4.2,.05,0,.2);}}
+/* 숨소리 같은 잡음: o={d,vol,f,to,q,at,type} */
+function noise(c,o){var b=bus(c),t=c.currentTime+(o.at||0)+.005,d=o.d||.15,s=c.createBufferSource(),fl=c.createBiquadFilter(),g=c.createGain();
+  s.buffer=b.noise;fl.type=o.type||'bandpass';fl.Q.value=o.q||.8;fl.frequency.setValueAtTime(o.f||1200,t);if(o.to)fl.frequency.exponentialRampToValueAtTime(o.to,t+d);
+  g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(o.vol||.2,t+Math.min(.015,d*.3));g.gain.exponentialRampToValueAtTime(.0001,t+d);
+  s.connect(fl);fl.connect(g);g.connect(b.out);g.connect(b.wet);s.start(t);s.stop(t+d+.03);}
+var SC=[523.25,587.33,659.25,783.99,880,1046.5,1174.66,1318.51,1567.98];
 var P={
- coin:[1,0,1675,0,.06,.24,1,1.82,0,0,837,.06],
- buy:[1,0,1200,0,.04,.2,1,1.8,0,0,400,.05],
- power:[1,0,539,0,.04,.29,1,1.92,0,0,567,.02,.02,0,0,0,.04],
- pass:[1,0,880,0,.05,.18,0,1.6,12],
- bull:[1,0,1318,0,.08,.3,1,1.8,0,0,440,.08],
- hit:[1.2,.05,333,.01,0,.5,4,1.9,0,0,0,0,0,.5,0,.6],
- thud:[1,.05,120,0,.02,.12,1,1.5,-6,0,0,0,0,.3],
- tick:[.6,0,900,0,.01,.03,1,1],
- pop:[1,.05,600,0,.01,.08,4,2,-20,0,0,0,0,1],
- shoot:[.8,0,500,0,.02,.15,3,1.5,-15,0,0,0,0,.4],
- lose:[1,0,300,0,.1,.5,2,1.5,-4,0,0,0,0,0,0,.1],
- deny:[.8,0,220,0,.03,.12,2,1.5,-3]
+ coin:function(c){voice(c,{f:987.77,d:.22,vol:.17,bell:1});voice(c,{f:1318.51,d:.42,vol:.19,bell:1,at:.075});},
+ buy:function(c){[1046.5,1318.51,1567.98].forEach(function(f,i){voice(c,{f:f,d:.34,vol:.16,bell:1,at:i*.06});});},
+ power:function(c){voice(c,{f:440,to:1318.51,d:.3,vol:.14,type:'triangle'});voice(c,{f:1318.51,d:.5,vol:.17,bell:1,at:.26});voice(c,{f:1975.53,d:.5,vol:.08,bell:1,at:.3});},
+ pass:function(c){voice(c,{f:880,d:.2,vol:.24,type:'triangle',bell:1});voice(c,{f:1318.51,d:.22,vol:.11,at:.06});},
+ bull:function(c){[1318.51,1661.22,1975.53].forEach(function(f,i){voice(c,{f:f,d:.7,vol:.16-i*.03,bell:1,at:i*.045});});},
+ hit:function(c){noise(c,{d:.28,vol:.3,f:1400,to:260,type:'lowpass',q:.5});voice(c,{f:190,to:55,d:.28,vol:.3,cut:700});},
+ thud:function(c){voice(c,{f:150,to:52,d:.17,vol:.32,cut:500,dry:1});noise(c,{d:.07,vol:.14,f:500,type:'lowpass',q:.4});},
+ tick:function(c){voice(c,{f:1244.5,d:.05,vol:.15,type:'triangle',dry:1});},
+ pop:function(c){voice(c,{f:420,to:980,d:.1,vol:.28});},
+ shoot:function(c){noise(c,{d:.2,vol:.42,f:3200,to:520,q:1.1});voice(c,{f:640,to:210,d:.16,vol:.17,type:'triangle'});},
+ lose:function(c){[392,311.13,261.63].forEach(function(f,i){voice(c,{f:f,d:.42,vol:.17,type:'triangle',at:i*.17,cut:f*4});});},
+ deny:function(c){voice(c,{f:233.08,d:.13,vol:.18,type:'triangle',cut:900});voice(c,{f:196,d:.17,vol:.18,type:'triangle',cut:900,at:.09});},
+ win:function(c){[523.25,659.25,783.99,1046.5].forEach(function(f,i){voice(c,{f:f,d:.3,vol:.17,bell:1,at:i*.11});});
+   [1046.5,1318.51,1567.98].forEach(function(f){voice(c,{f:f,d:1,vol:.1,bell:1,at:.46});});},
+ clear:function(c,k){var f=SC[Math.max(0,Math.min(k|0,8))];voice(c,{f:f,d:.3,vol:.26,bell:1});voice(c,{f:f*1.5,d:.34,vol:.11,bell:1,at:.05});}
 };
-function ready(){try{if(!zzfxX)zzfxX=new(window.AudioContext||window.webkitAudioContext)();if(zzfxX.state==='suspended')zzfxX.resume();return true;}catch(e){return false;}}
-function play(a){try{zzfx.apply(null,a);}catch(e){}}
 window.MongFx={
  presets:P,
- sfx:function(n,k){if(!ready())return false;k=k||0;
-  if(n==='win'){[523,659,784,1047].forEach(function(f,i){setTimeout(function(){play([1,0,f,0,i===3?.16:.07,.22,1,1.5]);},i*120);});return true;}
-  if(n==='clear'){play([1,0,700+Math.min(k,8)*90,0,.05,.25,0,1.5,8,0,200,.05]);return true;}
-  if(!P[n])return false;play(P[n]);return true;},
+ sfx:function(n,k){if(!P[n]||!ready())return false;try{P[n](X,k||0);}catch(e){return false;}return true;},
+ /* 게임 안의 짧은 삑 소리를 부드럽게: 네모·톱니 파형은 둥글게 깎아요 */
+ tone:function(c,f,d,type,vol,slide){try{var hard=type==='square'||type==='sawtooth';d=Math.max(.03,d||.1);
+   voice(c,{f:f,to:slide||0,d:d*1.25+.05,vol:Math.min(.36,(vol||.14)*(hard?2:1.6)),type:hard?'triangle':(type||'sine'),cut:hard?Math.max(500,f*3.2):Math.max(900,f*6),bell:!slide&&f>=500&&d>=.09,dry:d<.07});}catch(e){}},
  confetti:function(kind){try{if(!window.confetti)return;var C=window.confetti,o={disableForReducedMotion:true,zIndex:200};
   if(kind==='win'){C(Object.assign({particleCount:70,angle:60,spread:65,origin:{x:0,y:.7}},o));C(Object.assign({particleCount:70,angle:120,spread:65,origin:{x:1,y:.7}},o));setTimeout(function(){C(Object.assign({particleCount:90,spread:110,startVelocity:38,origin:{y:.45}},o));},260);}
   else C(Object.assign({particleCount:45,spread:70,startVelocity:28,origin:{y:.32}},o));}catch(e){}},
- _set:function(x){zzfxX=x;}
+ _set:function(x){X=x;}
 };
 })();
 /**
