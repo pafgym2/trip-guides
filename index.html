@@ -101,8 +101,7 @@ h2.sub{font-family:var(--f-disp);font-weight:400;font-size:18px;margin:22px 0 10
 /* 새 페이지를 만들면 해당 카테고리의 items에 한 줄만 추가하면 됩니다. soon:true 는 '준비 중' 표시(링크 없음). */
 var CATS=[
  {id:'travel',em:'✈️',name:'여행',c:'--c-travel',lede:'2013년부터 다녀온 곳이에요. 누르면 내용이 열려요.',items:[],trips:true},
- {id:'game',em:'🎮',name:'게임',c:'--c-game',lede:'하루 티켓으로 하는 우리 집 게임방이에요.',items:[
-   {em:'🕹️',name:'몽팸게임방',ds:'전체 보기 · 티켓 · 성적표',top:true,href:'./games/'},
+ {id:'game',em:'🎮',name:'게임',c:'--c-game',href:'./games/',count:10,lede:'하루 티켓으로 하는 우리 집 게임방이에요.',items:[
    {em:'🛩️',name:'꼬마 조종사 3D',ds:'하늘에서 링 통과',href:'./games/games/plane3d.html'},
    {em:'⛸️',name:'아이스 대시',ds:'쇼트트랙 · 메달',href:'./games/games/skate.html'},
    {em:'🏎️',name:'레이싱',ds:'세계 서킷 50여 개',href:'./games/games/racing.html'},
@@ -141,10 +140,10 @@ var TRIPS=[
 ];
 var $=function(id){return document.getElementById(id);};
 function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-function live(c){return c.trips?TRIPS.length:c.items.filter(function(i){return !i.soon;}).length;}
+function live(c){return c.count?c.count:c.trips?TRIPS.length:c.items.filter(function(i){return !i.soon;}).length;}
 function renderHome(){var h=new Date().getHours();$('hello').textContent=(h<11?'좋은 아침이에요.':h<18?'안녕하세요.':'좋은 저녁이에요.')+' 어디로 갈까요?';
   $('cats').innerHTML=CATS.map(function(c,i){var n=live(c),odd=CATS.length%2===1&&i===CATS.length-1;
-    return '<a class="cat'+(n?'':' empty')+(odd?' wide':'')+'" href="#'+c.id+'" style="--c:var('+c.c+')"><span class="em">'+c.em+'</span><span><span class="nm" style="display:block">'+esc(c.name)+'</span><span class="ct" style="display:block">'+(n?n+(c.trips?'번의 여행':'개'):'준비 중')+'</span></span></a>';}).join('');}
+    return '<a class="cat'+(n?'':' empty')+(odd?' wide':'')+'" href="'+(c.href||'#'+c.id)+'" style="--c:var('+c.c+')"><span class="em">'+c.em+'</span><span><span class="nm" style="display:block">'+esc(c.name)+'</span><span class="ct" style="display:block">'+(n?n+(c.trips?'번의 여행':'개'):'준비 중')+'</span></span></a>';}).join('');}
 function renderTrips(c){var h='',yr=0,first=TRIPS[0].y,last=TRIPS[TRIPS.length-1].y;
   h+='<p class="tsum">'+first+' — '+last+' · '+TRIPS.length+'번의 여행 · 가이드 '+TRIPS.filter(function(t){return t.href;}).length+'개</p><ol class="tl">';
   TRIPS.forEach(function(t,i){if(t.y!==yr){yr=t.y;h+='<li class="yr"><span>'+yr+'</span></li>';}
@@ -163,6 +162,7 @@ function renderCat(c){$('cTitle').textContent=c.em+' '+c.name;$('cLede').textCon
     :'<div class="item soon"><span class="em">🌱</span><span class="tx"><span class="nm" style="display:block">아직 비어 있어요</span><span class="ds" style="display:block">새로 만들면 여기에 생겨요.</span></span></div>';}
 function route(){var id=location.hash.replace('#',''),c=null,back=document.querySelector('.back');for(var i=0;i<CATS.length;i++)if(CATS[i].id===id)c=CATS[i];
   var m=/^t(\d+)$/.exec(id);if(m&&TRIPS[+m[1]]){$('home').hidden=true;$('cat').hidden=false;back.setAttribute('href','#travel');back.textContent='← 여행 연혁';renderTrip(+m[1]);document.title=TRIPS[+m[1]].name+' · 몽치치 패밀리';scrollTo(0,0);return;}
+  if(c&&c.href){location.replace(c.href);return;}
   back.setAttribute('href','#');back.textContent='← 처음으로';
   $('home').hidden=!!c;$('cat').hidden=!c;if(c){renderCat(c);document.title=c.name+' · 몽치치 패밀리';}else{renderHome();document.title='몽치치 패밀리';}scrollTo(0,0);}
 addEventListener('hashchange',route);route();
