@@ -50,6 +50,22 @@ h1 b{font-weight:400;color:#ff6b57}
 .item .go{flex:none;font-family:var(--f-disp);font-size:18px}
 .item.soon{background:transparent;border-style:dashed;box-shadow:none;color:var(--ink2)}
 .item.soon .em{background:var(--c-etc)}
+.chead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.chead .back{margin-bottom:0;font-size:15px;padding:5px 13px;box-shadow:0 3px 0 var(--line)}
+.chead h1{font-size:clamp(26px,7.6vw,32px);margin:0}
+#cat .lede{margin:0 0 12px;font-size:13.5px}
+/* 카테고리 화면: 2칸 타일로 한 화면에 다 보이게(줄 수에 맞춰 타일 높이를 자동으로 줄임) */
+.list.tiles{grid-template-columns:1fr 1fr;gap:10px;grid-auto-rows:clamp(74px,calc((100dvh - 178px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px) - (var(--rows) - 1)*10px)/var(--rows)),128px)}
+.tiles .item{flex-direction:column;justify-content:center;gap:5px;padding:8px 8px 7px;text-align:center;border-width:2.5px;border-radius:18px;box-shadow:0 4px 0 var(--line);min-height:0;overflow:hidden}
+.tiles .item .em{width:44px;height:44px;font-size:26px;border-width:2.5px;border-radius:13px}
+.tiles .item .tx{flex:none;width:100%}
+.tiles .item .nm{font-size:17px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tiles .item .ds{font-size:11.5px;line-height:1.25;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tiles .item .go{display:none}
+.tiles .item.top{background:var(--c)}.tiles .item.top .em{background:var(--paper)}.tiles .item.top .ds{color:var(--ink);opacity:.75}
+.tiles .item.solo{grid-column:1/-1;flex-direction:row;text-align:left;gap:12px;padding:8px 14px}.tiles .item.solo .tx{flex:1;width:auto}
+@media (max-height:640px){.tiles .item .em{width:36px;height:36px;font-size:21px;border-radius:11px}.tiles .item .ds{display:none}.tiles .item{gap:4px}}
+@media (min-height:641px) and (max-height:720px){.tiles .item .em{width:38px;height:38px;font-size:22px}}
 .foot{font-size:12px;color:var(--ink2);text-align:center;margin:18px 0 0;line-height:1.6}
 .tsum{font-size:13px;font-weight:500;color:var(--ink2);margin:-6px 0 12px}
 .tl{list-style:none;margin:0;padding:0 0 0 14px;border-left:3px solid var(--line)}
@@ -76,8 +92,7 @@ h2.sub{font-family:var(--f-disp);font-weight:400;font-size:18px;margin:22px 0 10
     <p class="foot">인터넷이 될 때 한 번 열어 두면 인터넷 없이도 열려요.<br>라이프·일상에 적은 내용은 이 기기에만 저장돼요. <a href="./fam/" style="color:inherit">설정 · 백업</a></p>
   </section>
   <section id="cat" hidden>
-    <a class="back" href="#">← 처음으로</a>
-    <h1 id="cTitle"></h1>
+    <div class="chead"><a class="back" href="#">← 처음으로</a><h1 id="cTitle"></h1></div>
     <p class="lede" id="cLede"></p>
     <div class="list" id="items"></div>
   </section>
@@ -87,29 +102,29 @@ h2.sub{font-family:var(--f-disp);font-weight:400;font-size:18px;margin:22px 0 10
 var CATS=[
  {id:'travel',em:'✈️',name:'여행',c:'--c-travel',lede:'2013년부터 다녀온 곳이에요. 누르면 내용이 열려요.',items:[],trips:true},
  {id:'game',em:'🎮',name:'게임',c:'--c-game',lede:'하루 티켓으로 하는 우리 집 게임방이에요.',items:[
-   {em:'🕹️',name:'몽팸게임방',ds:'게임 7개 모두 보기 · 티켓과 성적표',href:'./games/'},
-   {em:'🛩️',name:'꼬마 조종사 3D',ds:'입체 하늘에서 링을 통과해요',href:'./games/games/plane3d.html'},
-   {em:'⛸️',name:'아이스 대시',ds:'쇼트트랙 · 별 모으기 · 메달',href:'./games/games/skate.html'},
-   {em:'🏎️',name:'레이싱',ds:'세계 서킷 50여 개 · 업그레이드',href:'./games/games/racing.html'},
-   {em:'🐶',name:'멍멍 구조대',ds:'강아지 블록으로 줄을 채워 강아지를 구해요',href:'./games/games/puppy.html'},
-   {em:'🏹',name:'텐텐 양궁',ds:'바람을 읽고 10점을 노려요 · 20m부터 70m까지',href:'./games/games/archery.html'},
-   {em:'🦘',name:'캥거루 점프',ds:'장애물을 뛰어넘으며 멀리 달려요',href:'./games/games/kangaroo.html'},
-   {em:'🎣',name:'세계 바다낚시',ds:'세계 여섯 바다에서 물고기를 낚아 도감을 채워요',href:'./games/games/fishing.html'}]},
+   {em:'🕹️',name:'몽팸게임방',ds:'전체 보기 · 티켓 · 성적표',top:true,href:'./games/'},
+   {em:'🛩️',name:'꼬마 조종사 3D',ds:'하늘에서 링 통과',href:'./games/games/plane3d.html'},
+   {em:'⛸️',name:'아이스 대시',ds:'쇼트트랙 · 메달',href:'./games/games/skate.html'},
+   {em:'🏎️',name:'레이싱',ds:'세계 서킷 50여 개',href:'./games/games/racing.html'},
+   {em:'🐶',name:'멍멍 구조대',ds:'강아지 블록 퍼즐',href:'./games/games/puppy.html'},
+   {em:'🏹',name:'텐텐 양궁',ds:'바람 읽고 10점',href:'./games/games/archery.html'},
+   {em:'🦘',name:'캥거루 점프',ds:'장애물 뛰어넘기',href:'./games/games/kangaroo.html'},
+   {em:'🎣',name:'세계 바다낚시',ds:'여섯 바다 · 도감',href:'./games/games/fishing.html'}]},
  {id:'edu',em:'📚',name:'교육',c:'--c-edu',lede:'놀면서 배우는 것들이에요. 티켓 없이 할 수 있어요.',items:[
-   {em:'🕒',name:'시계 놀이',ds:'바늘시계 읽기 · 퀴즈와 바늘 맞추기',href:'./clock/'},
-   {em:'🔤',name:'한글 놀이',ds:'글자 만들기 · 듣고 찾기 · 따라 쓰기',href:'./hangul/'},
-   {em:'🗣️',name:'영어 연습',ds:'화상영어 스크립트 · 매일 한 장',href:'../dayoon-english/'},
-   {em:'📋',name:'코치 퀴즈 · 성적표',ds:'게임방 첫 화면 아래 버튼에서 열어요',href:'./games/'}]},
+   {em:'🕒',name:'시계 놀이',ds:'바늘시계 읽기 퀴즈',href:'./clock/'},
+   {em:'🔤',name:'한글 놀이',ds:'글자 만들기 · 쓰기',href:'./hangul/'},
+   {em:'🗣️',name:'영어 연습',ds:'매일 한 장',href:'../dayoon-english/'},
+   {em:'📋',name:'코치 퀴즈',ds:'성적표 · 게임방에서',href:'./games/'}]},
  {id:'life',em:'🏡',name:'라이프',c:'--c-life',lede:'집에서 자주 쓰는 도구예요.',items:[
-   {em:'🗓️',name:'가족 일정표',ds:'이번 주 누가 어디 가는지 · 매주 반복 일정',href:'./life/schedule.html'},
-   {em:'🧹',name:'집안일 · 용돈 보드',ds:'집안일을 하면 별 · 용돈이나 게임 티켓으로',href:'./life/chores.html'},
-   {em:'🧳',name:'여행 짐 체크',ds:'국내용 · 해외용 준비물',href:'./life/pack.html'},
-   {em:'🍽️',name:'주말 외식 장소',ds:'가본 곳과 안 가본 곳 · 어디 갈까 뽑기',href:'./life/eatout.html'}]},
+   {em:'🗓️',name:'가족 일정표',ds:'이번 주 누가 어디',href:'./life/schedule.html'},
+   {em:'🧹',name:'집안일 보드',ds:'별 모아 용돈 · 티켓',href:'./life/chores.html'},
+   {em:'🧳',name:'여행 짐 체크',ds:'국내 · 해외 준비물',href:'./life/pack.html'},
+   {em:'🍽️',name:'주말 외식 장소',ds:'어디 갈까 뽑기',href:'./life/eatout.html'}]},
  {id:'daily',em:'📷',name:'일상',c:'--c-daily',lede:'하루하루 쌓이는 기록이에요.',items:[
-   {em:'✏️',name:'한 줄 일기장',ds:'가족 모두 오늘의 한 줄',href:'./daily/diary.html'},
-   {em:'⛸️',name:'스케이트 기록장',ds:'대회·연습 기록과 종목별 최고 기록',href:'./daily/skate.html'},
-   {em:'📏',name:'키 · 몸무게 기록장',ds:'날짜별 기록과 그래프',href:'./daily/growth.html'},
-   {em:'📚',name:'읽은 책 목록',ds:'책 제목 · 별점 · 한 줄 느낌',href:'./daily/books.html'}]}
+   {em:'✏️',name:'한 줄 일기장',ds:'오늘의 한 줄',href:'./daily/diary.html'},
+   {em:'⛸️',name:'스케이트 기록장',ds:'대회 · 최고 기록',href:'./daily/skate.html'},
+   {em:'📏',name:'키 · 몸무게',ds:'기록과 그래프',href:'./daily/growth.html'},
+   {em:'📚',name:'읽은 책 목록',ds:'별점 · 한 줄 느낌',href:'./daily/books.html'}]}
 ];
 /* 여행 연혁: 가이드가 있으면 href, 없으면 눌렀을 때 '기록 준비 중' 화면. note 는 그 화면에 보여 줄 한 줄 메모. */
 var TRIPS=[
@@ -135,15 +150,16 @@ function renderTrips(c){var h='',yr=0,first=TRIPS[0].y,last=TRIPS[TRIPS.length-1
   TRIPS.forEach(function(t,i){if(t.y!==yr){yr=t.y;h+='<li class="yr"><span>'+yr+'</span></li>';}
     h+='<li><a class="trip'+(t.href?' has':'')+'" href="'+(t.href||'#t'+i)+'"><span class="em">'+t.em+'</span><span class="tx"><span class="nm" style="display:block">'+esc(t.name)+'</span>'+(t.ds?'<span class="ds" style="display:block">'+esc(t.ds)+'</span>':'')+'</span><span class="go">'+(t.href?'가이드 →':'→')+'</span></a></li>';});
   h+='</ol>';
-  $('items').innerHTML=h;}
+  $('items').className='list';$('items').innerHTML=h;}
 function renderTrip(i){var t=TRIPS[i],n=0;TRIPS.forEach(function(x,j){if(j<=i)n++;});
   $('cTitle').textContent=t.em+' '+t.name;$('cLede').textContent=t.y+'년 · '+n+'번째 여행';
-  $('items').innerHTML='<div class="item soon"><span class="em">📝</span><span class="tx"><span class="nm" style="display:block">'+(t.note?esc(t.note):'아직 기록이 없어요')+'</span><span class="ds" style="display:block">사진이나 메모를 모으면 여기에 일정, 다녀온 곳, 기억에 남는 일을 채워 넣어요.</span></span></div>'+
+  $('items').className='list';$('items').innerHTML='<div class="item soon"><span class="em">📝</span><span class="tx"><span class="nm" style="display:block">'+(t.note?esc(t.note):'아직 기록이 없어요')+'</span><span class="ds" style="display:block">사진이나 메모를 모으면 여기에 일정, 다녀온 곳, 기억에 남는 일을 채워 넣어요.</span></span></div>'+
     (i>0?'<a class="item" href="'+(TRIPS[i-1].href||'#t'+(i-1))+'"><span class="em">'+TRIPS[i-1].em+'</span><span class="tx"><span class="ds" style="display:block">이전 여행 · '+TRIPS[i-1].y+'</span><span class="nm" style="display:block">'+esc(TRIPS[i-1].name)+'</span></span><span class="go">←</span></a>':'')+
     (i<TRIPS.length-1?'<a class="item" href="'+(TRIPS[i+1].href||'#t'+(i+1))+'"><span class="em">'+TRIPS[i+1].em+'</span><span class="tx"><span class="ds" style="display:block">다음 여행 · '+TRIPS[i+1].y+'</span><span class="nm" style="display:block">'+esc(TRIPS[i+1].name)+'</span></span><span class="go">→</span></a>':'');}
 function renderCat(c){$('cTitle').textContent=c.em+' '+c.name;$('cLede').textContent=c.lede;if(c.trips){renderTrips(c);return;}
-  $('items').innerHTML=c.items.length?c.items.map(function(i){var inner='<span class="em">'+i.em+'</span><span class="tx"><span class="nm" style="display:block">'+esc(i.name)+'</span><span class="ds" style="display:block">'+esc(i.ds)+'</span></span>';
-    return i.soon?'<div class="item soon" style="--c:var('+c.c+')">'+inner+'<span class="go" style="font-size:13px">준비 중</span></div>':'<a class="item" href="'+i.href+'" style="--c:var('+c.c+')">'+inner+'<span class="go">→</span></a>';}).join('')
+  var n=c.items.length,box=$('items');box.className='list tiles';box.style.setProperty('--rows',Math.max(1,Math.ceil(n/2)));
+  $('items').innerHTML=c.items.length?c.items.map(function(i,k){var cls=(i.top?' top':'')+(n%2===1&&k===n-1?' solo':'');var inner='<span class="em">'+i.em+'</span><span class="tx"><span class="nm" style="display:block">'+esc(i.name)+'</span><span class="ds" style="display:block">'+esc(i.ds)+'</span></span>';
+    return i.soon?'<div class="item soon'+cls+'" style="--c:var('+c.c+')">'+inner+'<span class="go" style="font-size:13px">준비 중</span></div>':'<a class="item'+cls+'" href="'+i.href+'" style="--c:var('+c.c+')">'+inner+'<span class="go">→</span></a>';}).join('')
     :'<div class="item soon"><span class="em">🌱</span><span class="tx"><span class="nm" style="display:block">아직 비어 있어요</span><span class="ds" style="display:block">새로 만들면 여기에 생겨요.</span></span></div>';}
 function route(){var id=location.hash.replace('#',''),c=null,back=document.querySelector('.back');for(var i=0;i<CATS.length;i++)if(CATS[i].id===id)c=CATS[i];
   var m=/^t(\d+)$/.exec(id);if(m&&TRIPS[+m[1]]){$('home').hidden=true;$('cat').hidden=false;back.setAttribute('href','#travel');back.textContent='← 여행 연혁';renderTrip(+m[1]);document.title=TRIPS[+m[1]].name+' · 몽치치 패밀리';scrollTo(0,0);return;}
