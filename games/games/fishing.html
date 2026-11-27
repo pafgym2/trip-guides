@@ -121,6 +121,7 @@ button{font:inherit;color:inherit;cursor:pointer;touch-action:manipulation}
     </div>
     <p id="cNote" style="font-weight:700"></p>
     <button class="big" id="btnNext">계속 낚기</button>
+    <button class="big alt" id="btnCatchHome">처음 화면</button>
   </div>
 </div>
 
@@ -274,7 +275,7 @@ function land(){const sp=fish.sp,d=SAVE.dex[sp.id]||{n:0,max:0},isNew=!d.n,isRec
   if(sp.type==='s'||sp.type==='c'){ink=1;noise(.3,.2,500);}
   $('cName').textContent=sp.name;$('cLen').textContent=fish.size+'cm';$('cKg').textContent=fmtKg(fish.kg);$('cCoin').textContent='+'+coin;$('cNew').hidden=!isNew;$('cRec').hidden=!isRec;
   $('cNote').textContent=(F.perfect?'완벽한 챔질 · ':'')+ZONE[sp.zone]+' · '+RIGS[sp.rig.indexOf(Math.max(...sp.rig))].name+(isNew?' · 첫 손님 보너스 ×1.5':'');
-  $('btnNext').textContent=baits>0?'계속 낚기 (미끼 '+baits+'개)':'오늘 결과 보기';
+  $('btnNext').textContent=baits>0?'계속 낚기 (미끼 '+baits+'개)':'오늘 결과 보기';homeArm=0;$('btnCatchHome').textContent='처음 화면';
   drawThumb($('cardCv'),sp,false,.8);state='catch';show();(zz(isNew||fish.k>.7?'win':'pass')||beep(880,.3,'triangle',.12));if(isNew||fish.k>.7)cf('burst');F=null;}
 const fmtKg=k=>k<1?Math.round(k*1000)+'g':k<10?k.toFixed(1)+'kg':Math.round(k)+'kg';
 function endTrip(){state='trip';const cs=tripLog.filter(e=>!e.x);$('tN').textContent=cs.length;const big=cs.slice().sort((a,b)=>b.kg-a.kg)[0];$('tBig').textContent=big?big.size+'cm':'-';$('tCoin').textContent='+'+tripCoins;
@@ -501,6 +502,7 @@ let dexFrom='menu';
 $('btnDex').onclick=()=>openDex('menu');$('btnMapDex').onclick=()=>openDex('map');$('btnDexBack').onclick=()=>{if(dexFrom==='map')openMap();else{state='menu';show();}};
 $('btnStart').onclick=()=>{audio();openMap();};$('btnMapBack').onclick=()=>{state='menu';show();};
 $('btnNext').onclick=()=>{state='play';toAim();if(state==='play')show();};
+let homeArm=0;$('btnCatchHome').onclick=()=>{if(baits>0&&!homeArm){homeArm=1;$('btnCatchHome').textContent='미끼 '+baits+'개 남았어요 · 한 번 더 누르면 나가요';return;}homeArm=0;state='menu';show();};
 $('btnAgain').onclick=()=>startTrip();$('btnToMap').onclick=openMap;
 $('btnPause').onclick=()=>{if(state==='play'){state='pause';held=false;show();}};$('btnResume').onclick=()=>{state='play';show();};$('btnQuit').onclick=()=>{endTrip();};
 function sndUi(){$('btnSound').textContent=SAVE.sound?'🔊':'🔇';}$('btnSound').onclick=()=>{SAVE.sound=!SAVE.sound;save();sndUi();};sndUi();
