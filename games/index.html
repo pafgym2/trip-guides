@@ -36,8 +36,8 @@ h1{font-family:var(--f-disp);font-weight:400;font-size:clamp(34px,10vw,46px);lin
 h1 b{font-weight:400;color:var(--tomato)}
 .count{font-family:var(--f-disp);font-size:14px;background:var(--ink);color:var(--ground);padding:6px 12px;border-radius:999px;white-space:nowrap;transform:rotate(3deg)}
 .row{display:grid;gap:12px;min-height:0}
-.games{grid-area:games;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
-.games .tile{grid-column:span 2}
+.games{grid-area:games;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:repeat(2,minmax(0,1fr))}
+.games .tile{grid-column:span 4}.games .tile:nth-child(-n+4){grid-column:span 3}.games .tile:nth-child(-n+4) .nm{font-size:clamp(11px,3.05vw,17px)}
 .games .tile .label{padding:7px 6px 8px;justify-content:center}.games .tile .nm{font-size:clamp(12px,3.7vw,18px)}
 .tag.new{background:var(--tomato);color:var(--paper);font-family:var(--f-disp);font-weight:400;font-size:12px;transform:rotate(-5deg)}
 .learn{grid-area:learn;grid-template-columns:repeat(3,minmax(0,1fr))}
@@ -75,7 +75,7 @@ footer{grid-area:foot;text-align:center;margin:0}
 <main>
   <header>
     <div><p class="kicker">MONGFAM · FAMILY ARCADE</p><h1>몽팸<b>게임</b>방</h1></div>
-    <span style="display:flex;align-items:center;gap:8px"><a class="count" href="../" style="transform:rotate(-3deg);text-decoration:none">🏠 홈</a><span class="count">게임 10개</span></span>
+    <span style="display:flex;align-items:center;gap:8px"><a class="count" href="../" style="transform:rotate(-3deg);text-decoration:none">🏠 홈</a><span class="count">게임 11개</span></span>
   </header>
 
   <a class="tile hero" href="games/plane3d.html" style="--c:var(--sky)">
@@ -85,12 +85,13 @@ footer{grid-area:foot;text-align:center;margin:0}
   </a>
 
   <div class="row games">
+    <a class="tile" href="games/train.html" style="--c:#bfeeb8"><span class="tag new">NEW</span><canvas data-t="train"></canvas><span class="label"><span class="nm">기차 운전</span></span></a>
     <a class="tile" href="games/skate.html" style="--c:var(--ice)"><canvas data-t="skate"></canvas><span class="label"><span class="nm">아이스 대시</span></span></a>
     <a class="tile" href="games/racing.html" style="--c:var(--grass)"><canvas data-t="race"></canvas><span class="label"><span class="nm">레이싱</span></span></a>
     <a class="tile" href="games/puppy.html" style="--c:#ffe9c7"><canvas data-t="puppy"></canvas><span class="label"><span class="nm">멍멍 구조대</span></span></a>
     <a class="tile" href="games/archery.html" style="--c:#8fd0f5"><canvas data-t="archery"></canvas><span class="label"><span class="nm">텐텐 양궁</span></span></a>
     <a class="tile" href="games/kangaroo.html" style="--c:#ffd9a0"><canvas data-t="roo"></canvas><span class="label"><span class="nm">캥거루 점프</span></span></a>
-    <a class="tile" href="games/fishing.html" style="--c:#8fd0f5"><span class="tag new">NEW</span><canvas data-t="fish"></canvas><span class="label"><span class="nm">바다낚시</span></span></a>
+    <a class="tile" href="games/fishing.html" style="--c:#8fd0f5"><canvas data-t="fish"></canvas><span class="label"><span class="nm">바다낚시</span></span></a>
   </div>
 
   <div class="row learn">
@@ -159,6 +160,15 @@ const D={
   const cx=w*.58,cy=H*.48,R=Math.max(8,Math.min(H*.4,w*.3));['#fff','#2b2f36','#3d8fe0','#e8483f','#ffd23f'].forEach((c,i)=>{g.fillStyle=c;g.beginPath();g.arc(cx,cy,R*(5-i)/5,0,TAU);g.fill();g.strokeStyle=INK;g.lineWidth=i?1:2.2;g.stroke();});
   const p=(t*.7)%1,ax=cx-R*2.6*(1-Math.min(1,p*1.6)),wob=p>.62?Math.sin((p-.62)*60)*2*(1-p):0;g.strokeStyle=INK;g.lineWidth=3;g.lineCap='round';g.beginPath();g.moveTo(ax-R*1.1,cy+wob);g.lineTo(ax,cy);g.stroke();
   g.fillStyle='#ff5a4d';g.beginPath();g.moveTo(ax-R*1.1,cy+wob);g.lineTo(ax-R*1.35,cy-5+wob);g.lineTo(ax-R*1.35,cy+5+wob);g.closePath();g.fill();},
+ train(g,w,h,t){const H=h-30,gy=H*.8;const sk=g.createLinearGradient(0,0,0,gy);sk.addColorStop(0,'#6ec4ff');sk.addColorStop(1,'#e9f8ff');g.fillStyle=sk;g.fillRect(0,0,w,h);
+  g.fillStyle='#9cc7dc';g.beginPath();g.moveTo(0,gy);for(let x=0;x<=w;x+=6)g.lineTo(x,gy-H*.3-Math.sin(x*.05+1)*H*.12-Math.sin(x*.13)*H*.05);g.lineTo(w,gy);g.fill();
+  g.fillStyle='#3f9a58';for(let i=0;i<6;i++){const x=((i*47-t*14)%(w+40)+w+40)%(w+40)-20;g.beginPath();g.moveTo(x-9,gy);g.lineTo(x,gy-H*.34);g.lineTo(x+9,gy);g.fill();}
+  g.fillStyle='#77cc6d';g.fillRect(0,gy,w,h);g.fillStyle='#b9aa98';g.fillRect(0,gy-2,w,5);g.fillStyle='#7a5a44';for(let x=-((t*40)%10);x<w;x+=10)g.fillRect(x,gy-3,4,4);
+  const u=Math.min(1,H/70),x0=w*.5-34*u,by=gy-3+Math.sin(t*9)*.6,R=(a,b,c,d,col)=>{g.fillStyle=col;g.fillRect(x0+a*u,by-b*u,c*u,d*u);};
+  R(-30,30,24,24,'#f2b84b');R(-27,26,7,9,'#bfe6ff');R(-17,26,7,9,'#bfe6ff');R(0,36,22,30,'#e2574c');R(4,31,13,11,'#bfe6ff');R(22,28,38,22,'#2f9a63');R(30,28,3,22,'#ffd23f');R(44,28,3,22,'#ffd23f');R(48,40,8,12,'#2a2740');R(-2,40,26,4,'#7a2f28');
+  g.fillStyle='#2a2740';g.beginPath();g.moveTo(x0+60*u,by-10*u);g.lineTo(x0+68*u,by);g.lineTo(x0+58*u,by);g.fill();
+  [[-24,4],[-12,4],[8,7],[24,7],[40,4],[52,4]].forEach(p=>{g.fillStyle='#2a2740';g.beginPath();g.arc(x0+p[0]*u,by-p[1]*u,p[1]*u,0,TAU);g.fill();g.fillStyle='#e2574c';g.beginPath();g.arc(x0+p[0]*u,by-p[1]*u,p[1]*u*.55,0,TAU);g.fill();});
+  g.fillStyle='rgba(255,255,255,.9)';for(let i=0;i<4;i++){const k=((t*.9+i*.25)%1);g.beginPath();g.arc(x0+(52-k*38)*u,by-(42+k*22)*u,(3+k*7)*u,0,TAU);g.fill();}},
  roo(g,w,h,t){const H=h-30,gy=H*.8;const sk=g.createLinearGradient(0,0,0,gy);sk.addColorStop(0,'#7fd0ff');sk.addColorStop(1,'#ffe9b8');g.fillStyle=sk;g.fillRect(0,0,w,h);
   g.fillStyle='#fff3a8';g.beginPath();g.arc(w*.8,H*.2,Math.min(12,H*.13),0,TAU);g.fill();g.fillStyle='#e9a468';g.beginPath();g.moveTo(w*.42,gy);g.lineTo(w*.5,gy-H*.3);g.lineTo(w*.92,gy-H*.27);g.lineTo(w,gy-H*.12);g.lineTo(w,gy);g.closePath();g.fill();
   g.fillStyle='#cf5f2f';g.fillRect(0,gy,w,h);g.strokeStyle=INK;g.lineWidth=2.5;g.beginPath();g.moveTo(0,gy);g.lineTo(w,gy);g.stroke();
