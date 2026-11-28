@@ -15,6 +15,8 @@
 </head>
 <body>
 <main>
+<div id="latest"></div>
+<div id="shareTip"></div>
 <div class="card" id="today"></div>
 <div id="who"></div>
 <div id="list"></div>
@@ -25,15 +27,24 @@
 MF.head('한 줄 일기장','daily','오늘 제일 기억에 남는 일을 한 줄만 써요. 가족 모두 한 줄씩!');
 var D=MF.load('diary',[]),filter='all',MOODS=[['😀','😀'],['🥰','🥰'],['😎','😎'],['😴','😴'],['😢','😢'],['😡','😡']];
 function save(){MF.save('diary',D);}
+/* 가장 최근에 쓴 일기: 저장한 시각(t), 없으면 id 에 들어 있는 만든 시각 */
+function when(x){return x.t||parseInt(String(x.id).slice(0,-4),36)||0;}
+function ago(ms){var m=Math.floor((Date.now()-ms)/60000);if(!ms||m<0)return '';if(m<1)return '방금';if(m<60)return m+'분 전';if(m<1440)return Math.floor(m/60)+'시간 전';if(m<10080)return Math.floor(m/1440)+'일 전';return '';}
+function latest(skip){var b=null;D.forEach(function(x){if(x!==skip&&x.text&&(!b||when(x)>when(b)))b=x;});return b;}
+function latestHtml(x){var m=MF.member(x.who),a=ago(when(x));
+  return '<div class="card" style="border:2px solid '+m.color+';margin-bottom:10px"><div class="muted" style="font-size:13px;margin-bottom:5px">💬 가장 최근에 쓴 일기</div><div class="row" style="align-items:flex-start"><span style="font-size:24px;line-height:1.2">'+(x.mood||'🙂')+'</span><div class="grow"><span class="chip" style="--c:'+m.color+'">'+MF.esc(m.name)+'</span> <span class="muted" style="font-size:13px">'+MF.day(x.d)+(a?' · '+a:'')+'</span><div style="margin-top:3px">'+MF.esc(x.text)+'</div></div></div></div>';}
+function drawLatest(){var x=latest();$('latest').innerHTML=x?latestHtml(x):'';
+  $('shareTip').innerHTML=MF.shared()?'':'<a class="card tap" href="../fam/" style="display:block;text-decoration:none;color:inherit;margin-bottom:10px;background:#fff7d6">📱 지금은 <b>이 폰에서만</b> 보여요. 가족이 다 같이 보려면 여기를 눌러 <b>가족 공유</b>를 켜 주세요. <span class="muted">(폰마다 같은 가족 비밀번호 한 번)</span></a>';}
 function mine(who,d){return D.filter(function(x){return x.who===who&&x.d===d;})[0];}
 function drawToday(){var t=MF.ymd();$('today').innerHTML='<h2>'+MF.day(t)+' · 오늘의 한 줄</h2><div class="row" style="flex-wrap:wrap;gap:7px;margin-top:8px">'+MF.members().map(function(m){var e=mine(m.id,t);return '<button class="btn sm" data-w="'+m.id+'" style="background:'+(e?m.color:'#fff')+'">'+MF.esc(m.name)+(e?' ✓':' 쓰기')+'</button>';}).join('')+'</div>';}
-function draw(){drawToday();var l=D.filter(function(x){return filter==='all'||x.who===filter;}).sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0;}),h='',day='';
+function draw(){drawLatest();drawToday();var l=D.filter(function(x){return filter==='all'||x.who===filter;}).sort(function(a,b){return a.d<b.d?1:a.d>b.d?-1:0;}),h='',day='';
   l.forEach(function(x){if(x.d!==day){day=x.d;h+='<h2 class="sec">'+MF.day(x.d,true)+'</h2>';}var m=MF.member(x.who);
     h+='<div class="card tap row" data-id="'+x.id+'" style="align-items:flex-start"><span style="font-size:24px;line-height:1.2">'+(x.mood||'🙂')+'</span><div class="grow"><span class="chip" style="--c:'+m.color+'">'+MF.esc(m.name)+'</span><div style="margin-top:3px">'+MF.esc(x.text)+'</div></div></div>';});
   $('list').innerHTML=h||'<div class="empty">아직 쓴 일기가 없어요. 위에서 이름을 눌러 오늘의 한 줄을 써 보세요.</div>';}
 function edit(e,who){var m=MF.member(e?e.who:who);MF.form({title:m.name+'의 한 줄',value:e||{d:MF.ymd(),mood:'😀'},
   fields:[{k:'text',label:'오늘 제일 기억에 남는 일',type:'textarea',max:80,req:true,ph:'예: 스케이트에서 처음으로 코너를 안 넘어지고 돌았다'},{k:'mood',label:'오늘 기분',type:'opts',opts:MOODS},{k:'d',label:'날짜',type:'date',req:true}],
-  onSave:function(v){if(e)Object.assign(e,v);else{v.id=MF.uid();v.who=who;D.push(v);}save();draw();MF.toast('저장했어요');},onDelete:e?function(){D=D.filter(function(x){return x!==e;});save();draw();}:null});}
+  onSave:function(v){v.t=Date.now();if(e)Object.assign(e,v);else{v.id=MF.uid();v.who=who;D.push(v);}save();draw();MF.toast('저장했어요');},onDelete:e?function(){D=D.filter(function(x){return x!==e;});save();draw();}:null});
+  var lx=latest(e),hd=document.querySelector('#mfSheet .sh h2');if(lx&&hd)hd.insertAdjacentHTML('afterend',latestHtml(lx));}
 $('today').onclick=function(ev){var b=ev.target.closest('[data-w]');if(!b)return;edit(mine(b.dataset.w,MF.ymd()),b.dataset.w);};
 $('list').onclick=function(ev){var c=ev.target.closest('[data-id]');if(c)edit(D.filter(function(x){return x.id===c.dataset.id;})[0]);};
 MF.who($('who'),{all:true},function(id){filter=id;draw();});

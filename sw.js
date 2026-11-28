@@ -1,6 +1,6 @@
 // 몽치치 패밀리 첫 화면 오프라인 지원: 한 번 열면 파일과 글꼴을 기기에 저장해 두고, 인터넷이 없을 때 저장본으로 엽니다.
 // 게임을 고치면 CACHE 이름의 숫자를 올려서 새 버전이 저장되게 합니다.
-const CACHE = 'home-v13';
+const CACHE = 'home-v14';
 const CORE = ['./', './index.html', './fukuoka/', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './fam/', './fam/fam.css', './fam/fam.js', './life/schedule.html', './life/chores.html', './life/pack.html', './life/eatout.html', './daily/diary.html', './daily/skate.html', './daily/growth.html', './daily/books.html'];
 const FONT_HOSTS = ['fonts.googleapis.com', 'fonts.gstatic.com'];
 
